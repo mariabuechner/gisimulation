@@ -1,8 +1,6 @@
-import materials
-
 class Grating():
     """
-    bla bla.
+    Parent class for gratings.
 
     Parameters
     ==========
@@ -27,5 +25,4 @@ class Grating():
     def __init__(self, pitch, height, material):
         self.pitch = pitch # [um]
         self.height = height # [um]
-        if materials.exists(material):
-            self.material = material
+        self.material = material
