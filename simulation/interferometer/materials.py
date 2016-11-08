@@ -26,6 +26,12 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
+# Constants
+H_C = 1.23984193 # [eV um]
+
+###############################################################################
+# Material constants look ups
+###############################################################################
 
 def density(material):
     """
@@ -59,7 +65,7 @@ def density(material):
 
     """
     url_material = ('http://x-server.gmca.aps.anl.gov/cgi/'
-    'www_dbli.exe?x0hdb=amorphous%2Batoms')
+        'www_dbli.exe?x0hdb=amorphous%2Batoms')
     try:
         page=urllib2.urlopen(url_material).read()
         # Format of page, using \r\n to seperate lines
@@ -78,11 +84,12 @@ def density(material):
         return page[material] # return density belonging to material
     except urllib2.URLError as err:
         logger.error('URL "{}" cannot be accessed, check internet connection'
-        .format(url_material))
+            .format(url_material))
         raise
     except KeyError as err:
         logger.error('Density of material "{}" not accessible at '
-        '"http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe"'.format(material))
+            '"http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe"'.format(
+            material))
         raise
 
 def delta_beta(material, energy, rho=0, photo_only=False):
@@ -133,7 +140,7 @@ def delta_beta(material, energy, rho=0, photo_only=False):
     """
     energy = np.array(energy)
     logger.info('Getting delta and beta for "{}" at [{}] keV.'.format(material,
-    energy))
+        energy))
     if photo_only:
         logger.info('Only consider photo cross-section component.')
     else:
@@ -141,16 +148,208 @@ def delta_beta(material, energy, rho=0, photo_only=False):
     if rho is not 0:
         logger.info('Density entered manually: rho = {}'.format(rho))
         [delta, beta, attenuation_length] = xdb.xray_delta_beta(material, rho,
-        energy*1000, photo_only)
+            energy*1e3, photo_only)
         logger.debug('delta: {}\nbeta: {}\nattenuation length: {}'.format(
-        delta, beta, attenuation_length))
+            delta, beta, attenuation_length))
     else:
         logger.info('Retrieve density (rho) from',
-        '"http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe"')
+            '"http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe"')
         rho = density(material)
         logger.debug('Density calculated: rho = {}'.format(rho))
         [delta, beta, attenuation_length] = xdb.xray_delta_beta(material, rho,
-        energy*1000, photo_only)
+            energy*1e3, photo_only)
         logger.debug('delta: {}\nbeta: {}\nattenuation length: {}'.format(
-        delta, beta, attenuation_length))
+            delta, beta, attenuation_length))
     return delta,beta,rho
+
+###############################################################################
+# Conversions
+###############################################################################
+
+def energy_to_wavelength(energy):
+    """
+    Convert energy [keV] into wavelength [um].
+    wavelength = h*c/E
+    with
+    E [keV]
+    h*c = 1.23984193 [eV um]
+    wavelength [um]
+
+    Parameters
+    ==========
+
+    energy: in [keV], can be array
+
+    Returns
+    =======
+
+    wavelength: in [um]
+
+    Examples
+    ========
+
+    energy_to_wavelength(35)
+    3.5424055142857143e-05
+    # um or 0.35 angstroems
+
+    """
+    energy = np.array(energy)*1e3 # [eV]
+    return H_C / energy # [um]
+
+def wavelength_to_energy(wavelength):
+    """
+    Convert wavelength [um] into energy [keV].
+    E = h*c/wavelength
+    with
+    E [keV]
+    h*c = 1.23984193 [eV um]
+    wavelength [um]
+
+    Parameters
+    ==========
+
+    wavelength: in [um], can be array
+
+    Returns
+    =======
+
+    energy: in [keV]
+
+    Examples
+    ========
+
+    wavelength_to_energy(3.5424055142857143e-05)
+    35.0
+
+    """
+    wavelength = np.array(wavelength) # [um]
+    return (H_C / wavelength)*1e-3 # [keV]
+
+def delta_to_mu(delta, energy):
+    """
+    .
+
+    Parameters
+    ==========
+
+
+
+    Returns
+    =======
+
+
+
+    Notes
+    =====
+
+
+
+    Examples
+    ========
+
+
+    """
+    return 4*np.pi*delta/energy_to_wavelength(energy)
+
+def shift_to_height(shift, material, energy):
+    """
+    .
+
+    Parameters
+    ==========
+
+
+
+    Returns
+    =======
+
+
+
+    Notes
+    =====
+
+
+
+    Examples
+    ========
+
+
+    """
+
+
+def height_to_shift(height, material, energy):
+    """
+    .
+
+    Parameters
+    ==========
+
+
+
+    Returns
+    =======
+
+
+
+    Notes
+    =====
+
+
+
+    Examples
+    ========
+
+
+    """
+
+
+def absorption_to_height(absorption, material, energy):
+    """
+    .
+
+    Parameters
+    ==========
+
+
+
+    Returns
+    =======
+
+
+
+    Notes
+    =====
+
+
+
+    Examples
+    ========
+
+
+    """
+
+
+def height_to_absorption(height, material, energy):
+    """
+    .
+
+    Parameters
+    ==========
+
+
+
+    Returns
+    =======
+
+
+
+    Notes
+    =====
+
+
+
+    Examples
+    ========
+
+
+    """
