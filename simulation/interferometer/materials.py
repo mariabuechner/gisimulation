@@ -85,7 +85,7 @@ def density(material):
         '"http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe"'.format(material))
         raise
 
-def delta_beta(material, energy, rho=0):
+def delta_beta(material, energy, rho=0, photo_only=False):
     """
     Calculate delta and beta values for given material and energy.
 
@@ -94,7 +94,9 @@ def delta_beta(material, energy, rho=0):
 
     material: chemical formula  ('Fe2O3', 'CaMg(CO3)2', 'La1.9Sr0.1CuO4')
     energy: x-ray energy [keV], use np.array for multiple energies
-    rho: density in [g/cm3], optional, default=0 (no density given)
+    rho: density in [g/cm3], default=0 (no density given)
+    photo_only: boolean for returning photo cross-section component only,
+    default=False
 
     Returns
     =======
@@ -130,12 +132,16 @@ def delta_beta(material, energy, rho=0):
 
     """
     energy = np.array(energy)
-    logger.info('Getting delta and beta for "{}" at [{}] keV'.format(material,
+    logger.info('Getting delta and beta for "{}" at [{}] keV.'.format(material,
     energy))
+    if photo_only:
+        logger.info('Only consider photo cross-section component.')
+    else:
+        logger.info('Consider total cross-section.')
     if rho is not 0:
         logger.info('Density entered manually: rho = {}'.format(rho))
         [delta, beta, attenuation_length] = xdb.xray_delta_beta(material, rho,
-        energy*1000)
+        energy*1000, photo_only)
         logger.debug('delta: {}\nbeta: {}\nattenuation length: {}'.format(
         delta, beta, attenuation_length))
     else:
@@ -144,7 +150,7 @@ def delta_beta(material, energy, rho=0):
         rho = density(material)
         logger.debug('Density calculated: rho = {}'.format(rho))
         [delta, beta, attenuation_length] = xdb.xray_delta_beta(material, rho,
-        energy*1000)
+        energy*1000, photo_only)
         logger.debug('delta: {}\nbeta: {}\nattenuation length: {}'.format(
         delta, beta, attenuation_length))
     return delta,beta,rho
