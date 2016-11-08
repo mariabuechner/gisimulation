@@ -222,17 +222,18 @@ def wavelength_to_energy(wavelength):
     35.0
 
     """
-    wavelength = np.array(wavelength) # [um]
-    return (H_C / wavelength)*1e-3 # [keV]
+    return (H_C/np.array(wavelength))*1e-3 # [keV]
 
 def delta_to_mu(delta, energy):
     """
-    .
+    Calculate the x-ray absorption coefficient (mu) from delta and
+    corresponding energy.
 
     Parameters
     ==========
 
-
+    delta: real part of index of refraction
+    energy: x-ray energy [keV]
 
     Returns
     =======
@@ -242,13 +243,15 @@ def delta_to_mu(delta, energy):
     Notes
     =====
 
-
+    delta and energy need to be the same length, as delta = delta(energy)
 
     Examples
     ========
 
 
     """
+    if np.array(delta).size is not np.array(energy).size:
+        raise Exception('Number of deltas and energies do not match.')
     return 4*np.pi*delta/energy_to_wavelength(energy)
 
 def shift_to_height(shift, material, energy):
