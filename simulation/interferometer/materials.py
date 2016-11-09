@@ -2,9 +2,12 @@
 Module to retrieve the complexe refractive index: n = 1 - delta - i*beta and
 density rho of an arbritary material or chemical comppsition.
 
-The python package 'nist_lookup' (git@git.psi.ch:tomcat/nist_lookup.git) is
+Either the python package 'nist_lookup' (git@git.psi.ch:tomcat/nist_lookup.git) is
 used to retrieve delta and beta. This requires the input of the dentisty,
 which for certain materials can be looked up online at
+'http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe'
+
+Alternatively the density and delta and beta will be looked up at 'X0h':
 'http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe'
 
 Delta:
@@ -26,6 +29,9 @@ import urllib2
 import numpy as np
 import logging
 logger = logging.getLogger(__name__)
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - '
+'%(message)s')
+# This technically only needs to be done one, in highest hirachy function!!!
 
 # Constants
 H_C = 1.23984193 # [eV um]
@@ -61,7 +67,7 @@ def density(material):
     Examples
     ========
 
-    materials.rho("Au")
+    density("Au")
     19.3
 
     """
@@ -87,15 +93,85 @@ def density(material):
         logger.error('URL "{}" cannot be accessed, check internet connection'
             .format(url_material))
         raise
-    except KeyError as err:
+    except KeyError:
         logger.error('Density of material "{}" not accessible at '
             '"http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe"'.format(
             material))
-        raise
+        raise ValueError('{} is not a valid material'.format(material))
 
-def delta_beta(material, energy, rho=0, photo_only=False):
+def read_x0h(material, energy):
     """
-    Calculate delta and beta values for given material and energy.
+    Look up delta and beta for single energy from
+    'http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe'. If offline, need to
+    enter manually.
+
+    Parameters
+    ==========
+
+    material: chemical formula  ('Fe2O3')
+    energy: x-ray energy [keV], accepts only single values
+
+    Returns
+    =======
+
+    (delta, beta)
+
+    where
+
+        delta: real part of index of refraction
+        beta: complex part of index of refraction
+
+    Notes
+    =====
+
+    All materials will be treated as amorphous.
+
+
+    Examples
+    ========
+
+    read_x0h('Au', 30)
+    (3.5477e-06, 1.8106e-07)
+
+
+    """
+    energy = np.array(energy)
+    if energy.size > 1:
+        logger.debug('Size of "energy": {}'.format(energy.size))
+        raise ValueError('"read_x0h()" does not accept multiple energies at '
+        'a time.')
+    url_material = ('http://x-server.gmca.aps.anl.gov/cgi/x0h_form.exe?'
+    'xway=2&wave={}&coway=1&amor={}&i1=1&i2=1&i3=1&df1df2=-1&modeout=1'
+    '&detail=0'.format(energy, material))
+    # xway: 1 - wavelength, 2 - energy, 3 - line type
+    # wave: [A]             [keV]       [characteristic X-ray line]
+    # coway: 0 - crystal, 1 - other material, 2 - chemicalformula
+    #        code: 'name' amor: 'name'        chem: 'chemical formula'
+    # Miller indices: (i1, i2, i3) = 1, df1df2 = -1
+    # modeout: 0 - html out, 1 - quasy-text out with keywords
+    # detail: 0 - don't print coords, 1 = print coords
+    try:
+        page=urllib2.urlopen(url_material).read()
+        # Retrieve delta and beta values, look at 'page' for details
+        delta_eta = page.split('delta')[2].split('eta')
+        delta = np.float(delta_eta[0].split('\r\n')[0][1:])
+        beta = np.float(delta_eta[1].split('Absorption')[0].split('\r\n'
+        )[0][1:])
+        return delta, -beta
+    except urllib2.URLError as err:
+        logger.error('URL "{}" cannot be accessed, check internet connection'
+            .format(url_material))
+        raise
+    except IndexError as err:
+        logger.error('{} is not a valid material at '
+            '"http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe"'.format(
+            material))
+        raise ValueError('{} is not a valid material'.format(material))
+
+def delta_beta_nist(material, energy, rho=0, photo_only=False):
+    """
+    Calculate delta and beta values for given material and energy, based
+    on the 'nist_lookup' package.
 
     Parameters
     ==========
@@ -121,44 +197,157 @@ def delta_beta(material, energy, rho=0, photo_only=False):
     =====
 
     If the material is not listed at
-    'http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe', the desnity must be
-    given manually and a error message is shown.
+    'http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe', the density must be
+    given manually and an error is raised.
 
     Examples
     ========
 
-    delta_beta('Au',30)
+    delta_beta_nist('Au', 30)
     (3.5424041819846902e-06, 1.712907107947311e-07, 19.3)
 
-    delta_beta('Au',[30,35,46])
+    delta_beta_nist('Au', [30,35,46])
     (array([  3.54036290e-06,   2.59984680e-06,   1.49671119e-06]),
     array([  1.71290711e-07,   9.71481951e-08,   3.61364422e-08]),
     19.3)
 
     """
     energy = np.array(energy)
-    logger.info('Getting delta and beta for "{}" at [{}] keV.'.format(material,
+    logger.debug('Material is "{}", energy is {} keV.'.format(material,
         energy))
     if photo_only:
-        logger.info('Only consider photo cross-section component.')
+        logger.debug('Only consider photo cross-section component.')
     else:
-        logger.info('Consider total cross-section.')
+        logger.debug('Consider total cross-section.')
     if rho is not 0:
-        logger.info('Density entered manually: rho = {}'.format(rho))
+        logger.debug('Density entered manually: rho = {}'.format(rho))
         [delta, beta, attenuation_length] = xdb.xray_delta_beta(material, rho,
             energy*1e3, photo_only)
-        logger.debug('delta: {}\nbeta: {}\nattenuation length: {}'.format(
+        logger.debug('delta: {},\tbeta: {},\tattenuation length: {}'.format(
             delta, beta, attenuation_length))
     else:
-        logger.info('Retrieve density (rho) from',
+        logger.debug('Retrieve density (rho) from'
             '"http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe"')
         rho = density(material)
         logger.debug('Density calculated: rho = {}'.format(rho))
         [delta, beta, attenuation_length] = xdb.xray_delta_beta(material, rho,
             energy*1e3, photo_only)
-        logger.debug('delta: {}\nbeta: {}\nattenuation length: {}'.format(
+        logger.debug('delta: {},\tbeta: {},\tattenuation length: {}'.format(
             delta, beta, attenuation_length))
     return delta,beta,rho
+
+def delta_beta_x0h(material, energy):
+    """
+    Lookup delta and beta values for given material and energy from
+    'http://x-server.gmca.aps.anl.gov/cgi/x0h_form.exe
+
+    Parameters
+    ==========
+
+    material: chemical formula  ('Fe2O3', 'CaMg(CO3)2', 'La1.9Sr0.1CuO4')
+    energy: x-ray energy [keV]
+
+    Returns
+    =======
+
+    (delta, beta, rho)
+
+    where
+
+        delta: real part of index of refraction
+        beta: complex part of index of refraction
+        rho: density in [g/cm3]
+
+    Notes
+    =====
+
+    If the material is not listed at
+    'http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe', neither density nor
+    delta and beta can be looked up, and an error is raised.
+
+    Examples
+    ========
+
+    delta_beta_x0h('Au', 30)
+    (3.5477e-06, -1.8106e-07, 19.3)
+
+    delta_beta_x0h('Au', [30,35,46])
+    (array([  3.54770000e-06,   2.60580000e-06,   1.50440000e-06]),
+    array([  1.81060000e-07,   1.06140000e-07,   4.11930000e-08]),
+    19.3)
+
+
+    """
+    logger.warning('Values interatively retrieved for each energy. Slow!')
+    energy = np.array(energy)
+    logger.debug('Material is "{}", energy is {} keV.'.format(material,
+        energy))
+    logger.debug('Retrieve density (rho) from'
+        '"http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe"')
+    rho = density(material)
+    logger.debug('Density calculated: rho = {}'.format(rho))
+    if energy.size is 1:
+        delta, beta = read_x0h(material, energy)
+    else:
+        delta, beta = np.array([read_x0h(material, e) for e in energy]).T
+    logger.debug('delta: {},\tbeta: {}'.format(
+        delta, beta))
+    return delta,beta,rho
+
+def delta_beta(material, energy, rho=0, photo_only=False, source='nist'):
+    """
+    Calculate delta and beta values for given material and energy, using the
+    'nist_loohup' package (source='nist') or from
+    'http://x-server.gmca.aps.anl.gov/cgi/x0h_form.exe' (source='X0h').
+
+    Parameters
+    ==========
+
+    material: chemical formula  ('Fe2O3', 'CaMg(CO3)2', 'La1.9Sr0.1CuO4')
+    energy: x-ray energy [keV]
+    rho: density in [g/cm3], default=0 (no density given)
+    photo_only: boolean for returning photo cross-section component only (for
+    'nist_lookup', default=False
+    source: source of values, choices=['nist','X0h'], default='nist'
+
+    Returns
+    =======
+
+    (delta, beta, rho)
+
+    where
+
+        delta: real part of index of refraction
+        beta: complex part of index of refraction
+        rho: density in [g/cm3]
+
+    Notes
+    =====
+
+    If the material is not listed at
+    'http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe', the density must be
+    given manually and an error is raised. If the material ist not listed,
+    'X0h' webside cannot be used as the source.
+
+    Examples
+    ========
+
+    delta_beta('Au', 30)
+    (3.5424041819846902e-06, 1.712907107947311e-07, 19.3)
+
+    delta_beta('Au', 30, source='X0h')
+    (3.5477e-06, -1.8106e-07, 19.3)
+
+    """
+    if source is 'nist':
+        logger.info('Looking up delta and beta from "nist_lookup"')
+        return delta_beta_nist(material, energy, rho, photo_only)
+    elif source is 'X0h':
+        logger.info('Looking up delta and beta from "X0h"')
+        return delta_beta_x0h(material, energy)
+    else:
+        raise ValueError('Wrong data source specified: {}. Source must be '
+        '"nist" or "X0h"'.format(source))
 
 ###############################################################################
 # Conversions
@@ -502,3 +691,12 @@ def height_to_shift(height, material, energy, rho=0, photo_only=False):
     wavelength = energy_to_wavelength(energy)
     logger.debug('Wavelengthis {} [um].'.format(wavelength))
     return 2*np.pi*delta*height/wavelength
+
+
+#if __name__ == '__main__':
+#    energy = 30
+#    material = 'Au'
+#    height = 6
+#    logger.info('Height is {}, material is {}, energy is {}'.format(height,
+#    material, energy))
+#    height_to_shift(height, material, energy)
