@@ -1,7 +1,10 @@
+"""
+
+@author: buechner_m
+"""
 import materials
 import logging
 logger = logging.getLogger(__name__)
-
 
 
 class Grating(object):
@@ -25,11 +28,11 @@ class Grating(object):
 
     """
     def __init__(self, pitch, material, design_energy, height=0,
-    duty_cycle=0.5, shape='flat'):
-        self.pitch = pitch # [um]
+                 duty_cycle=0.5, shape='flat'):
+        self.pitch = pitch  # [um]
         self.material = material
-        self.design_energy = design_energy # [keV]
-        self.height = height # [um]
+        self.design_energy = design_energy  # [keV]
+        self.height = height  # [um]
         self.duty_cycle = duty_cycle
         self.shape = shape
 
@@ -56,21 +59,22 @@ class PhaseGrating(Grating):
 
     """
     def __init__(self, pitch, material, design_energy, height=0,
-    duty_cycle=0.5, shape='flat', phase_shift=0):
+                 duty_cycle=0.5, shape='flat', phase_shift=0):
         # call init from parent class
         super(PhaseGrating, self).__init__(pitch, material, design_energy,
-            height, duty_cycle, shape)
+                                           height, duty_cycle, shape)
         # Calculate height or phase shift respectively
         if self.height:
             self.phase_shift = materials.height_to_shift(self.height,
-                self.material, self.design_energy)
+                                                         self.material,
+                                                         self.design_energy)
         elif phase_shift:
             self.height = materials.shift_to_height(phase_shift, self.material,
-                self.design_energy) # [um]
+                                                    self.design_energy)  # [um]
             self.phase_shift = phase_shift
         else:
             raise Exception('Neither height of grating nor phase shift are '
-                'given.')
+                            'defined.')
 
 
 class AbsorptionGrating(Grating):
@@ -95,18 +99,24 @@ class AbsorptionGrating(Grating):
 
     """
     def __init__(self, pitch, material, design_energy, height=0,
-    duty_cycle=0.5, shape='flat', absorption=0):
+                 duty_cycle=0.5, shape='flat', absorption=0):
         # call init from parent class
         super(AbsorptionGrating, self).__init__(pitch, material,
-            design_energy, height, duty_cycle, shape)
+                                                design_energy, height,
+                                                duty_cycle, shape)
         # Calculate height or absorption respectively
         if self.height:
             self.absorption = materials.height_to_absorption(self.height,
-                self.material, self.design_energy) # [%]
+                                                             self.material,
+                                                             self.
+                                                             design_energy)
+            # [%]
         elif absorption:
             self.height = materials.absorption_to_height(absorption,
-                self.material, self.design_energy) # [um]
-            self.absorption = absorption # [%]
+                                                         self.material,
+                                                         self.
+                                                         design_energy)  # [um]
+            self.absorption = absorption  # [%]
         else:
             raise Exception('Neither height of grating nor absorption are '
-                'given.')
+                            'defined.')

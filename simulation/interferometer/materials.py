@@ -2,8 +2,8 @@
 Module to retrieve the complexe refractive index: n = 1 - delta - i*beta and
 density rho of an arbritary material or chemical comppsition.
 
-Either the python package 'nist_lookup' (git@git.psi.ch:tomcat/nist_lookup.git) is
-used to retrieve delta and beta. This requires the input of the dentisty,
+Either the python package 'nist_lookup' (git@git.psi.ch:tomcat/nist_lookup.git)
+is used to retrieve delta and beta. This requires the input of the dentisty,
 which for certain materials can be looked up online at
 'http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe'
 
@@ -23,6 +23,7 @@ Beta:
 
 Rho: density in [g/cm3]
 
+@author: buechner_m
 """
 import nist_lookup.xraydb_plugin as xdb
 import urllib2
@@ -30,15 +31,16 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - '
-'%(message)s')
-# This technically only needs to be done one, in highest hirachy function!!!
+                    '%(message)s')
+# This technically only needs to be done once, in highest hirachy function!!!
 
 # Constants
-H_C = 1.23984193 # [eV um]
+H_C = 1.23984193  # [eV um]
 
 ###############################################################################
 # Material constants look ups
 ###############################################################################
+
 
 def density(material):
     """
@@ -72,32 +74,33 @@ def density(material):
 
     """
     url_material = ('http://x-server.gmca.aps.anl.gov/cgi/'
-        'www_dbli.exe?x0hdb=amorphous%2Batoms')
+                    'www_dbli.exe?x0hdb=amorphous%2Batoms')
     try:
-        page=urllib2.urlopen(url_material).read()
+        page = urllib2.urlopen(url_material).read()
         # Format of page, using \r\n to seperate lines
         #   Header
         #   Ac              *Amorphous*     rho=10.05     /Ac/
         #   Ag              *Amorphous*     rho=10.5      /Ag/
-        page = page.splitlines() # Split in lines
-        page = [row for row in page if '*Amorphous*' in row] # Remove header
-        page = [row.split(' ') for row in page] # Split strings
-        page = [filter(None, row) for row in page] # Remove spaces
+        page = page.splitlines()  # Split in lines
+        page = [row for row in page if '*Amorphous*' in row]  # Remove header
+        page = [row.split(' ') for row in page]  # Split strings
+        page = [filter(None, row) for row in page]  # Remove spaces
         for row in page:
-            del row[1] # delete second column '*Amorphous*'
-            del row[-1] # delete last column '/name/'
-        page = [[row[0],np.float(row[1].split('=')[1])] for row in page]
+            del row[1]  # delete second column '*Amorphous*'
+            del row[-1]  # delete last column '/name/'
+        page = [[row[0], np.float(row[1].split('=')[1])] for row in page]
         page = dict(page)
-        return page[material] # return density belonging to material
-    except urllib2.URLError as err:
+        return page[material]  # return density belonging to material
+    except urllib2.URLError:
         logger.error('URL "{}" cannot be accessed, check internet connection'
-            .format(url_material))
+                     .format(url_material))
         raise
     except KeyError:
         logger.error('Density of material "{}" not accessible at '
-            '"http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe"'.format(
-            material))
+                     '"http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe"'.
+                     format(material))
         raise ValueError('{} is not a valid material'.format(material))
+
 
 def read_x0h(material, energy):
     """
@@ -139,10 +142,10 @@ def read_x0h(material, energy):
     if energy.size > 1:
         logger.debug('Size of "energy": {}'.format(energy.size))
         raise ValueError('"read_x0h()" does not accept multiple energies at '
-        'a time.')
+                         'a time.')
     url_material = ('http://x-server.gmca.aps.anl.gov/cgi/x0h_form.exe?'
-    'xway=2&wave={}&coway=1&amor={}&i1=1&i2=1&i3=1&df1df2=-1&modeout=1'
-    '&detail=0'.format(energy, material))
+                    'xway=2&wave={}&coway=1&amor={}&i1=1&i2=1&i3=1&df1df2='
+                    '-1&modeout=1&detail=0'.format(energy, material))
     # xway: 1 - wavelength, 2 - energy, 3 - line type
     # wave: [A]             [keV]       [characteristic X-ray line]
     # coway: 0 - crystal, 1 - other material, 2 - chemicalformula
@@ -151,22 +154,23 @@ def read_x0h(material, energy):
     # modeout: 0 - html out, 1 - quasy-text out with keywords
     # detail: 0 - don't print coords, 1 = print coords
     try:
-        page=urllib2.urlopen(url_material).read()
+        page = urllib2.urlopen(url_material).read()
         # Retrieve delta and beta values, look at 'page' for details
         delta_eta = page.split('delta')[2].split('eta')
         delta = np.float(delta_eta[0].split('\r\n')[0][1:])
-        beta = np.float(delta_eta[1].split('Absorption')[0].split('\r\n'
-        )[0][1:])
+        beta = np.float(delta_eta[1].split('Absorption')[0].split('\r\n')
+                        [0][1:])
         return delta, -beta
-    except urllib2.URLError as err:
+    except urllib2.URLError:
         logger.error('URL "{}" cannot be accessed, check internet connection'
-            .format(url_material))
+                     .format(url_material))
         raise
-    except IndexError as err:
+    except IndexError:
         logger.error('{} is not a valid material at '
-            '"http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe"'.format(
-            material))
+                     '"http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe"'.
+                     format(material))
         raise ValueError('{} is not a valid material'.format(material))
+
 
 def delta_beta_nist(material, energy, rho=0, photo_only=False):
     """
@@ -214,7 +218,7 @@ def delta_beta_nist(material, energy, rho=0, photo_only=False):
     """
     energy = np.array(energy)
     logger.debug('Material is "{}", energy is {} keV.'.format(material,
-        energy))
+                 energy))
     if photo_only:
         logger.debug('Only consider photo cross-section component.')
     else:
@@ -222,19 +226,22 @@ def delta_beta_nist(material, energy, rho=0, photo_only=False):
     if rho is not 0:
         logger.debug('Density entered manually: rho = {}'.format(rho))
         [delta, beta, attenuation_length] = xdb.xray_delta_beta(material, rho,
-            energy*1e3, photo_only)
+                                                                energy*1e3,
+                                                                photo_only)
         logger.debug('delta: {},\tbeta: {},\tattenuation length: {}'.format(
             delta, beta, attenuation_length))
     else:
         logger.debug('Retrieve density (rho) from'
-            '"http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe"')
+                     '"http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe"')
         rho = density(material)
         logger.debug('Density calculated: rho = {}'.format(rho))
         [delta, beta, attenuation_length] = xdb.xray_delta_beta(material, rho,
-            energy*1e3, photo_only)
+                                                                energy*1e3,
+                                                                photo_only)
         logger.debug('delta: {},\tbeta: {},\tattenuation length: {}'.format(
-            delta, beta, attenuation_length))
-    return delta,beta,rho
+                     delta, beta, attenuation_length))
+    return delta, beta, rho
+
 
 def delta_beta_x0h(material, energy):
     """
@@ -281,9 +288,9 @@ def delta_beta_x0h(material, energy):
     logger.warning('Values interatively retrieved for each energy. Slow!')
     energy = np.array(energy)
     logger.debug('Material is "{}", energy is {} keV.'.format(material,
-        energy))
+                 energy))
     logger.debug('Retrieve density (rho) from'
-        '"http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe"')
+                 '"http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe"')
     rho = density(material)
     logger.debug('Density calculated: rho = {}'.format(rho))
     if energy.size is 1:
@@ -292,7 +299,8 @@ def delta_beta_x0h(material, energy):
         delta, beta = np.array([read_x0h(material, e) for e in energy]).T
     logger.debug('delta: {},\tbeta: {}'.format(
         delta, beta))
-    return delta,beta,rho
+    return delta, beta, rho
+
 
 def delta_beta(material, energy, rho=0, photo_only=False, source='nist'):
     """
@@ -347,11 +355,12 @@ def delta_beta(material, energy, rho=0, photo_only=False, source='nist'):
         return delta_beta_x0h(material, energy)
     else:
         raise ValueError('Wrong data source specified: {}. Source must be '
-        '"nist" or "X0h"'.format(source))
+                         '"nist" or "X0h"'.format(source))
 
 ###############################################################################
 # Conversions
 ###############################################################################
+
 
 def energy_to_wavelength(energy):
     """
@@ -380,9 +389,10 @@ def energy_to_wavelength(energy):
     # um or 0.35 angstroems
 
     """
-    energy = np.array(energy)*1e3 # [eV]
+    energy = np.array(energy)*1e3  # [eV]
     logger.debug('Energy is {} [eV].'.format(energy))
-    return H_C / energy # [um]
+    return H_C / energy  # [um]
+
 
 def wavelength_to_energy(wavelength):
     """
@@ -412,12 +422,16 @@ def wavelength_to_energy(wavelength):
     """
     energy = H_C/np.array(wavelength)
     logger.debug('Energy is {} [eV].'.format(energy))
-    return energy*1e-3 # [keV]
+    return energy*1e-3  # [keV]
+
 
 def attenuation_coefficient(beta, energy):
     """
     Calculate the x-ray attenuation coefficient (mu) from beta and
     corresponding energy.
+
+    4*pi*beta/lambda
+
 
     Parameters
     ==========
@@ -448,6 +462,7 @@ def attenuation_coefficient(beta, energy):
     wavelength = energy_to_wavelength(energy)
     logger.debug('Wavelengthis {} [um].'.format(wavelength))
     return 4*np.pi*beta/wavelength
+
 
 def mass_attenuation_coefficient(mu, rho, convert_to_um=False):
     """
@@ -486,13 +501,14 @@ def mass_attenuation_coefficient(mu, rho, convert_to_um=False):
     # [um2/g]
 
     """
-    mum = mu*1e4/rho # [ (1/um -> 1/cm) / (g/cm3) = cm2/g ]
+    mum = mu*1e4/rho  # [ (1/um -> 1/cm) / (g/cm3) = cm2/g ]
     if convert_to_um:
-        mum = mum*1e8 # [ cm2/g -> um2/g]
+        mum = mum*1e8  # [ cm2/g -> um2/g]
     return mum
 
+
 def absorption_to_height(absorption, material, energy, rho=0,
-photo_only=False):
+                         photo_only=False):
     """
     Calculates the necessary height (thickness) of a grating to get the
     required percentage of x-ray absorption for a given material and energy.
@@ -533,6 +549,7 @@ photo_only=False):
     mu = attenuation_coefficient(beta, energy)
     logger.debug('The attenuation coefficient is {} [1/um].'.format(mu))
     return -np.log(1-absorption)/mu
+
 
 def height_to_absorption(height, material, energy, rho=0, photo_only=False):
     """
@@ -576,6 +593,7 @@ def height_to_absorption(height, material, energy, rho=0, photo_only=False):
     logger.debug('The attenuation coefficient is {} [1/um].'.format(mu))
     return 1 - np.exp(-mu*height)
 
+
 def phase_shift(delta, energy):
     """
     Calculate the x-ray phase shift from delta and the corresponding energy.
@@ -611,6 +629,7 @@ def phase_shift(delta, energy):
     wavelength = energy_to_wavelength(energy)
     logger.debug('Wavelengthis {} [um].'.format(wavelength))
     return 2*np.pi*delta/wavelength
+
 
 def shift_to_height(dphi, material, energy, rho=0, photo_only=False):
     """
@@ -650,7 +669,8 @@ def shift_to_height(dphi, material, energy, rho=0, photo_only=False):
     logger.debug('Delta is {}.'.format(delta))
     wavelength = energy_to_wavelength(energy)
     logger.debug('Wavelengthis {} [um].'.format(wavelength))
-    return dphi*wavelength/ (2*np.pi*delta)
+    return dphi*wavelength / (2*np.pi*delta)
+
 
 def height_to_shift(height, material, energy, rho=0, photo_only=False):
     """
@@ -693,10 +713,45 @@ def height_to_shift(height, material, energy, rho=0, photo_only=False):
     return 2*np.pi*delta*height/wavelength
 
 
-#if __name__ == '__main__':
-#    energy = 30
-#    material = 'Au'
-#    height = 6
-#    logger.info('Height is {}, material is {}, energy is {}'.format(height,
-#    material, energy))
-#    height_to_shift(height, material, energy)
+def read_sample_values():
+    """
+    Read delta and mu fom sample files and interpolate for energies
+    """
+
+
+if __name__ == '__main__':
+    from scipy import interpolate
+    import matplotlib.pyplot as plt
+
+    energy = np.array([range(1, 101)])
+
+    rho = 1
+
+    e_lut = np.array([4.00000E-03, 5.00000E-03, 6.00000E-03, 8.00000E-03,
+                      1.00000E-02, 1.50000E-02, 2.00000E-02, 3.00000E-02,
+                      4.00000E-02, 5.00000E-02, 6.00000E-02, 8.00000E-02,
+                      1.00000E-01])
+    e_lut = e_lut*1e3
+    mu_lut = np.array([7.788E+01, 4.027E+01, 2.341E+01, 9.921E+00, 5.120E+00,
+                       1.614E+00, 7.779E-01, 3.538E-01, 2.485E-01, 2.080E-01,
+                       1.875E-01, 1.662E-01, 1.541E-01])
+
+    mu_m = interpolate.spline(e_lut, mu_lut, energy)
+
+    plt.plot(energy, mu_m, 'ro')
+    plt.plot(e_lut, mu_lut, 'bo')
+    plt.show()
+
+    mu = rho * abs(mu_m)
+
+    [delta_Al, beta_Al, rho_Al] = delta_beta('Al', energy)
+
+    mu_Al = attenuation_coefficient(beta_Al, energy)
+
+    filtered_abso = np.exp(-mu_Al*0.3)
+
+    abso = np.exp(-mu*100)
+
+    plt.plot(energy, filtered_abso, 'ro')
+    plt.plot(energy, abso, 'bo')
+    plt.show()
