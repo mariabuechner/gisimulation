@@ -1,6 +1,6 @@
 """
 
-@author: buechner_m
+@author: buechner_m <maria.buechner@gmail.com>
 """
 import materials
 import logging

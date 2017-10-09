@@ -5,7 +5,7 @@ ToDo:
     include check for correct results (p0>p2 etc., incase of invalid input
     values.
 
-@author: buechner_m
+@author: buechner_m <maria.buechner@gmail.com>
 """
 import materials
 import logging

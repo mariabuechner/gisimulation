@@ -23,7 +23,7 @@ Beta:
 
 Rho: density in [g/cm3]
 
-@author: buechner_m
+@author: buechner_m <maria.buechner@gmail.com>
 """
 import nist_lookup.xraydb_plugin as xdb
 import urllib2
