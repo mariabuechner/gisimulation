@@ -9,35 +9,31 @@ import argparse
 
 #  Parse input arguments
 parser = argparse.ArgumentParser(description='Collect GI and simulation '
-                                 'parameters.',
+                                 'parameters.\n'
+                                 'Parse from .txt file: '
+                                 '@filedir/filename.txt.\n'
+                                 'Can use multiple files. Arguments can \n'
+                                 'be overwritten afterwards in command line.\n'
+                                 'File layout:\n'
+                                 '\tArgName ArgValue\n'
+                                 'Example:\n'
+                                 '\t-sr 100\n'
+                                 '\t-p0 2.4\n',
                                  fromfile_prefix_chars='@',
                                  formatter_class=argparse.RawTextHelpFormatter)
 
-parser.add_argument('--verbose', '-v', action='count',
+parser.add_argument('-v', '--verbose', action='count',
                     help='Increase verbosity level. "v": error, '
                     '"vv": warning, "vvv": info (default), "vvvv": debug')
-
-#parser.add_argument('-i', dest='input_file', type=open, action=LoadFromFile,
-#                    help='Location of input file containing all (necessary) '
-#                    'parameters.\n'
-#                    'NOTE: input from input file can be overwritten in '
-#                    'command line after.\n'
-#                    'Layout:\n'
-#                    'Line1: argument name (e.g. -sr)\n'
-#                    'Line2: values        (e.g. 100)\n'
-#                    'Example:\n'
-#                    '-sr\n'
-#                    '100\n'
-#                    '-g0\n'
-#                    'phase\n'
-#                    '-d0\n'
-#                    '33\n'
-#                    '.\n'
-#                    '.\n'
-#                    '.')
 
 parser.add_argument('-sr', dest='sampling_rate',
                     help='sampling voxel size (cube). '
                     'Default is 0, then pixel_size * 1e1-3.')
+
+parser.add_argument('-gi', dest='geometry', default='sym',
+                    type=str,
+                    choices=['sym', 'trad', 'inv'],
+                    help='GI geometry. Default is "sym", choices are\n'
+                    '"sym": symmetrical, "trad": traditional, "inv": inverse.')
 
 args = parser.parse_args()
