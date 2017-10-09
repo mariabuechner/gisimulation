@@ -23,43 +23,43 @@ Module to run grating interferometer simulation and metrics calculation
 
     Grating interferometer:
         G0:
-            type_g0 [string]:           'mix' (default), 'phase', 'abs'
-            pitch_g0 [um]:              0 (default)
-            material_g0 [string]:       '' (default)
-            thickness_g0 [um]:          0 (default)
-            phase_shift_g0 [rad]:       0 (default)
-            wafer_material_g0 [string]: '' (default)
-            wafer_thickness_g0 [um]:    0 (default)
-            fill_material_g0 [string]:  '' (default)
-            fill_thickness_g0 [um]:     0 (default)
+            type_g0 [string]
+            pitch_g0 [um]
+            material_g0 [string]
+            thickness_g0 [um]
+            phase_shift_g0 [rad]
+            wafer_material_g0 [string]
+            wafer_thickness_g0 [um]
+            fill_material_g0 [string]
+            fill_thickness_g0 [um]
         G1:
             type_g1 [string]:           'mix' (default), 'phase', 'abs'
-            pitch_g1 [um]:              0 (default)
+            pitch_g1 [um]
             material_g1 [string]
-            thickness_g1 [um]:          0 (default)
-            phase_shift_g1 [rad]:       0 (default)
-            wafer_material_g1 [string]: '' (default)
-            wafer_thickness_g1 [um]:    0 (default)
-            fill_material_g1 [string]:  '' (default)
-            fill_thickness_g1 [um]:     0 (default)
+            thickness_g1 [um]
+            phase_shift_g1 [rad]        PI (default)
+            wafer_material_g1 [string]
+            wafer_thickness_g1 [um]
+            fill_material_g1 [string]
+            fill_thickness_g1 [um]
         G2:
             type_g2 [string]:           'mix' (default), 'phase', 'abs'
-            pitch_g2 [um]:              0 (default)
+            pitch_g2 [um]
             material_g2 [string]
-            thickness_g2 [um]:          0 (default)
-            phase_shift_g2 [rad]:       0 (default)
-            wafer_material_g2 [string]: '' (default)
-            wafer_thickness_g2 [um]:    0 (default)
-            fill_material_g2 [string]:  '' (default)
-            fill_thickness_g2 [um]:     0 (default)
+            thickness_g2 [um]
+            phase_shift_g2 [rad]
+            wafer_material_g2 [string]
+            wafer_thickness_g2 [um]
+            fill_material_g2 [string]
+            fill_thickness_g2 [um]
         design_energy [keV]
         Talbot order
-        spectrum [string]:              '' (default)
+        spectrum [string]:
         geometry [string]:              'sym' (default), 'conv', 'inv'
             (symmentric, conventional, inverse)
-        distance_source2grating [mm]:   0 (default)
+        distance_source2grating [mm]
             (to G1 or G0, if defined)
-        distance_G2_detector [mm]:      0 (default)
+        distance_G2_detector [mm]
 
     Detector:
         pixel_size [um] (square)
@@ -153,115 +153,90 @@ parser.add_argument('-g0', dest='type_g0', default='mix',
                     choices=['mix', 'phase', 'abs'],
                     help='Choose which interaction will be considered for G0. '
                     'Default is "mix", both phase shift and absoprtion.')
-parser.add_argument('-p0', dest='pitch_g0', default=0,
-                    type=NUMERICAL_TYPE,
-                    help='Pitch of G0 [um]. '
-                    'Default is 0, no G0.')
-parser.add_argument('-m0', dest='material_g0', default='',
+parser.add_argument('-p0', dest='pitch_g0',
+                    help='Pitch of G0 [um].')
+parser.add_argument('-m0', dest='material_g0',
                     type=str,
-                    help='G0 grating line material. '
-                    'Default is "", no G0.')
-parser.add_argument('-d0', dest='thickness_g0', default=0,
+                    help='G0 grating line material.')
+parser.add_argument('-d0', dest='thickness_g0',
                     type=NUMERICAL_TYPE,
-                    help='Depth of G0 grating lines [um]. '
-                    'Default is 0, no G0 OR defined through phase shift.')
-parser.add_argument('-shift0', dest='phase_shift_g0', default=0,
+                    help='Depth of G0 grating lines [um].')
+parser.add_argument('-shift0', dest='phase_shift_g0',
                     type=NUMERICAL_TYPE,
-                    help='Phase shift of G0 grating lines [rad]. '
-                    'Default is 0, no G0/pure absorption OR '
-                    'defined through thickness.')
-parser.add_argument('-m0_wafer', dest='wafer_material_g0', default='',
+                    help='Phase shift of G0 grating lines [rad].')
+parser.add_argument('-m0_wafer', dest='wafer_material_g0',
                     type=str,
-                    help='G0 wafer material. '
-                    'Default is "", no wafer.')
-parser.add_argument('-d0_wafer', dest='wafer_thickness_g0', default=0,
+                    help='G0 wafer material.')
+parser.add_argument('-d0_wafer', dest='wafer_thickness_g0',
                     type=NUMERICAL_TYPE,
-                    help='Depth of G0 wafer [um]. '
-                    'Default is 0, no wafer.')
-parser.add_argument('-m0_fill', dest='fill_material_g0', default='',
+                    help='Depth of G0 wafer [um].')
+parser.add_argument('-m0_fill', dest='fill_material_g0',
                     type=str,
-                    help='G0 filling material. '
-                    'Default is "", no line filling.')
-parser.add_argument('-d0_fill', dest='fill_thickness_g0', default=0,
+                    help='G0 filling material.')
+parser.add_argument('-d0_fill', dest='fill_thickness_g0',
                     type=NUMERICAL_TYPE,
-                    help='Depth of G0 filling [um]. '
-                    'Default is 0, no line filling.')
+                    help='Depth of G0 filling [um].')
 # G1
 parser.add_argument('-g1', dest='type_g1', default='mix',
                     type=str,
                     choices=['mix', 'phase', 'abs'],
                     help='Choose which interaction will be considered for G1. '
                     'Default is "mix", both phase shift and absoprtion.')
-parser.add_argument('-p1', dest='pitch_g1', default=0,
+parser.add_argument('-p1', dest='pitch_g1',
                     type=NUMERICAL_TYPE,
-                    help='Pitch of G1 [um]. '
-                    'Default is 0, no G1.')
+                    help='Pitch of G1 [um].')
 parser.add_argument('-m1', dest='material_g1',
                     type=str,
                     help='G1 grating line material.')
-parser.add_argument('-d1', dest='thickness_g1', default=0,
+parser.add_argument('-d1', dest='thickness_g1',
                     type=NUMERICAL_TYPE,
-                    help='Depth of G1 grating lines [um]. '
-                    'Default is 0, no G1 OR defined through phase shift.')
-parser.add_argument('-shift1', dest='phase_shift_g1', default=0,
+                    help='Depth of G1 grating lines [um].')
+parser.add_argument('-shift1', dest='phase_shift_g1', default=np.pi,
                     type=NUMERICAL_TYPE,
                     help='Phase shift of G1 grating lines [rad]. '
-                    'Default is 0, no G1/pure absorption OR '
-                    'defined through thickness.')
-parser.add_argument('-m1_wafer', dest='wafer_material_g1', default='',
+                    'Default is PI.')
+parser.add_argument('-m1_wafer', dest='wafer_material_g1',
                     type=str,
-                    help='G1 wafer material. '
-                    'Default is "", no wafer.')
-parser.add_argument('-d1_wafer', dest='wafer_thickness_g1', default=0,
+                    help='G1 wafer material.')
+parser.add_argument('-d1_wafer', dest='wafer_thickness_g1',
                     type=NUMERICAL_TYPE,
-                    help='Depth of G1 wafer [um]. '
-                    'Default is 0, no wafer.')
-parser.add_argument('-m1_fill', dest='fill_material_g1', default='',
+                    help='Depth of G1 wafer [um].')
+parser.add_argument('-m1_fill', dest='fill_material_g1',
                     type=str,
-                    help='G1 filling material. '
-                    'Default is "", no line filling.')
-parser.add_argument('-d1_fill', dest='fill_thickness_g1', default=0,
+                    help='G1 filling material.')
+parser.add_argument('-d1_fill', dest='fill_thickness_g1',
                     type=NUMERICAL_TYPE,
-                    help='Depth of G1 filling [um]. '
-                    'Default is 0, no line filling.')
+                    help='Depth of G1 filling [um].')
 # G2
 parser.add_argument('-g2', dest='type_g2', default='mix',
                     type=str,
                     choices=['mix', 'phase', 'abs'],
                     help='Choose which interaction will be considered for G2. '
                     'Default is "mix", both phase shift and absoprtion.')
-parser.add_argument('-p2', dest='pitch_g2', default=0,
+parser.add_argument('-p2', dest='pitch_g2',
                     type=NUMERICAL_TYPE,
-                    help='Pitch of G2 [um]. '
-                    'Default is 0, no G2.')
+                    help='Pitch of G2 [um].')
 parser.add_argument('-m2', dest='material_g2',
                     type=str,
                     help='G2 grating line material.')
-parser.add_argument('-d2', dest='thickness_g2', default=0,
+parser.add_argument('-d2', dest='thickness_g2',
                     type=NUMERICAL_TYPE,
-                    help='Depth of G2 grating lines [um]. '
-                    'Default is 0, no G2 OR defined through phase shift.')
-parser.add_argument('-shift2', dest='phase_shift_g2', default=0,
+                    help='Depth of G2 grating lines [um]..')
+parser.add_argument('-shift2', dest='phase_shift_g2',
                     type=NUMERICAL_TYPE,
-                    help='Phase shift of G2 grating lines [rad]. '
-                    'Default is 0, no G2/pure absorption OR '
-                    'defined through thickness.')
-parser.add_argument('-m2_wafer', dest='wafer_material_g2', default='',
+                    help='Phase shift of G2 grating lines [rad].')
+parser.add_argument('-m2_wafer', dest='wafer_material_g2',
                     type=str,
-                    help='G2 wafer material. '
-                    'Default is "", no wafer.')
-parser.add_argument('-d2_wafer', dest='wafer_thickness_g2', default=0,
+                    help='G2 wafer material.')
+parser.add_argument('-d2_wafer', dest='wafer_thickness_g2',
                     type=NUMERICAL_TYPE,
-                    help='Depth of G2 wafer [um]. '
-                    'Default is 0, no wafer.')
-parser.add_argument('-m2_fill', dest='fill_material_g2', default='',
+                    help='Depth of G2 wafer [um].')
+parser.add_argument('-m2_fill', dest='fill_material_g2',
                     type=str,
-                    help='G2 filling material. '
-                    'Default is "", no line filling.')
-parser.add_argument('-d2_fill', dest='fill_thickness_g2', default=0,
+                    help='G2 filling material.')
+parser.add_argument('-d2_fill', dest='fill_thickness_g2',
                     type=NUMERICAL_TYPE,
-                    help='Depth of G2 filling [um]. '
-                    'Default is 0, no line filling.')
+                    help='Depth of G2 filling [um].')
 # Design
 parser.add_argument('-e', dest='design_energy',
                     type=NUMERICAL_TYPE,
@@ -278,14 +253,12 @@ parser.add_argument('-gi', dest='geometry', default='sym',
                     help='GI geometry. Default is "sym", choices are\n'
                     '"sym": symmetrical, "conv": conventional, '
                     '"inv": inverse.')
-parser.add_argument('-s2g', dest='distance_source2grating', default=0,
+parser.add_argument('-s2g', dest='distance_source2grating',
                     type=NUMERICAL_TYPE,
-                    help='Distance from source to first grating [mm]. '
-                    'Default is 0.')
-parser.add_argument('-g2d', dest='distance_G2_detector', default=0,
+                    help='Distance from source to first grating [mm].')
+parser.add_argument('-g2d', dest='distance_G2_detector',
                     type=NUMERICAL_TYPE,
-                    help='Distance from G2 to detector [mm]. '
-                    'Default is 0.')
+                    help='Distance from G2 to detector [mm].')
 
 # Detector
 parser.add_argument('-pxs', dest='pixel_size',
@@ -296,8 +269,8 @@ parser.add_argument('-fov', dest='pixel_size', nargs=2,
                     help='Number of pixels: x, y.')
 parser.add_argument('-md', dest='detector_material',
                     type=str,
-                    help='Choose detector material material.')
-parser.add_argument('-dd', dest='fill_thickness_g2', default=0,
+                    help='Choose detector material.')
+parser.add_argument('-dd', dest='fill_thickness_g2',
                     type=NUMERICAL_TYPE,
                     help='Depth of detector [um].')
 
@@ -319,9 +292,6 @@ parser.add_argument('-sr', dest='sampling_rate', default=0,
 if __name__ == '__main__':
     # Parse from command line
     args = parser.parse_args()
-    # Overwrite args if read from file
-    if args.input_file:
-        args = read_input_file(input_file)
 
     # Check input
 
