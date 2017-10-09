@@ -6,6 +6,7 @@ Created on Fri Oct 06 14:37:55 2017
 @author: buechner_m <maria.buechner@gmail.com>
 """
 import argparse
+import sys
 
 #  Parse input arguments
 parser = argparse.ArgumentParser(description='Collect GI and simulation '
@@ -26,7 +27,7 @@ parser.add_argument('-v', '--verbose', action='count',
                     help='Increase verbosity level. "v": error, '
                     '"vv": warning, "vvv": info (default), "vvvv": debug')
 
-parser.add_argument('-sr', dest='sampling_rate',
+parser.add_argument('-sr', dest='sampling_rate', default=0,
                     help='sampling voxel size (cube). '
                     'Default is 0, then pixel_size * 1e1-3.')
 
@@ -37,3 +38,12 @@ parser.add_argument('-gi', dest='geometry', default='sym',
                     '"sym": symmetrical, "trad": traditional, "inv": inverse.')
 
 args = parser.parse_args()
+
+try:
+    # Check input
+    if args.sampling_rate == 0:
+        # Default to pixel_size *1e-3
+        args.sampling_rate = args.pixel_size * 1e-3
+except AttributeError as e:
+    sys.stderr.write("Input arguments missing: {}".format(
+                     e.message.split()[-1]))
