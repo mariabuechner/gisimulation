@@ -8,18 +8,10 @@ Created on Fri Oct 06 14:37:55 2017
 import argparse
 import sys
 
+
 #  Parse input arguments
 parser = argparse.ArgumentParser(description='Collect GI and simulation '
-                                 'parameters.\n'
-                                 'Parse from .txt file: '
-                                 '@filedir/filename.txt.\n'
-                                 'Can use multiple files. Arguments can \n'
-                                 'be overwritten afterwards in command line.\n'
-                                 'File layout:\n'
-                                 '\tArgName ArgValue\n'
-                                 'Example:\n'
-                                 '\t-sr 100\n'
-                                 '\t-p0 2.4\n',
+                                 'parameters.',
                                  fromfile_prefix_chars='@',
                                  formatter_class=argparse.RawTextHelpFormatter)
 
@@ -27,9 +19,9 @@ parser.add_argument('-v', '--verbose', action='count',
                     help='Increase verbosity level. "v": error, '
                     '"vv": warning, "vvv": info (default), "vvvv": debug')
 
-parser.add_argument('-sr', dest='sampling_rate', default=0,
-                    help='sampling voxel size (cube). '
-                    'Default is 0, then pixel_size * 1e1-3.')
+sr = parser.add_argument('-sr', dest='sampling_rate',
+                         help='sampling voxel size (cube). '
+                         'Default is 0, then pixel_size * 1e1-3.')
 
 parser.add_argument('-gi', dest='geometry', default='sym',
                     type=str,
@@ -37,7 +29,19 @@ parser.add_argument('-gi', dest='geometry', default='sym',
                     help='GI geometry. Default is "sym", choices are\n'
                     '"sym": symmetrical, "trad": traditional, "inv": inverse.')
 
-args = parser.parse_args()
+args = parser.parse_args()  # returns namespace
+all_parameter = vars(args)  # namespace to dict
+# Keep verbosity level and all non-None input parameters
+parameter = dict([key, value] for [key, value] in all_parameter.items()
+                 if value is not None or key == 'verbose')
+
+
+class Struct:
+    def __init__(self, **entries):
+        self.__dict__.update(entries)
+
+parameters = Struct(**parameter)
+
 
 try:
     # Check input
@@ -46,4 +50,4 @@ try:
         args.sampling_rate = args.pixel_size * 1e-3
 except AttributeError as e:
     sys.stderr.write("Input arguments missing: {}".format(
-                     e.message.split()[-1]))
+                     str(e).split()[-1]))
