@@ -1,0 +1,86 @@
+#:kivy 1.10.0
+#:import np numpy
+
+# All labels
+<Label>:
+    size_hint_y: None
+    height: 50
+    canvas.before:
+        Color:
+            rgba: np.divide([88, 88, 88, 50],[255., 255., 255., 100.])
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+# All GridLayouts
+<GridLayout>:
+    canvas.before:
+        Color:
+            rgba: np.divide([88, 88, 88, 35],[255., 255., 255., 100.])
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+
+# Set rules for custom classes
+
+# gi GUI
+<giGUI>:
+    # Splitter to seperate general input area (left) and Tabs for results
+    # and specific input (right)
+    Splitter:
+        sizable_from: 'right'
+        max_size: root.width*0.8
+        min_size: root.width*0.1
+
+        # Content of 'general input window'
+        BoxLayout:
+            orientation: 'vertical'
+            # Name of window
+            Label:
+                text: 'General parameters'
+
+            # Sub-input layout for parameters, bundled into sub-layouts
+            BoxLayout: # For all different sub-categories
+                       # (maybe later gridlayout)
+                orientation: 'vertical'
+                GridLayout:
+                    cols: 1
+                    rows: 2
+                    Label:
+                        text: 'bundle 1'
+                    GridLayout:
+                        cols: 2
+                        Label:
+                            text: 'bt 1'
+                        Button:
+                            text: '1'
+                        Label:
+                            text: 'bt 2'
+                        Button:
+                            text: '2'
+                        Label:
+                            text: 'bt 3'
+                        Button:
+                            text: '4'
+
+    TabbedPanel:
+        # Content of 'tab windows'
+
+        # Geometry (dafault)
+        default_tab_text: 'Geometry'
+
+        # Visibility
+        TabbedPanelItem:
+            text: 'Visibility'
+            Label:
+                text: 'First tab content area'
+
+        # CT
+        TabbedPanelItem:
+            text: 'CT'
+            BoxLayout:
+                Label:
+                    text: 'bla'
+                Button:
+                    text: 'Button that does nothing'
