@@ -55,5 +55,5 @@ def check_input(parameters):
 #            test = parameters.fill_material_g1
     except AttributeError as e:
         logger.exception("Input arguments missing: {}".format(
-                     str(e).split()[-1]))
+                     str(e).split()[-1]), exc_info=True)
         raise InputError

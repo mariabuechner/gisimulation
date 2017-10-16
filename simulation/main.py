@@ -109,8 +109,6 @@ from check_input import check_input, InputError
 # import geometry
 # import gratings
 logger = logging.getLogger(__name__)
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - '
-                    '%(message)s')
 
 # Constants
 NUMERICAL_TYPE = np.float
@@ -128,6 +126,12 @@ if __name__ == '__main__':
     # dict to struct
     parameters = utility.Struct(**input_parameters)
 
+    # Config logger output
+    logging.basicConfig(disable_existing_loggers=False)  # Do not overwrite
+                                                         # loggers in sub-
+                                                         # modules
+    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - '
+                        '%(message)s')
     # Set verbose level of logger
     utility.set_logger_level(logger, parameters.verbose, logging.INFO)
 
@@ -136,6 +140,6 @@ if __name__ == '__main__':
     try:
         check_input(parameters)
     except InputError:
-        logger.error("Command line error, exiting...")
+        logger.error("Command line error, exiting...", exc_info=True)
         sys.exit(2)  # 2: command line syntax errors
     logger.debug("...done.")

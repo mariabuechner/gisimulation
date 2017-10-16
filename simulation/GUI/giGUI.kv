@@ -12,17 +12,27 @@
             pos: self.pos
             size: self.size
 
-# All GridLayouts
-<GridLayout>:
-    canvas.before:
-        Color:
-            rgba: np.divide([88, 88, 88, 35],[255., 255., 255., 100.])
-        Rectangle:
-            pos: self.pos
-            size: self.size
+# All text inputs
+<TextInput>:
+    size_hint_y: None
+    height: 50
+    multiline: False
+
+# All float inputs
+<FloatInput>:
+    size_hint_y: None
+    height: 50
+    multiline: False
+
+# All BoxLayouts
+<BoxLayout>:
+    spacing: 1
+    padding: 1
+
 
 
 # Set rules for custom classes
+
 
 # gi GUI
 <giGUI>:
@@ -30,8 +40,8 @@
     # and specific input (right)
     Splitter:
         sizable_from: 'right'
-        max_size: root.width*0.8
-        min_size: root.width*0.1
+        max_size: root.width*0.98
+        min_size: root.width*0.02
 
         # Content of 'general input window'
         BoxLayout:
@@ -44,25 +54,86 @@
             BoxLayout: # For all different sub-categories
                        # (maybe later gridlayout)
                 orientation: 'vertical'
-                GridLayout:
-                    cols: 1
-                    rows: 2
+
+                # 1. Block
+                BoxLayout:
+                    # General input
+                    BoxLayout:
+                        orientation: 'vertical'
+                        Label:
+                            text: 'General Input'
+                        BoxLayout:
+                            orientation: 'vertical'
+                            BoxLayout:
+                                LabelHelp:
+                                    text: 'Geometry'
+                                    help_message: "GI geometry. Choices are\n'sym': symmetrical, 'conv': conventional, 'inv': inverse, 'free': free input."
+                                Spinner:
+                                    id: geometry
+                                    text: 'sym'
+                                    values: ['sym', 'conv', 'inv', 'free']
+                    # GI input
+                    BoxLayout:
+                        orientation: 'vertical'
+                        Label:
+                            text: 'GI Input'
+                        BoxLayout:
+                            orientation: 'vertical'
+                            BoxLayout:
+                                Label:
+                                    text: 'Design Energy [keV]'
+                                FloatInput:
+                                    id: design_energy
+                            BoxLayout:
+                                Label:
+                                    text: 'Talbot order'
+                                FloatInput:
+                                    id: talbot_order
+                            BoxLayout:
+                                Label:
+                                    text: 'Spectrum file location'
+                                TextInput:
+                                    id: spectrum
+
+                # 2. Block
+                # Grating input
+                BoxLayout:
+                    orientation: 'vertical'
                     Label:
-                        text: 'bundle 1'
-                    GridLayout:
-                        cols: 2
+                        text: 'Grating Input'
+                    BoxLayout:
+                        orientation: 'vertical'
+
+                # 3. Block
+                BoxLayout:
+                    # Detector input
+                    BoxLayout:
+                        orientation: 'vertical'
                         Label:
-                            text: 'bt 1'
-                        Button:
-                            text: '1'
+                            text: 'Detector Input'
+                        BoxLayout:
+                            orientation: 'vertical'
+                    # Source input
+                    BoxLayout:
+                        orientation: 'vertical'
                         Label:
-                            text: 'bt 2'
-                        Button:
-                            text: '2'
-                        Label:
-                            text: 'bt 3'
-                        Button:
-                            text: '4'
+                            text: 'Source Input'
+                        BoxLayout:
+                            orientation: 'vertical'
+
+                # 4. Block
+                # Simulation input
+                BoxLayout:
+                    orientation: 'vertical'
+                    Label:
+                        text: 'Simulation Input'
+                    BoxLayout:
+                        orientation: 'vertical'
+                        BoxLayout:
+                            Label:
+                                text: 'Debug'
+                            CheckBox:
+                                id: verbose_bool
 
     TabbedPanel:
         # Content of 'tab windows'

@@ -19,6 +19,9 @@ input_parser:       defines and returns parser
 import argparse
 import numpy as np
 
+# Constants
+NUMERICAL_TYPE = np.float
+
 # =============================================================================
 # Classes
 # =============================================================================
@@ -36,12 +39,12 @@ class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter,
 # =============================================================================
 
 
-def input_parser(numerical_type):
+def input_parser(numerical_type=NUMERICAL_TYPE):
     """
     Parameters
     ==========
 
-    numerical_type (i.e. numpy.float)
+    numerical_type (i.e. numpy.float), default: NUMERICAL_TYPE (np.float)
 
     Returns
     =======
