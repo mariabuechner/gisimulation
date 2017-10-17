@@ -15,6 +15,7 @@ from kivy.properties import StringProperty
 # Graphics
 from kivy.graphics import Color, Rectangle
 # UIX
+from kivy.uix.widget import Widget
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.anchorlayout import AnchorLayout
@@ -65,6 +66,38 @@ class FloatInput(TextInput):
         return super(FloatInput, self).insert_text(s, from_undo=from_undo)
 
 
+class PopupWindow():
+    """
+    A popup window containing a label and a button.
+    The size of the window is determined by the number of lines and the
+    length of the longest line of the help message.
+    The button closes the window.
+
+    Parameters
+    ##########
+
+    title [str]:    titel of popup window
+    message [str]:  message displayed
+
+    """
+    def __init__(self, title, message):
+        """
+        """
+        # Custom Window with close button
+        popup_window = BoxLayout(orientation='vertical')
+        popup_window.add_widget(Label(text=str(message)))
+        close_popup_button = Button(text='OK')
+        popup_window.add_widget(close_popup_button)
+
+        self.popup = Popup(title=title,
+                           auto_dismiss=False,
+                           content=popup_window,
+                           size_hint=(None, None),
+                           size=(_scale_popup_window(message)))
+        # Close help window when button 'OK' is pressed
+        close_popup_button.bind(on_press=self.popup.dismiss)
+
+
 class LabelHelp(Label):
     """
     Label, but upon touch down a help message appears.
@@ -73,26 +106,13 @@ class LabelHelp(Label):
 
     def on_touch_down(self, touch):
         """
-        On touch down a popup window is created, containing a label and a
-        button.
-        The siye of the window is determined by the number of lines and the
-        length of the longest line of the help message.
-        The button closes the window.
-        """
-        # Custom Window with close button
-        popup_window = BoxLayout(orientation='vertical')
-        popup_window.add_widget(Label(text=str(self.help_message)))
-        close_popup_button = Button(text='OK')
-        popup_window.add_widget(close_popup_button)
+        On touch down a popup window is created, with its title indicating
+        the variable to which the help is referring and its help message.
 
-        self.help_popup = Popup(title='Help: {}'.format(self.text),
-                                auto_dismiss=False,
-                                content=popup_window,
-                                size_hint=(None, None),
-                                size=(_scale_popup_window(self.help_message)))
-        self.help_popup.open()
-        # Close help window when button 'OK' is pressed
-        close_popup_button.bind(on_press=self.help_popup.dismiss)
+        """
+        window_title = 'Help: {}'.format(self.text)
+        self.help_popup = PopupWindow(window_title, self.help_message)
+        self.help_popup.popup.open()
 
 
 ###############################################################################
