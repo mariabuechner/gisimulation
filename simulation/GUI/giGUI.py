@@ -7,6 +7,8 @@ import numpy as np
 import re
 import logging
 import kivy
+from kivy.base import ExceptionHandler
+from kivy.base import ExceptionManager
 from kivy.logger import Logger
 from kivy.app import App
 from kivy.core.window import Window
@@ -14,6 +16,8 @@ from kivy.core.window import Window
 from kivy.properties import StringProperty
 # UIX
 from kivy.factory import Factory as F
+# gi-simulation
+import kivy_test
 
 
 # Check kivy version
@@ -33,9 +37,9 @@ Window.maximize()  # NOTE: On desktop platforms only
 POPUP_WINDOW_SIZE = [550, 80]  # Width: 600 per line, Height: 80 per line
 POPUP_WINDOW_MAX_LETTERS = 80.0  # max 80 letters per line
 
-###############################################################################
+# =============================================================================
 # Custom Widgets
-###############################################################################
+# =============================================================================
 
 
 class FloatInput(F.TextInput):
@@ -72,6 +76,7 @@ class PopupWindow():
     """
     def __init__(self, title, message):
         """
+        Init function, creates layout and adds functunality.
         """
         # Custom Window with close button
         popup_window = F.BoxLayout(orientation='vertical')
@@ -109,9 +114,39 @@ class LabelHelp(F.Label):
         return super(LabelHelp, self).on_touch_down(touch)
 
 
-###############################################################################
-# Utility functions
-###############################################################################
+# =============================================================================
+# Utiliies
+# =============================================================================
+
+
+class DisplayExceptions(ExceptionHandler):
+    """
+    Kivy Exception Handler to either display the exception or exit the
+    program.
+    """
+    def handle_exception(self, inst):
+        """
+        Exception Handler disabeling the automatic exiting after any exception
+        occured.
+        Now: pass. Python needs to handlen all exceptions now
+        """
+        return ExceptionManager.PASS
+
+
+ExceptionManager.add_handler(DisplayExceptions())
+
+
+class ErrorDisplay():
+    """
+    Popup window in case an exception is caught. Displays type of error and
+    error message.
+    """
+    def __init__(self, error_title, error_message):
+        """
+        Init PopupWindow and open popup.
+        """
+        error_popup = PopupWindow(error_title, error_message)
+        error_popup.popup.open()
 
 
 def _scale_popup_window(message, window_size=None,
@@ -136,8 +171,12 @@ def _scale_popup_window(message, window_size=None,
     """
     # Init window size
     window_size = [0, 0]
+
     # Count lines in help message to set height
     nlines = message.count('\n')+1
+    # At least 2 lines to display title correctly (at one line it dissapears)
+    if nlines == 1:
+        nlines = 2
     window_size[1] = POPUP_WINDOW_SIZE[1] * nlines
     # Count sets of POPUP_WINDOW_MAX_LETTERS letters to set width
     nletters = float(len(max(message.split('\n'), key=len)))
@@ -145,9 +184,9 @@ def _scale_popup_window(message, window_size=None,
     window_size[0] = POPUP_WINDOW_SIZE[0] * nwidth
     return window_size
 
-###############################################################################
+# =============================================================================
 # Main GUI
-###############################################################################
+# =============================================================================
 
 
 class giGUI(F.BoxLayout):
@@ -161,11 +200,23 @@ class giGUIApp(App):
         self.title = 'GI Simumlation'
         return giGUI()  # Main widget, root
 
+    # Functions callable in .kv file
+
+    def test(self):
+        logger.info("calling 'check_input()'.")
+        kivy_test.check_input()
+
 
 if __name__ == '__main__':
     # Config logger
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - '
                         '%(message)s')
 
-    # Run app
-    giGUIApp().run()
+#    giGUIApp().run()
+    try:
+        giGUIApp().run()
+    except kivy_test.InputError as e:
+        logger.info("Caught an exception in main.")
+        # if error, then exit. if exception, just display
+        # or: if InputError, display )or any other custom errors; else exit
+        ErrorDisplay('Error', str(e))
