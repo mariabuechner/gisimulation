@@ -67,19 +67,17 @@ class FloatInput(TextInput):
 
 class LabelHelp(Label):
     """
-    Label, but upon touch down a help message appears
+    Label, but upon touch down a help message appears.
     """
     help_message = StringProperty()
 
-#    def __init__(self, *args, **kwargs):
-#        super(LabelHelp, self).__init__(*args, **kwargs)
-#        self.help_popup = Popup(title='Help',
-#                                content=Label(text=str(self.help_message)),
-#                                pos=self.pos,
-#                                size_hint=(None, None),
-#                                size=(HELP_WINDOW_SIZE))
     def on_touch_down(self, touch):
         """
+        On touch down a popup window is created, containing a label and a
+        button.
+        The siye of the window is determined by the number of lines and the
+        length of the longest line of the help message.
+        The button closes the window.
         """
         # Custom Window with close button
         popup_window = BoxLayout(orientation='vertical')
@@ -90,7 +88,6 @@ class LabelHelp(Label):
         self.help_popup = Popup(title='Help: {}'.format(self.text),
                                 auto_dismiss=False,
                                 content=popup_window,
-                                pos=self.pos,
                                 size_hint=(None, None),
                                 size=(_scale_popup_window(self.help_message)))
         self.help_popup.open()
