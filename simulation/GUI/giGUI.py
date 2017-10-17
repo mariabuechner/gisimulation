@@ -12,20 +12,9 @@ from kivy.app import App
 from kivy.core.window import Window
 # Properties
 from kivy.properties import StringProperty
-# Graphics
-from kivy.graphics import Color, Rectangle
 # UIX
-from kivy.uix.widget import Widget
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.anchorlayout import AnchorLayout
-from kivy.uix.tabbedpanel import TabbedPanel
-from kivy.uix.label import Label
-from kivy.uix.button import Button
-from kivy.uix.checkbox import CheckBox
-from kivy.uix.textinput import TextInput
-from kivy.uix.spinner import Spinner
-from kivy.uix.popup import Popup
+from kivy.factory import Factory as F
+
 
 # Check kivy version
 kivy.require('1.10.0')
@@ -46,9 +35,10 @@ POPUP_WINDOW_MAX_LETTERS = 80.0  # max 80 letters per line
 
 ###############################################################################
 # Custom Widgets
+###############################################################################
 
 
-class FloatInput(TextInput):
+class FloatInput(F.TextInput):
     """
     Allows only numbers 0...9 and one dot as text input (for numerical input)
     """
@@ -84,21 +74,21 @@ class PopupWindow():
         """
         """
         # Custom Window with close button
-        popup_window = BoxLayout(orientation='vertical')
-        popup_window.add_widget(Label(text=str(message)))
-        close_popup_button = Button(text='OK')
+        popup_window = F.BoxLayout(orientation='vertical')
+        popup_window.add_widget(F.Label(text=str(message)))
+        close_popup_button = F.Button(text='OK')
         popup_window.add_widget(close_popup_button)
 
-        self.popup = Popup(title=title,
-                           auto_dismiss=False,
-                           content=popup_window,
-                           size_hint=(None, None),
-                           size=(_scale_popup_window(message)))
+        self.popup = F.Popup(title=title,
+                             auto_dismiss=False,
+                             content=popup_window,
+                             size_hint=(None, None),
+                             size=(_scale_popup_window(message)))
         # Close help window when button 'OK' is pressed
         close_popup_button.bind(on_press=self.popup.dismiss)
 
 
-class LabelHelp(Label):
+class LabelHelp(F.Label):
     """
     Label, but upon touch down a help message appears.
     """
@@ -113,12 +103,16 @@ class LabelHelp(Label):
         window_title = 'Help: {}'.format(self.text)
         self.help_popup = PopupWindow(window_title, self.help_message)
         self.help_popup.popup.open()
+        # To manage input chain corectly
+        return super(LabelHelp, self).on_touch_down(touch)
 
 
 ###############################################################################
 # Utility functions
+###############################################################################
 
-def _scale_popup_window(message, window_size=POPUP_WINDOW_SIZE,
+
+def _scale_popup_window(message, window_size=None,
                         max_letters=POPUP_WINDOW_MAX_LETTERS):
     """
     Scales popup window size based on number of lines and longes line (number
@@ -138,20 +132,23 @@ def _scale_popup_window(message, window_size=POPUP_WINDOW_SIZE,
     window_size [horizontal, vertical]:     Scaled window size
 
     """
+    # Init window size
+    window_size = [0, 0]
     # Count lines in help message to set height
     nlines = message.count('\n')+1
-    window_size[1] = window_size[1] * nlines
+    window_size[1] = POPUP_WINDOW_SIZE[1] * nlines
     # Count sets of POPUP_WINDOW_MAX_LETTERS letters to set width
     nletters = float(len(max(message.split('\n'), key=len)))
-    nwidth = int(nletters/max_letters)+1
-    window_size[0] = window_size[0] * nwidth
+    nwidth = int(nletters/POPUP_WINDOW_MAX_LETTERS)+1
+    window_size[0] = POPUP_WINDOW_SIZE[0] * nwidth
     return window_size
 
 ###############################################################################
 # Main GUI
+###############################################################################
 
 
-class giGUI(BoxLayout):
+class giGUI(F.BoxLayout):
     pass
 
 # Main App
