@@ -26,6 +26,7 @@ kivy.require('1.10.0')
 # Use Kivy logger to handle logging.Logger
 logging.Logger.manager.root = Logger  # Makes Kivy Logger root for all
                                       # following loggers
+#logging.root = Logger  #???
 logger = logging.getLogger(__name__)
 
 # Set App Window configuration
@@ -119,21 +120,22 @@ class LabelHelp(F.Label):
 # =============================================================================
 
 
-class DisplayExceptions(ExceptionHandler):
+class IgnoreExceptions(ExceptionHandler):
     """
     Kivy Exception Handler to either display the exception or exit the
     program.
+
     """
     def handle_exception(self, inst):
         """
         Exception Handler disabeling the automatic exiting after any exception
         occured.
-        Now: pass. Python needs to handlen all exceptions now
+        Now: pass. Python needs to handlen all exceptions now.
         """
         return ExceptionManager.PASS
 
 
-ExceptionManager.add_handler(DisplayExceptions())
+ExceptionManager.add_handler(IgnoreExceptions())
 
 
 class ErrorDisplay():
@@ -190,6 +192,8 @@ def _scale_popup_window(message, window_size=None,
 
 
 class giGUI(F.BoxLayout):
+    """
+    """
     pass
 
 # Main App
@@ -203,8 +207,12 @@ class giGUIApp(App):
     # Functions callable in .kv file
 
     def test(self):
-        logger.info("calling 'check_input()'.")
-        kivy_test.check_input()
+        try:
+            logger.info("calling 'check_input()'.")
+            kivy_test.check_input()
+        except kivy_test.InputError as e:
+            logger.info("Caught error in test().")
+            ErrorDisplay('Input Error', str(e))
 
 
 if __name__ == '__main__':
@@ -212,11 +220,10 @@ if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - '
                         '%(message)s')
 
-#    giGUIApp().run()
-    try:
-        giGUIApp().run()
-    except kivy_test.InputError as e:
-        logger.info("Caught an exception in main.")
-        # if error, then exit. if exception, just display
-        # or: if InputError, display )or any other custom errors; else exit
-        ErrorDisplay('Error', str(e))
+    giGUIApp().run()
+
+    # If necessary
+#    try:
+#        giGUIApp().run()
+#    except CriticalError as e:
+#        close_gracefully()

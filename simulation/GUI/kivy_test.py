@@ -28,5 +28,6 @@ def check_input():
         logger.info("Caught an exception in kivy_test.")
         error_message = "Input arguments missing: {}".format(
                          str(e).split()[-1])
-#        logger.exception(error_message, exc_info=True)
-#        raise InputError(error_message)
+        logger.exception(error_message, exc_info=True)
+        logger.info("Raising InputError.")
+        raise InputError(error_message)
