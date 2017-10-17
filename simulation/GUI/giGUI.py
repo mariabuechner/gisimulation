@@ -100,9 +100,11 @@ class LabelHelp(F.Label):
         the variable to which the help is referring and its help message.
 
         """
-        window_title = 'Help: {}'.format(self.text)
-        self.help_popup = PopupWindow(window_title, self.help_message)
-        self.help_popup.popup.open()
+        # If mouse clicked on
+        if self.collide_point(touch.x, touch.y):
+            window_title = 'Help: {}'.format(self.text)
+            self.help_popup = PopupWindow(window_title, self.help_message)
+            self.help_popup.popup.open()
         # To manage input chain corectly
         return super(LabelHelp, self).on_touch_down(touch)
 
