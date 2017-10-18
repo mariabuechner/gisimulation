@@ -34,16 +34,14 @@ logger = logging.getLogger(__name__)
 Window.maximize()  # NOTE: On desktop platforms only
 #Window.set_icon('path\to\icon')
 
-# Constants
+# %% Constants
 POPUP_WINDOW_SIZE = [550, 80]  # Width: 600 per line, Height: 80 per line
 POPUP_WINDOW_MAX_LETTERS = 80.0  # max 80 letters per line
 
-# =============================================================================
-# Custom Widgets
-# =============================================================================
+# %% Custom Widgets
 
-
-class FloatInput(F.TextInput):
+c
+lass FloatInput(F.TextInput):
     """
     Allows only numbers 0...9 and one dot as text input (for numerical input)
     """
@@ -114,10 +112,7 @@ class LabelHelp(F.Label):
         # To manage input chain corectly
         return super(LabelHelp, self).on_touch_down(touch)
 
-
-# =============================================================================
-# Utiliies
-# =============================================================================
+# %% Utiliies
 
 
 class IgnoreExceptions(ExceptionHandler):
@@ -186,9 +181,7 @@ def _scale_popup_window(message, window_size=None,
     window_size[0] = POPUP_WINDOW_SIZE[0] * nwidth
     return window_size
 
-# =============================================================================
-# Main GUI
-# =============================================================================
+# %% Main GUI
 
 
 class giGUI(F.BoxLayout):
@@ -196,7 +189,7 @@ class giGUI(F.BoxLayout):
     """
     pass
 
-# Main App
+# %% Main App
 
 
 class giGUIApp(App):
@@ -214,6 +207,7 @@ class giGUIApp(App):
             logger.info("Caught error in test().")
             ErrorDisplay('Input Error', str(e))
 
+# %% Main
 
 if __name__ == '__main__':
     # Config logger

@@ -22,9 +22,8 @@ set_logger_level:   set level of logger.
 @author: buechner_m <maria.buechner@gmail.com>
 """
 import logging
-# =============================================================================
-# Classes
-# =============================================================================
+
+# %% Classes
 
 
 class Struct:
@@ -48,9 +47,7 @@ class Struct:
     def __init__(self, **entries):
         self.__dict__.update(entries)
 
-# =============================================================================
-# Functions
-# =============================================================================
+# %% Functions
 
 
 def set_logger_level(logger, verbose, default_level=logging.INFO):

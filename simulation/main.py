@@ -110,8 +110,10 @@ from check_input import check_input, InputError
 # import gratings
 logger = logging.getLogger(__name__)
 
-# Constants
+# %% Constants
 NUMERICAL_TYPE = np.float
+
+# %% Main
 
 if __name__ == '__main__':
     # Parse from command line

@@ -19,9 +19,7 @@ check_input:    Checks the input parameters, logs errors and raises an
 import logging
 logger = logging.getLogger(__name__)
 
-# =============================================================================
-# Classes
-# =============================================================================
+# %% Classes
 
 
 class InputError(Exception):
@@ -36,9 +34,7 @@ class InputError(Exception):
     """
     pass
 
-# =============================================================================
-# Functions
-# =============================================================================
+# %% Functions
 
 
 def check_input(parameters):
