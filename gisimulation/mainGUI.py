@@ -4,8 +4,16 @@ GUI mpodule for gi-simulation.
 @author: buechner_m  <maria.buechner@gmail.com>
 """
 import numpy as np
+import sys
 import re
 import logging
+# Set kivy logger console output format
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - '
+                              '%(message)s')
+console = logging.StreamHandler()
+console.setFormatter(formatter)
+sys._kivy_logging_handler = console
+# Other imports
 import kivy
 from kivy.base import ExceptionHandler
 from kivy.base import ExceptionManager
@@ -16,21 +24,21 @@ from kivy.core.window import Window
 from kivy.properties import StringProperty
 # UIX
 from kivy.factory import Factory as F
-# gi-simulation
-import kivy_test
 
+# Set logger before importing simulation modules (to set format for all)
+# Use Kivy logger to handle logging.Logger
+logging.Logger.manager.root = Logger  # Makes Kivy Logger root for all
+                                      # following loggers
+
+logger = logging.getLogger(__name__)
+
+# gisimulation imports
+import kivy_test
 
 # Check kivy version
 kivy.require('1.10.0')
 
-# Use Kivy logger to handle logging.Logger
-logging.Logger.manager.root = Logger  # Makes Kivy Logger root for all
-                                      # following loggers
-#logging.root = Logger  #???
-logger = logging.getLogger(__name__)
-
 # Set App Window configuration
-#Window.clearcolor = (248, 255, 255, 1)  # If not black
 Window.maximize()  # NOTE: On desktop platforms only
 #Window.set_icon('path\to\icon')
 
@@ -40,8 +48,8 @@ POPUP_WINDOW_MAX_LETTERS = 80.0  # max 80 letters per line
 
 # %% Custom Widgets
 
-c
-lass FloatInput(F.TextInput):
+
+class FloatInput(F.TextInput):
     """
     Allows only numbers 0...9 and one dot as text input (for numerical input)
     """
@@ -201,6 +209,7 @@ class giGUIApp(App):
 
     def test(self):
         try:
+            logger.info("bla ist: bla")
             logger.info("calling 'check_input()'.")
             kivy_test.check_input()
         except kivy_test.InputError as e:
@@ -210,10 +219,6 @@ class giGUIApp(App):
 # %% Main
 
 if __name__ == '__main__':
-    # Config logger
-    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - '
-                        '%(message)s')
-
     giGUIApp().run()
 
     # If necessary

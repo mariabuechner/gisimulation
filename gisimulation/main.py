@@ -102,9 +102,10 @@ Module to run grating interferometer simulation and metrics calculation
 import logging
 import numpy as np
 import sys
-import utility
-from parser_def import input_parser
-from check_input import check_input, InputError
+# gisimulation modules
+import simulation.utility
+from simulation.parser_def import input_parser
+from simulation.check_input import check_input, InputError
 # import materials
 # import geometry
 # import gratings
@@ -117,6 +118,7 @@ NUMERICAL_TYPE = np.float
 
 if __name__ == '__main__':
     # Parse from command line
+
     parser = input_parser(NUMERICAL_TYPE)
     args = parser.parse_args()  # returns namespace
     # Clean parsed arguments
@@ -126,22 +128,24 @@ if __name__ == '__main__':
                             all_input_parameters.items()
                             if value is not None or key == 'verbose')
     # dict to struct
-    parameters = utility.Struct(**input_parameters)
+    parameters = simulation.utility.Struct(**input_parameters)
 
     # Config logger output
-    logging.basicConfig(disable_existing_loggers=False)  # Do not overwrite
-                                                         # loggers in sub-
-                                                         # modules
-    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - '
-                        '%(message)s')
-    # Set verbose level of logger
-    utility.set_logger_level(logger, parameters.verbose, logging.INFO)
+
+    # Get verbose level of logger
+    logger_level = simulation.utility.get_logger_level(parameters.verbose,
+                                                       logging.INFO)
+    # Set logger config
+    logging.basicConfig(level=logger_level, format='%(asctime)s - %(name)s - %(levelname)s - '
+                    '%(message)s', disable_existing_loggers=False)
+
 
     # Check input
     logger.debug("Checking parsed arguments...")
     try:
         check_input(parameters)
     except InputError:
-        logger.error("Command line error, exiting...", exc_info=True)
+        logger.error("Command line error, exiting...")
         sys.exit(2)  # 2: command line syntax errors
-    logger.debug("...done.")
+    finally:
+        logger.debug("...done.")

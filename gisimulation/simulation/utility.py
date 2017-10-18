@@ -50,14 +50,13 @@ class Struct:
 # %% Functions
 
 
-def set_logger_level(logger, verbose, default_level=logging.INFO):
+def get_logger_level(verbose, default_level=logging.INFO):
     """
-    Sets the verbose level of the logger.
+    Gets the logging level dependent on verbosity.
 
     Parameters
     ==========
 
-    logger:         logger instance
     verbose [int]:  1, 2, 3, 4
     default_level:  if verbose=None, set to default (logging.INFO)
 
@@ -79,4 +78,4 @@ def set_logger_level(logger, verbose, default_level=logging.INFO):
         3: logging.INFO,
         4: logging.DEBUG
     }.get(verbose, default_level)  # Default: logging.INFO
-    logger.setLevel(logging_level)
+    return logging_level

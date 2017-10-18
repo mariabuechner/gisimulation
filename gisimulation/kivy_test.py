@@ -6,8 +6,6 @@ Created on Tue Oct 17 17:41:28 2017
 """
 import logging
 logger = logging.getLogger(__name__)
-logger.addHandler(logging.StreamHandler())
-logger.setLevel(logging.INFO)
 
 # %% TEST
 
@@ -26,6 +24,6 @@ def check_input():
         logger.info("Caught an exception in kivy_test.")
         error_message = "Input arguments missing: {}".format(
                          str(e).split()[-1])
-        logger.exception(error_message, exc_info=True)
+        logger.exception(error_message)
         logger.info("Raising InputError.")
         raise InputError(error_message)
