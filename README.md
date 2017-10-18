@@ -1,4 +1,4 @@
-# gi-simulation
+# gisimulation
 =====================
 
 ## Description
