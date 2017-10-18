@@ -1,0 +1,164 @@
+#:kivy 1.10.0
+#:import np numpy
+#:import test kivy_test
+
+# All labels
+<Label>:
+    size_hint_y: None
+    height: 50
+    canvas.before:
+        Color:
+            rgba: np.divide([88, 88, 88, 50],[255., 255., 255., 100.])
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+# All text inputs
+<TextInput>:
+    size_hint_y: None
+    height: 50
+    multiline: False
+
+# All float inputs
+<FloatInput>:
+    size_hint_y: None
+    height: 50
+    multiline: False
+
+# All BoxLayouts
+<BoxLayout>:
+    spacing: 1
+    padding: 1
+
+
+
+# Set rules for custom classes
+
+
+# gi GUI
+<giGUI>:
+    # Splitter to seperate general input area (left) and Tabs for results
+    # and specific input (right)
+    Splitter:
+        sizable_from: 'right'
+        max_size: root.width*0.9
+        min_size: root.width*0.02
+
+
+
+        # Right side of splitter
+        # Content of 'general input window'
+        BoxLayout:
+            orientation: 'vertical'
+            # Name of window
+            Label:
+                text: 'General parameters'
+
+            # Sub-input layout for parameters, bundled into sub-layouts
+            BoxLayout: # For all different sub-categories
+                       # (maybe later gridlayout)
+                orientation: 'vertical'
+
+                # 1. Block
+                BoxLayout:
+                    # General input
+                    BoxLayout:
+                        orientation: 'vertical'
+                        Label:
+                            text: 'General Input'
+                        BoxLayout:
+                            orientation: 'vertical'
+                            BoxLayout:
+                                LabelHelp:
+                                    text: 'Geometry'
+                                    help_message: "GI geometry. Choices are\n'sym': symmetrical, 'conv': conventional, 'inv': inverse, 'free': free input."
+                                Spinner:
+                                    id: geometry
+                                    text: 'sym'
+                                    values: ['sym', 'conv', 'inv', 'free']
+                    # GI input
+                    BoxLayout:
+                        orientation: 'vertical'
+                        Label:
+                            text: 'GI Input'
+                        BoxLayout:
+                            orientation: 'vertical'
+                            BoxLayout:
+                                Label:
+                                    text: 'Design Energy [keV]'
+                                FloatInput:
+                                    id: design_energy
+                            BoxLayout:
+                                Label:
+                                    text: 'Talbot order'
+                                FloatInput:
+                                    id: talbot_order
+                            BoxLayout:
+                                Label:
+                                    text: 'Spectrum file location'
+                                TextInput:
+                                    id: spectrum
+
+                # 2. Block
+                # Grating input
+                BoxLayout:
+                    orientation: 'vertical'
+                    Label:
+                        text: 'Grating Input'
+                    BoxLayout:
+                        orientation: 'vertical'
+
+                # 3. Block
+                BoxLayout:
+                    # Detector input
+                    BoxLayout:
+                        orientation: 'vertical'
+                        Label:
+                            text: 'Detector Input'
+                        BoxLayout:
+                            orientation: 'vertical'
+                    # Source input
+                    BoxLayout:
+                        orientation: 'vertical'
+                        Label:
+                            text: 'Source Input'
+                        BoxLayout:
+                            orientation: 'vertical'
+
+                # 4. Block
+                # Simulation input
+                BoxLayout:
+                    orientation: 'vertical'
+                    Label:
+                        text: 'Simulation Input'
+                    BoxLayout:
+                        orientation: 'vertical'
+                        BoxLayout:
+                            Label:
+                                text: 'Debug'
+                            CheckBox:
+                                id: verbose_bool
+
+
+    # Left side of splitter
+    TabbedPanel:
+        # Content of 'tab windows'
+
+        # Geometry (dafault)
+        default_tab_text: 'Geometry'
+
+        # Visibility
+        TabbedPanelItem:
+            text: 'Visibility'
+            Label:
+                text: 'First tab content area'
+
+        # CT
+        TabbedPanelItem:
+            text: 'CT'
+            BoxLayout:
+                Label:
+                    text: 'bla'
+                Button:
+                    text: 'Raise error and display'
+                    on_press: app.test()
