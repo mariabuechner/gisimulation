@@ -50,6 +50,6 @@ def check_input(parameters):
 #        if parameters.geometry == 'free':
 #            test = parameters.fill_material_g1
     except AttributeError as e:
-        logger.exception("Input arguments missing: {}".format(
+        logger.error("Input arguments missing: {}".format(
                      str(e).split()[-1]))
         raise InputError
