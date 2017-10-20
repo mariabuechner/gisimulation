@@ -156,14 +156,19 @@ if __name__ == '__main__':
 
     parser = input_parser(NUMERICAL_TYPE)
     args = parser.parse_args()  # returns namespace
-    # Clean parsed arguments
-    all_input_parameters = vars(args)  # namespace to dict
-    # Keep verbosity level and all non-None input parameters
-    input_parameters = dict([key, value] for [key, value] in
-                            all_input_parameters.items()
-                            if value is not None or key == 'verbose')
-    # dict to struct
-    parameters = simulation.utility.Struct(**input_parameters)
+# =============================================================================
+# LEAVE OUT FOR NOW, TRY TO CHECK INPUT WITH NONETYPES
+#     # Clean parsed arguments
+#     all_input_parameters = vars(args)  # namespace to dict
+#     # Keep verbosity level and all non-None input parameters
+#     input_parameters = dict([key, value] for [key, value] in
+#                             all_input_parameters.items()
+#                             if value is not None or key == 'verbose')
+#    # dict to struct
+#    parameters = simulation.utility.Struct(**input_parameters)
+# =============================================================================
+    # namespace to dict to struct
+    parameters = simulation.utility.Struct(**vars(args))
 
     # Config logger output
 
@@ -181,5 +186,5 @@ if __name__ == '__main__':
     except InputError:
         logger.error("Command line error, exiting...")
         sys.exit(2)  # 2: command line syntax errors
-    finally:
-        logger.debug("...done.")
+#    finally:
+#        logger.debug("...done.")

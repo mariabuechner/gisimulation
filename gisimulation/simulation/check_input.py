@@ -40,7 +40,7 @@ def check_input(parameters):
     Parameters:
     """
     try:
-        # %% Minimal required inpuf for all scenarios
+        # % Minimal required inpuf for all scenarios
 
         # Source:
 
@@ -51,10 +51,11 @@ def check_input(parameters):
         # Spectrum:
         # Get spectrum
         [parameters.spectrum, min_energy, max_energy] = \
-            get_spectrum(parameters.spectrum_file, parameters.range)
+            get_spectrum(parameters.spectrum_file, parameters.spectrum_range,
+                         parameters.design_energy)
         # Check spectrum
         _check_spectrum(parameters.spectrum, min_energy, max_energy,
-                        parameters.range, parameters.design_energy)
+                        parameters.spectrum_range, parameters.design_energy)
 
         # Calculations:
         if parameters.sampling_rate == 0:
@@ -72,17 +73,21 @@ def check_input(parameters):
 #            # =================================================================
 #            pass
 
-        # %% Scenario specific requirements
+        # % Scenario specific requirements
         # General and connected parameters
-        if parameters.sampling_rate == 0:
-            logger.debug("Sampling rate is 0, set to pixel size * 1e-3")
-            # Default to pixel_size *1e-3
-            parameters.sampling_rate = parameters.pixel_size * 1e-4
-        # GI parameters
-#        if parameters.geometry == 'free':
-#            test = parameters.fill_material_g1
-    except AttributeError as e:
-        error_message = "Input arguments missing: {}" \
+        try:
+            if parameters.sampling_rate == 0:
+                logger.debug("Sampling rate is 0, set to pixel size * 1e-3")
+                # Default to pixel_size *1e-3
+                parameters.sampling_rate = parameters.pixel_size * 1e-4
+        except TypeError:
+            error_message = "Input arguments missing: 'pixel_size' ('-pxs')."
+            logger.error(error_message)
+            raise InputError(error_message)
+
+    except AttributeError as e:  # For paramters.value and value not existing
+                                 # NECESSARY??? (in the end?)
+        error_message = "Input arguments missing: {}." \
                         .format(str(e).split()[-1])
         logger.error(error_message)
         raise InputError(error_message)
@@ -155,7 +160,7 @@ def get_spectrum(spectrum_file, range_, design_energy):
             spectrum.photons = spectrum.photons[min_index:min_index]
             logger.info("\tSet energy range from {0} to {1} keV."
                         .format(min_energy, max_energy))
-        logger.info(" done.")
+        logger.info("... done.")
     elif range_:
         spectrum_dict = dict()
         # Calc from range
@@ -170,18 +175,19 @@ def get_spectrum(spectrum_file, range_, design_energy):
         logger.info("\tSet all photons to {}."
                     .format(spectrum_dict['photons'][0]))
         # Convert to struct
-        spectrum = simulation.utility.Struct(spectrum_dict)
-        logger.info(" done.")
+        spectrum = simulation.utility.Struct(**spectrum_dict)
+        logger.info("... done.")
     else:
         # Both spectrum_file and _range are None, use design energy as spectrum
         logger.info("Only design energy specifies, calculating only for {} "
                     "keV...".format(design_energy))
         spectrum_dict = dict()
-        spectrum_dict['energies'] = design_energy
+        spectrum_dict['energies'] = np.array(design_energy, dtype=np.float)
         spectrum_dict['photons'] = np.array(1, dtype=np.float)
-        spectrum = simulation.utility.Struct(spectrum_dict)
+        spectrum = simulation.utility.Struct(**spectrum_dict)
         logger.info("\tSet photons to 1.")
-        logger.info(" done.")
+        logger.info("... done.")
+        return spectrum, spectrum.energies, spectrum.energies
     return spectrum, min(spectrum.energies), max(spectrum.energies)
 
 
@@ -239,7 +245,7 @@ def read_spectrum(spectrum_file):
                                  "Minimum is 2.")
                 logger.error(error_message)
                 raise InputError(error_message)
-    logger.info(" done.")
+    logger.info("... done..")
     return spectrum
 
 # %% Private checking functions

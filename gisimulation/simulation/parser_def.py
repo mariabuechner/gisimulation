@@ -213,7 +213,8 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         "size.")
 
     # Spectrum
-    parser.add_argument('-e', dest='design_energy', required=True,
+    parser.add_argument('-e', dest='design_energy',# required=True,
+                        default = 25,
                         type=numerical_type,
                         help="Design energy of GI [keV].")
     parser.add_argument('-spec', dest='spectrum_file',  # NEEDTO IMPL CUSTOM
