@@ -11,7 +11,12 @@ logger = logging.getLogger(__name__)
 
 
 class InputError(Exception):
-    pass
+    def __init__(self):
+        """
+        If logging logger is used, show no (empty) message.
+        """
+        if type(logger.root) is logging.RootLogger:
+            self.message = ''
 
 
 def check_input():

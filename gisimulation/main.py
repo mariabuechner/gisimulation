@@ -11,6 +11,7 @@ Module to run grating interferometer simulation and metrics calculation
 
     General:
         '--verbose', '-v':              flag for verbosity level of logger
+        beam_geometry [string]:         'cone' (default), 'parallel'
         geometry [string]:              'sym' (default), 'conv', 'inv', 'free'
         @file.txt                       parse from txt file.
                                         Can use multiple files. Arguments can
@@ -64,10 +65,8 @@ Module to run grating interferometer simulation and metrics calculation
             wafer_thickness_g2 [um]
             fill_material_g2 [string]
             fill_thickness_g2 [um]
-        design_energy [keV]
         Talbot order
-        spectrum [string]:
-            (symmentric, conventional, inverse)
+
         distance_source2grating [mm]
             (to G1 or G0, if defined)
         distance_G2_detector [mm]
@@ -83,9 +82,12 @@ Module to run grating interferometer simulation and metrics calculation
     Source:
         focal_spot_size [um]:           0 (default)
             (if 0, infinite source size)
-        beam_geometry [string]:         'cone' (default), 'parallel'
 
-    Simulation:
+    Spectrum:
+        design_energy [keV]
+        spectrum [string]:              path to file
+
+    Calculations:
         sampling_rate [um]:             0 (default)
             (if 0, pixel_size * 1e1-4)
 
@@ -114,6 +116,39 @@ logger = logging.getLogger(__name__)
 # %% Constants
 NUMERICAL_TYPE = np.float
 
+
+# %% Utility functions
+
+def get_logger_level(verbose, default_level=logging.INFO):
+    """
+    Gets the logging level dependent on verbosity.
+
+    Parameters
+    ==========
+
+    verbose [int]:  1, 2, 3, 4
+    default_level:  if verbose=None, set to default (logging.INFO)
+
+    Notes
+    =====
+
+    1:  logging.ERROR
+    2:  logging.WARNING
+    3:  logging.INFO
+    4:  logging.DEBUG
+
+
+    """
+    if verbose > 4:  # if more v's counted, do not default, but set to highest
+        verbose = 4
+    logging_level = {
+        1: logging.ERROR,
+        2: logging.WARNING,
+        3: logging.INFO,
+        4: logging.DEBUG
+    }.get(verbose, default_level)  # Default: logging.INFO
+    return logging_level
+
 # %% Main
 
 if __name__ == '__main__':
@@ -133,12 +168,11 @@ if __name__ == '__main__':
     # Config logger output
 
     # Get verbose level of logger
-    logger_level = simulation.utility.get_logger_level(parameters.verbose,
-                                                       logging.INFO)
+    logger_level = get_logger_level(parameters.verbose, logging.INFO)
     # Set logger config
-    logging.basicConfig(level=logger_level, format='%(asctime)s - %(name)s - %(levelname)s - '
-                    '%(message)s', disable_existing_loggers=False)
-
+    logging.basicConfig(level=logger_level, format='%(asctime)s - %(name)s '
+                        '- %(levelname)s - '
+                        '%(message)s', disable_existing_loggers=False)
 
     # Check input
     logger.debug("Checking parsed arguments...")

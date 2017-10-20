@@ -71,11 +71,17 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                                      formatter_class=CustomFormatter)
     # USE SUBPARSERS FOR SIMULATION/GEOMETRY DEPENDENT ARGUMENTS...???
 
-    # General input
+    # Verbosity of logger
     parser.add_argument('-v', '--verbose', action='count',
                         help="Increase verbosity level. 'v': error, "
                         "'vv': warning,"
                         "'vvv': info (None=default), 'vvvv': debug")
+
+    # General input
+    parser.add_argument('-bg', dest='beam_geometry', default='parallel',
+                        type=str,
+                        choices=['cone', 'parallel'],
+                        help="Beam geometry.")
     parser.add_argument('-gi', dest='geometry', default='sym',
                         type=str,
                         choices=['sym', 'conv', 'inv', 'free'],
@@ -120,10 +126,10 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         help="Choose which interaction will be considered "
                         "for G1. Default is 'mix', both phase shift and "
                         "absoprtion.")
-    parser.add_argument('-p1', dest='pitch_g1', required=True,
+    parser.add_argument('-p1', dest='pitch_g1',
                         type=numerical_type,
                         help="Pitch of G1 [um].")
-    parser.add_argument('-m1', dest='material_g1', required=True,
+    parser.add_argument('-m1', dest='material_g1',
                         type=str,
                         help="G1 grating line material.")
     parser.add_argument('-d1', dest='thickness_g1',
@@ -176,17 +182,9 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         type=numerical_type,
                         help="Depth of G2 filling [um].")
     # Design
-    parser.add_argument('-e', dest='design_energy', required=True,
-                        type=numerical_type,
-                        help="Design energy of GI [keV].")
     parser.add_argument('-t', dest='talbot_order',
                         type=numerical_type,
                         help="Talbot order.")
-    parser.add_argument('-spec', dest='spectrum',  # NEEDTO IMPL CUSTOM
-                                                   # FILE INPUT?
-                        nargs='?', type=argparse.FileType('r'),
-                        help="Location of spectrum file.")
-
     parser.add_argument('-s2g', dest='distance_source2grating',
                         type=numerical_type,
                         help="Distance from source to first grating [mm].")
@@ -195,12 +193,12 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         help="Distance from G2 to detector [mm].")
 
     # Detector
-    parser.add_argument('-pxs', dest='pixel_size',# required=True,
+    parser.add_argument('-pxs', dest='pixel_size',
                         type=numerical_type,
                         help="Pixel size (square) [um].")
-    parser.add_argument('-fov', dest='field_of_view', nargs=2,# required=True,
+    parser.add_argument('-fov', dest='field_of_view', nargs=2,
                         type=numerical_type,
-                        help="Number of pixels: x, y.")
+                        help="Number of pixels: x y.")
     parser.add_argument('-md', dest='material_detector',
                         type=str,
                         help="Choose detector material.")
@@ -213,12 +211,23 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         type=numerical_type,
                         help="Focal spot size [um]. If 0, infinite source "
                         "size.")
-    parser.add_argument('-bg', dest='beam_geometry', default='cone',
-                        type=str,
-                        choices=['cone', 'parallel'],
-                        help="Beam geometry.")
 
-    # Simulation
+    # Spectrum
+    parser.add_argument('-e', dest='design_energy', required=True,
+                        type=numerical_type,
+                        help="Design energy of GI [keV].")
+    parser.add_argument('-spec', dest='spectrum_file',  # NEEDTO IMPL CUSTOM
+                                                        # FILE INPUT?
+                        nargs='?', type=argparse.FileType('r'),
+                        help="Location of spectrum file.")
+    parser.add_argument('-range', dest='spectrum_range',
+                        nargs=2, type=numerical_type,
+                        help="Range of energies [keV]: min max.\n"
+                        "If specturm from file: cut off at >= min and"
+                        "<= max.\n"
+                        "If just range: from min to <=max in 1 keV steps.")
+
+    # Calculations
     parser.add_argument('-sr', dest='sampling_rate', default=0,
                         type=numerical_type,
                         help="sampling voxel size (cube). "
