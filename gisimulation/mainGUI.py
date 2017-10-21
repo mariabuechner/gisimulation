@@ -51,19 +51,21 @@ POPUP_WINDOW_MAX_LETTERS = 80.0  # max 80 letters per line
 
 class FloatInput(F.TextInput):
     """
-    Allows only numbers 0...9 and one dot as text input (for numerical input)
+    TextInoput which only allows positive floats.
     """
-    pat = re.compile('[^0-9]')
+    pattern = re.compile('[^0-9]')  # Allowed input numbers
 
     def insert_text(self, substring, from_undo=False):
         """
-        Overwrites the insert_text function to only accept pat and '.'.
+        Overwrites the insert_text function to only accept numbers 0...9
+        and '.'.
         """
-        pat = self.pat
+        pattern = self.pattern
         if '.' in self.text:
-            s = re.sub(pat, '', substring)
+            s = re.sub(pattern, '', substring)
         else:
-            s = '.'.join([re.sub(pat, '', s) for s in substring.split('.', 1)])
+            s = '.'.join([re.sub(pattern, '', s) for s in substring.split('.',
+                          1)])
         return super(FloatInput, self).insert_text(s, from_undo=from_undo)
 
 

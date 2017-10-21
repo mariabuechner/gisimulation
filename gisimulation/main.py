@@ -151,13 +151,16 @@ def get_logger_level(verbose, default_level=logging.INFO):
 
 # %% Main
 
+
 if __name__ == '__main__':
     # Parse from command line
 
     parser = input_parser(NUMERICAL_TYPE)
-    args = parser.parse_args()  # returns namespace
+    args = parser.parse_args()
+    parameters = simulation.utility.Struct(**vars(args))
 # =============================================================================
 # LEAVE OUT FOR NOW, TRY TO CHECK INPUT WITH NONETYPES
+#     args = parser.parse_args()  # returns namespace
 #     # Clean parsed arguments
 #     all_input_parameters = vars(args)  # namespace to dict
 #     # Keep verbosity level and all non-None input parameters
@@ -167,8 +170,6 @@ if __name__ == '__main__':
 #    # dict to struct
 #    parameters = simulation.utility.Struct(**input_parameters)
 # =============================================================================
-    # namespace to dict to struct
-    parameters = simulation.utility.Struct(**vars(args))
 
     # Config logger output
 
@@ -184,7 +185,7 @@ if __name__ == '__main__':
     try:
         check_input(parameters)
     except InputError:
-        logger.error("Command line error, exiting...")
+        logger.info("Command line error, exiting...")
         sys.exit(2)  # 2: command line syntax errors
 #    finally:
 #        logger.debug("...done.")

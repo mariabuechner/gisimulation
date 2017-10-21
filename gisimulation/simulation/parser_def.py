@@ -16,6 +16,7 @@ input_parser:       defines and returns parser
 
 @author: buechner_m <maria.buechner@gmail.com>
 """
+import os.path
 import argparse
 import numpy as np
 
@@ -25,12 +26,87 @@ NUMERICAL_TYPE = np.float
 # %% Classes
 
 
-class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter,
-                      argparse.RawDescriptionHelpFormatter):
+class _CustomFormatter(argparse.ArgumentDefaultsHelpFormatter,
+                       argparse.RawDescriptionHelpFormatter):
     """
     Custom formatter class combining all wanted formats.
+
+    Parents
+    #######
+
+    argparse.ArgumentDefaultsHelpFormatter
+    argparse.RawDescriptionHelpFormatter
+
     """
     pass
+
+
+class _StoreNpArray(argparse._StoreAction):
+    """
+    argpars._StoreAction custom class to store multiple inout values into a
+    numpy array. Values must be true positives.
+
+    Usage
+    #####
+
+    action=_StoreNpArray
+
+    """
+    def __call__(self, parser, namespace, values, option_string=None):
+        values = np.array(values)
+        if (values <= 0).any():
+            parser.error("Values in {0} must be > 0.".format(option_string))
+        setattr(namespace, self.dest, values)
+
+
+class _PositiveNumber(argparse.Action):
+    """
+    argpars.Action custom class to only accept positives.
+
+    Usage
+    #####
+
+    action=_PositiveNumber
+
+    """
+    def __call__(self, parser, namespace, values, option_string=None):
+        if values < 0:
+            parser.error("{0} must be >= 0.".format(option_string))
+        setattr(namespace, self.dest, values)
+
+
+class _TruePositiveNumber(argparse.Action):
+    """
+    argpars.Action custom class to only accept true positives.
+
+    Usage
+    #####
+
+    action=_TruePositiveNumber
+
+    """
+    def __call__(self, parser, namespace, values, option_string=None):
+        if values <= 0:
+            parser.error("{0} must be > 0.".format(option_string))
+        setattr(namespace, self.dest, values)
+
+
+class _CheckFile(argparse.Action):
+    """
+    Check if file input exists, add path to calling script if necessary.
+    """
+    def __call__(self, parser, namespace, values, option_string=None):
+        # Normaliye for OS
+        values = os.path.normpath(values)
+        # if main path missing, add, then check
+        if not os.path.isabs(values):
+            script_path = os.path.dirname(os.path.abspath(__file__))
+            values = os.path.join(script_path, values)
+        # Check if file exists
+        if not os.path.exists(values):
+            parser.error("{0} file ({1}) does not exist."
+                         .format(option_string, values))
+        setattr(namespace, self.dest, values)
 
 # %% Functions
 
@@ -68,7 +144,7 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                                      "\t-sr 100\n"
                                      "\t-p0 2.4\n",
                                      fromfile_prefix_chars='@',
-                                     formatter_class=CustomFormatter)
+                                     formatter_class=_CustomFormatter)
     # USE SUBPARSERS FOR SIMULATION/GEOMETRY DEPENDENT ARGUMENTS...???
 
     # Verbosity of logger
@@ -97,26 +173,31 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         "for G0. Default is 'mix', both phase shift and "
                         "absoprtion.")
     parser.add_argument('-p0', dest='pitch_g0',
+                        action=_TruePositiveNumber,
                         help="Pitch of G0 [um].")
     parser.add_argument('-m0', dest='material_g0',
                         type=str,
                         help="G0 grating line material.")
     parser.add_argument('-d0', dest='thickness_g0',
+                        action=_TruePositiveNumber,
                         type=numerical_type,
                         help="Depth of G0 grating lines [um].")
     parser.add_argument('-shift0', dest='phase_shift_g0',
+                        action=_TruePositiveNumber,
                         type=numerical_type,
                         help="Phase shift of G0 grating lines [rad].")
     parser.add_argument('-m0_wafer', dest='wafer_material_g0',
                         type=str,
                         help="G0 wafer material.")
     parser.add_argument('-d0_wafer', dest='wafer_thickness_g0',
+                        action=_TruePositiveNumber,
                         type=numerical_type,
                         help="Depth of G0 wafer [um].")
     parser.add_argument('-m0_fill', dest='fill_material_g0',
                         type=str,
                         help="G0 filling material.")
     parser.add_argument('-d0_fill', dest='fill_thickness_g0',
+                        action=_TruePositiveNumber,
                         type=numerical_type,
                         help="Depth of G0 filling [um].")
     # G1
@@ -127,27 +208,32 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         "for G1. Default is 'mix', both phase shift and "
                         "absoprtion.")
     parser.add_argument('-p1', dest='pitch_g1',
+                        action=_TruePositiveNumber,
                         type=numerical_type,
                         help="Pitch of G1 [um].")
     parser.add_argument('-m1', dest='material_g1',
                         type=str,
                         help="G1 grating line material.")
     parser.add_argument('-d1', dest='thickness_g1',
+                        action=_TruePositiveNumber,
                         type=numerical_type,
                         help="Depth of G1 grating lines [um].")
     parser.add_argument('-shift1', dest='phase_shift_g1', default=np.pi,
+                        action=_TruePositiveNumber,
                         type=numerical_type,
                         help="Phase shift of G1 grating lines [rad].")
     parser.add_argument('-m1_wafer', dest='wafer_material_g1',
                         type=str,
                         help="G1 wafer material.")
     parser.add_argument('-d1_wafer', dest='wafer_thickness_g1',
+                        action=_TruePositiveNumber,
                         type=numerical_type,
                         help="Depth of G1 wafer [um].")
     parser.add_argument('-m1_fill', dest='fill_material_g1',
                         type=str,
                         help="G1 filling material.")
     parser.add_argument('-d1_fill', dest='fill_thickness_g1',
+                        action=_TruePositiveNumber,
                         type=numerical_type,
                         help="Depth of G1 filling [um].")
     # G2
@@ -158,27 +244,32 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         "for G2. Default is 'mix', both phase shift and "
                         "absoprtion.")
     parser.add_argument('-p2', dest='pitch_g2',
+                        action=_TruePositiveNumber,
                         type=numerical_type,
                         help="Pitch of G2 [um].")
     parser.add_argument('-m2', dest='material_g2',
                         type=str,
                         help="G2 grating line material.")
     parser.add_argument('-d2', dest='thickness_g2',
+                        action=_TruePositiveNumber,
                         type=numerical_type,
                         help="Depth of G2 grating lines [um]..")
     parser.add_argument('-shift2', dest='phase_shift_g2',
+                        action=_TruePositiveNumber,
                         type=numerical_type,
                         help="Phase shift of G2 grating lines [rad].")
     parser.add_argument('-m2_wafer', dest='wafer_material_g2',
                         type=str,
                         help="G2 wafer material.")
     parser.add_argument('-d2_wafer', dest='wafer_thickness_g2',
+                        action=_TruePositiveNumber,
                         type=numerical_type,
                         help="Depth of G2 wafer [um].")
     parser.add_argument('-m2_fill', dest='fill_material_g2',
                         type=str,
                         help="G2 filling material.")
     parser.add_argument('-d2_fill', dest='fill_thickness_g2',
+                        action=_TruePositiveNumber,
                         type=numerical_type,
                         help="Depth of G2 filling [um].")
     # Design
@@ -194,45 +285,57 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
 
     # Detector
     parser.add_argument('-pxs', dest='pixel_size',
+                        action=_TruePositiveNumber,
                         type=numerical_type,
                         help="Pixel size (square) [um].")
     parser.add_argument('-fov', dest='field_of_view', nargs=2,
+                        action=_StoreNpArray,
                         type=numerical_type,
                         help="Number of pixels: x y.")
     parser.add_argument('-md', dest='material_detector',
                         type=str,
                         help="Choose detector material.")
     parser.add_argument('-dd', dest='thickness_detector',
+                        action=_TruePositiveNumber,
                         type=numerical_type,
                         help="Depth of detector [um].")
 
     # Source
     parser.add_argument('-fs', dest='focal_spot_size', default=0,
+                        action=_PositiveNumber,
                         type=numerical_type,
                         help="Focal spot size [um]. If 0, infinite source "
                         "size.")
 
     # Spectrum
-    parser.add_argument('-e', dest='design_energy',# required=True,
-                        default = 25,
+    parser.add_argument('-e', dest='design_energy', required=True,
+                        action=_TruePositiveNumber,
                         type=numerical_type,
                         help="Design energy of GI [keV].")
-    parser.add_argument('-spec', dest='spectrum_file',  # NEEDTO IMPL CUSTOM
-                                                        # FILE INPUT?
-                        nargs='?', type=argparse.FileType('r'),
-                        help="Location of spectrum file.")
-    parser.add_argument('-range', dest='spectrum_range',
+    parser.add_argument('-spec', dest='spectrum_file',
+                        action=_CheckFile,
+                        nargs='?', type=str,
+                        help="Location of spectrum file (.csv).\n"
+                        "Full path or relative path ('./relative_path') "
+                        "from calling script.")
+    parser.add_argument('-r', dest='spectrum_range',
+                        action=_StoreNpArray,
                         nargs=2, type=numerical_type,
                         help="Range of energies [keV]: min max.\n"
                         "If specturm from file: cut off at >= min and"
                         "<= max.\n"
                         "If just range: from min to <=max in 1 keV steps.")
+    parser.add_argument('-rs', dest='range_step', default=1,
+                        action=_TruePositiveNumber,
+                        type=numerical_type,
+                        help="Step size of range in keV.")
 
     # Calculations
     parser.add_argument('-sr', dest='sampling_rate', default=0,
+                        action=_PositiveNumber,
                         type=numerical_type,
                         help="sampling voxel size (cube). "
-                        "If 0, it is pixel_size * 1e-4.")
+                        "If 0, it is pixel_size * 1e-3.")
 
     # Return
     return parser
