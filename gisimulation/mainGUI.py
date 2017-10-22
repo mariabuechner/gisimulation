@@ -194,7 +194,10 @@ def _convert_input(ids):
     parameters = dict()
     logger.debug("Converting all label inputs...")
     for key, value in ids.iteritems():
-        if value.text == '':
+#        logger.debug("Key is: {0}.\nValue is: {1}.".format(key, value))
+        if 'CheckBox' in str(value):
+            continue
+        elif value.text == '':
                 parameters[key] = None
         elif 'FloatInput' in str(value):
             parameters[key] = float(value.text)
@@ -204,6 +207,30 @@ def _convert_input(ids):
             parameters[key] = value.text
     # Convert dict to struct
     logger.debug("... done.")
+
+    # Handel double numeric inputs
+    # Spectrum range
+    if parameters['spectrum_range_min'] is None or \
+            parameters['spectrum_range_max'] is None:
+        parameters['spectrum_range'] = None
+    else:
+        parameters['spectrum_range'] = \
+            np.array([parameters['spectrum_range_min'],
+                     parameters['spectrum_range_max']],
+                     dtype=float)
+    del parameters['spectrum_range_min']
+    del parameters['spectrum_range_max']
+#    # FOV (FUTURE)
+#    if parameters['field_of_view_x'] is None or \
+#            parameters['field_of_view_y'] is None:
+#        parameters['spectrum_range'] = None
+#    else:
+#        parameters['field_of_view'] = np.array([parameters['field_of_view_x'],
+#                                               parameters['field_of_view_y']],
+#                                               dtype=float)
+#    del parameters['field_of_view_x']
+#    del parameters['field_of_view_y']
+
     parameters = utilities.Struct(**parameters)
     return parameters
 
@@ -288,15 +315,15 @@ class giGUI(F.BoxLayout):
     def check_general_input(self):
         # Convert input
         parameters = _convert_input(self.ids)
-
+        print(parameters.spectrum_range)
         # Check input
-        try:
-            logger.info("Checking general input...")
-            check_input.general_input(parameters)
-            logger.info("... done.")
-        except check_input.InputError as e:
-            logger.debug("Displaying error...")
-            ErrorDisplay('Input Error', str(e))
+#        try:
+#            logger.info("Checking general input...")
+#            check_input.general_input(parameters)
+#            logger.info("... done.")
+#        except check_input.InputError as e:
+#            logger.debug("Displaying error...")
+#            ErrorDisplay('Input Error', str(e))
 
 # %% Main App
 
