@@ -2,10 +2,13 @@
 #:import np numpy
 #:import test kivy_test
 
+#:set num_input_size 0.3
+#:set line_height 40
+
 # All labels
 <Label>:
     size_hint_y: None
-    height: 50
+    height: line_height
     canvas.before:
         Color:
             rgba: np.divide([88, 88, 88, 50],[255., 255., 255., 100.])
@@ -16,14 +19,22 @@
 # All text inputs
 <TextInput>:
     size_hint_y: None
-    height: 50
+    height: line_height
+    size_hint_x: num_input_size
     multiline: False
 
-# All float inputs
-<FloatInput>:
-    size_hint_y: None
-    height: 50
-    multiline: False
+# All checkboxes
+<CheckBox>:
+    size_hint: (None, None)
+    height: line_height
+    width: line_height
+    canvas.before:
+        Color:
+            rgba: np.divide([88, 88, 88, 50],[255., 255., 255., 100.])
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
 
 # All BoxLayouts
 <BoxLayout>:
@@ -54,19 +65,14 @@
             Label:
                 text: 'General parameters'
 
-            # Sub-input layout for parameters, bundled into sub-layouts
-            BoxLayout: # For all different sub-categories
-                       # (maybe later gridlayout)
-                orientation: 'vertical'
-
-                # 1. Block
+            GridLayout:
+                cols: 2
                 # General input
                 BoxLayout:
                     orientation: 'vertical'
                     Label:
                         text: 'General Input'
                     BoxLayout:
-                        cols: 1
                         orientation: 'vertical'
                         BoxLayout:
                             LabelHelp:
@@ -82,18 +88,35 @@
                                 id: spectrum_file
                         BoxLayout:
                             LabelHelp:
-                                text: 'Spectrum range: min, max [keV]'
+                                text: 'Spectrum range [keV]'
                                 help_message: "Range of energies [keV]: min max.\nIf specturm from file: cut off at >= min and<= max.\nIf just range: from min to <=max in 1 keV steps."
-                            FloatInput:
-                                id: spectrum_range_min
-                            FloatInput:
-                                id: spectrum_range_max
+                            CheckBox:
+                                id: spectrum_range_set
+                        BoxLayout:
+                            BoxLayout:
+                                size_hint_x: 0.5
+                                Label:
+                                    text: 'Min'
+                                FloatInput:
+                                    id: spectrum_range_min
+                                    size_hint_x: 1
+                                    disabled: not spectrum_range_set.active
+                            BoxLayout:
+                                size_hint_x: 0.5
+                                Label:
+                                    text: 'Max'
+                                FloatInput:
+                                    id: spectrum_range_max
+                                    size_hint_x: 1
+                                    disabled: not spectrum_range_set.active
                         BoxLayout:
                             LabelHelp:
                                 text: 'Spectrum step size [keV]'
                                 help_message: "Step size of spectrum range [keV]."
                             FloatInput:
                                 id: spectrum_step
+                                disabled: not spectrum_range_set.active
+                                          # And not a spcetum file loaded!!!
 
 
                 # GI input
@@ -112,55 +135,35 @@
                                 text: 'sym'
                                 values: ['sym', 'conv', 'inv', 'free']
 
-
-                # 2. Block
-                # Grating input
                 BoxLayout:
                     orientation: 'vertical'
                     Label:
-                        text: 'Grating Input'
+                        text: '3. block'
                     BoxLayout:
                         orientation: 'vertical'
+                        Button:
+                        Button:
+                        Button:
 
-                # 3. Block
-                BoxLayout:
-                    # Detector input
-                    BoxLayout:
-                        orientation: 'vertical'
-                        Label:
-                            text: 'Detector Input'
-                        BoxLayout:
-                            orientation: 'vertical'
-                    # Source input
-                    BoxLayout:
-                        orientation: 'vertical'
-                        Label:
-                            text: 'Source Input'
-                        BoxLayout:
-                            orientation: 'vertical'
 
-                # 4. Block
-                # Simulation input
-                BoxLayout:
-                    orientation: 'vertical'
-                    Label:
-                        text: 'Simulation Input'
-                    BoxLayout:
-                        orientation: 'vertical'
+
 
 
     # Left side of splitter
     TabbedPanel:
-        # Content of 'tab windows'
+        do_default_tab: False
 
-        # Geometry (dafault)
-        default_tab_text: 'Geometry'
+        # Geometry
+        TabbedPanelItem:
+            text: 'Geometry'
+            Label:
+                text: '1. tab content area'
 
         # Visibility
         TabbedPanelItem:
             text: 'Visibility'
             Label:
-                text: 'First tab content area'
+                text: '2. tab content area'
 
         # CT
         TabbedPanelItem:
