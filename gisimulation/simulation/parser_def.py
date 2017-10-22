@@ -53,7 +53,7 @@ class _StoreNpArray(argparse._StoreAction):
 
     """
     def __call__(self, parser, namespace, values, option_string=None):
-        values = np.array(values)
+        values = np.array(values, dtype=NUMERICAL_TYPE)
         if (values <= 0).any():
             parser.error("Values in {0} must be > 0.".format(option_string))
         setattr(namespace, self.dest, values)
@@ -290,7 +290,7 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         help="Pixel size (square) [um].")
     parser.add_argument('-fov', dest='field_of_view', nargs=2,
                         action=_StoreNpArray,
-                        type=numerical_type,
+                        type=np.int,
                         help="Number of pixels: x y.")
     parser.add_argument('-md', dest='material_detector',
                         type=str,
@@ -321,14 +321,14 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
     parser.add_argument('-r', dest='spectrum_range',
                         action=_StoreNpArray,
                         nargs=2, type=numerical_type,
-                        help="Range of energies [keV]: min max.\n"
+                        help=("Range of energies [keV]: min max.\n"
                         "If specturm from file: cut off at >= min and"
                         "<= max.\n"
-                        "If just range: from min to <=max in 1 keV steps.")
-    parser.add_argument('-rs', dest='range_step', default=1,
+                        "If just range: from min to <=max in 1 keV steps."))
+    parser.add_argument('-rs', dest='spectrum_step', default=1,
                         action=_TruePositiveNumber,
                         type=numerical_type,
-                        help="Step size of range in keV.")
+                        help="Step size of range [keV].")
 
     # Calculations
     parser.add_argument('-sr', dest='sampling_rate', default=0,

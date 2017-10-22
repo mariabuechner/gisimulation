@@ -73,7 +73,7 @@ Module to run grating interferometer simulation and metrics calculation
 
     Detector:
         pixel_size [um] (square)
-        detector_size [#x-pixel, #y-pixel]
+        detector_size [#x-pixel, #y-pixel] [int, int]
             (FOV)
         detector_material [string]
             (if not defined, assume 100% efficiency)
@@ -105,9 +105,9 @@ import logging
 import numpy as np
 import sys
 # gisimulation modules
-import simulation.utility
+import simulation.utilities as utilities
 from simulation.parser_def import input_parser
-from simulation.check_input import check_input, InputError
+import simulation.check_input as check_input
 # import materials
 # import geometry
 # import gratings
@@ -115,39 +115,6 @@ logger = logging.getLogger(__name__)
 
 # %% Constants
 NUMERICAL_TYPE = np.float
-
-
-# %% Utility functions
-
-def get_logger_level(verbose, default_level=logging.INFO):
-    """
-    Gets the logging level dependent on verbosity.
-
-    Parameters
-    ==========
-
-    verbose [int]:  1, 2, 3, 4
-    default_level:  if verbose=None, set to default (logging.INFO)
-
-    Notes
-    =====
-
-    1:  logging.ERROR
-    2:  logging.WARNING
-    3:  logging.INFO
-    4:  logging.DEBUG
-
-
-    """
-    if verbose > 4:  # if more v's counted, do not default, but set to highest
-        verbose = 4
-    logging_level = {
-        1: logging.ERROR,
-        2: logging.WARNING,
-        3: logging.INFO,
-        4: logging.DEBUG
-    }.get(verbose, default_level)  # Default: logging.INFO
-    return logging_level
 
 # %% Main
 
@@ -157,7 +124,7 @@ if __name__ == '__main__':
 
     parser = input_parser(NUMERICAL_TYPE)
     args = parser.parse_args()
-    parameters = simulation.utility.Struct(**vars(args))
+    parameters = utilities.Struct(**vars(args))
 # =============================================================================
 # LEAVE OUT FOR NOW, TRY TO CHECK INPUT WITH NONETYPES
 #     args = parser.parse_args()  # returns namespace
@@ -174,7 +141,7 @@ if __name__ == '__main__':
     # Config logger output
 
     # Get verbose level of logger
-    logger_level = get_logger_level(parameters.verbose, logging.INFO)
+    logger_level = utilities.get_logger_level(parameters.verbose)
     # Set logger config
     logging.basicConfig(level=logger_level, format='%(asctime)s - %(name)s '
                         '- %(levelname)s - '
@@ -183,8 +150,8 @@ if __name__ == '__main__':
     # Check input
     logger.debug("Checking parsed arguments...")
     try:
-        check_input(parameters)
-    except InputError:
+        check_input.check_parser(parameters)
+    except check_input.InputError:
         logger.info("Command line error, exiting...")
         sys.exit(2)  # 2: command line syntax errors
 #    finally:

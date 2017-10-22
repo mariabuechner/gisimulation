@@ -60,44 +60,58 @@
                 orientation: 'vertical'
 
                 # 1. Block
+                # General input
                 BoxLayout:
-                    # General input
+                    orientation: 'vertical'
+                    Label:
+                        text: 'General Input'
+                    BoxLayout:
+                        cols: 1
+                        orientation: 'vertical'
+                        BoxLayout:
+                            LabelHelp:
+                                text: 'Design Energy [keV]'
+                                help_message: "Design energy of GI [keV]."
+                            FloatInput:
+                                id: design_energy
+                        BoxLayout:
+                            LabelHelp:
+                                text: 'Spectrum file location'
+                                help_message: "Location of spectrum file (.csv).\nFull path or relative path ('./relative_path') from calling script."
+                            TextInput:
+                                id: spectrum_file
+                        BoxLayout:
+                            LabelHelp:
+                                text: 'Spectrum range: min, max [keV]'
+                                help_message: "Range of energies [keV]: min max.\nIf specturm from file: cut off at >= min and<= max.\nIf just range: from min to <=max in 1 keV steps."
+                            FloatInput:
+                                id: spectrum_range_min
+                            FloatInput:
+                                id: spectrum_range_max
+                        BoxLayout:
+                            LabelHelp:
+                                text: 'Spectrum step size [keV]'
+                                help_message: "Step size of spectrum range [keV]."
+                            FloatInput:
+                                id: spectrum_step
+
+
+                # GI input
+                BoxLayout:
+                    orientation: 'vertical'
+                    Label:
+                        text: 'GI Input'
                     BoxLayout:
                         orientation: 'vertical'
-                        Label:
-                            text: 'General Input'
                         BoxLayout:
-                            orientation: 'vertical'
-                            BoxLayout:
-                                LabelHelp:
-                                    text: 'Geometry'
-                                    help_message: "GI geometry. Choices are\n'sym': symmetrical, 'conv': conventional, 'inv': inverse, 'free': free input."
-                                Spinner:
-                                    id: geometry
-                                    text: 'sym'
-                                    values: ['sym', 'conv', 'inv', 'free']
-                    # GI input
-                    BoxLayout:
-                        orientation: 'vertical'
-                        Label:
-                            text: 'GI Input'
-                        BoxLayout:
-                            orientation: 'vertical'
-                            BoxLayout:
-                                Label:
-                                    text: 'Design Energy [keV]'
-                                FloatInput:
-                                    id: design_energy
-                            BoxLayout:
-                                Label:
-                                    text: 'Talbot order'
-                                FloatInput:
-                                    id: talbot_order
-                            BoxLayout:
-                                Label:
-                                    text: 'Spectrum file location'
-                                TextInput:
-                                    id: spectrum
+                            LabelHelp:
+                                text: 'Geometry'
+                                help_message: "GI geometry. Choices are\n'sym': symmetrical, 'conv': conventional, 'inv': inverse, 'free': free input."
+                            Spinner:
+                                id: geometry
+                                text: 'sym'
+                                values: ['sym', 'conv', 'inv', 'free']
+
 
                 # 2. Block
                 # Grating input
@@ -156,4 +170,4 @@
                     text: 'bla'
                 Button:
                     text: 'Raise error and display'
-                    on_press: app.test()
+                    on_press: root.check_general_input()

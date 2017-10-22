@@ -17,7 +17,7 @@ check_input:    Checks the input parameters, logs errors and raises an
 @author: buechner_m <maria.buechner@gmail.com>
 """
 import numpy as np
-import simulation.utility  # if only Struct and only used here, include here!
+import simulation.utilities as utilities
 import logging
 logger = logging.getLogger(__name__)
 
@@ -33,9 +33,26 @@ class InputError(Exception):
 # %% Public checking functions
 
 
-def check_input(parameters):
+def check_parser(parameters):
     """
-    ToDo: spit sectional checking into sub-functions (!?)
+    checking all input (parser)
+
+    Parameters:
+    """
+    logger.info("Checking general input...")
+    # % Minimal required inpuf for all scenarios
+    general_input(parameters)
+    logger.info("... done.")
+
+    # % Scenario specific requirements
+    # General and connected parameters
+
+    return True
+
+
+def general_input(parameters):
+    """
+    checking general input (GI, Geom, etc.)
 
     Parameters:
     """
@@ -52,8 +69,8 @@ def check_input(parameters):
         # Spectrum:
         # Get spectrum
         [parameters.spectrum, min_energy, max_energy] = \
-            get_spectrum(parameters.spectrum_file, parameters.spectrum_range,
-                         parameters.range_step, parameters.design_energy)
+            _get_spectrum(parameters.spectrum_file, parameters.spectrum_range,
+                          parameters.spectrum_step, parameters.design_energy)
 
         # Calculations:
         if parameters.sampling_rate == 0:
@@ -78,8 +95,7 @@ def check_input(parameters):
 #            # =================================================================
 #            pass
 
-        # % Scenario specific requirements
-        # General and connected parameters
+        return True
 
     except AttributeError as e:  # For paramters.value and value not existing
                                  # NECESSARY??? (in the end?)
@@ -91,7 +107,14 @@ def check_input(parameters):
 # %% Public utility functions
 
 
-def get_spectrum(spectrum_file, range_, range_step, design_energy):
+
+# %% Private checking functions
+
+
+# %% Private utility functions
+
+
+def _get_spectrum(spectrum_file, range_, spectrum_step, design_energy):
     """
     Load spectrum from file or define based on range (min, max). Returns
     energies and relative photons (normalized to 1 in total).
@@ -101,7 +124,7 @@ def get_spectrum(spectrum_file, range_, range_step, design_energy):
 
     spectrum_file:              path to spectrum file
     range_ [keV, keV]:          [min, max]
-    range_step [keV]
+    spectrum_step [keV]
     design_energy [keV]
 
     Returns
@@ -124,7 +147,7 @@ def get_spectrum(spectrum_file, range_, range_step, design_energy):
     if spectrum_file is not None:
         logger.info("Reading spectrum from file at:\n{}..."
                     .format(spectrum_file))
-        spectrum = read_spectrum(spectrum_file)
+        spectrum = _read_spectrum(spectrum_file)
         # Set range
         if range_ is not None:
             # Min and max in right order?
@@ -168,11 +191,11 @@ def get_spectrum(spectrum_file, range_, range_step, design_energy):
     # Check range input
     elif range_ is not None:
         # Min and max in right order?
-        if range_[1] <= range_[0]+range_step:
+        if range_[1] <= range_[0]+spectrum_step:
             error_message = ("Energy range maximum value ({0} keV) must be "
                              "at least {1} keV larger than minimum value "
                              "({2} keV)."
-                             .format(range_[0], range_step, range_[1]))
+                             .format(range_[0], spectrum_step, range_[1]))
             logger.error(error_message)
             raise InputError(error_message)
         # Calc spectrum
@@ -180,8 +203,8 @@ def get_spectrum(spectrum_file, range_, range_step, design_energy):
         # Calc from range
         logger.info("Setting spectrum based on input range...")
         spectrum_dict['energies'] = np.arange(range_[0],
-                                              range_[1]+range_step,
-                                              range_step,
+                                              range_[1]+spectrum_step,
+                                              spectrum_step,
                                               dtype=np.float)
         spectrum_dict['photons'] = (np.ones(len(spectrum_dict['energies']),
                                             dtype=np.float) /
@@ -189,7 +212,7 @@ def get_spectrum(spectrum_file, range_, range_step, design_energy):
         logger.debug("\tSet all photons to {}."
                      .format(spectrum_dict['photons'][0]))
         # Convert to struct
-        spectrum = simulation.utility.Struct(**spectrum_dict)
+        spectrum = utilities.Struct(**spectrum_dict)
         logger.info("... done.")
     # Both spectrum_file and _range are None, use design energy as spectrum
     else:
@@ -198,7 +221,7 @@ def get_spectrum(spectrum_file, range_, range_step, design_energy):
         spectrum_dict = dict()
         spectrum_dict['energies'] = np.array(design_energy, dtype=np.float)
         spectrum_dict['photons'] = np.array(1, dtype=np.float)
-        spectrum = simulation.utility.Struct(**spectrum_dict)
+        spectrum = utilities.Struct(**spectrum_dict)
         logger.debug("\tSet photons to 1.")
         logger.info("... done.")
         logger.info("Spectrum is design energy {} keV."
@@ -224,7 +247,7 @@ def get_spectrum(spectrum_file, range_, range_step, design_energy):
     return spectrum, min_energy, max_energy
 
 
-def read_spectrum(spectrum_file):
+def _read_spectrum(spectrum_file):
     """
     Read from spectrum file.
 
@@ -270,7 +293,7 @@ def read_spectrum(spectrum_file):
         logger.error()
         raise InputError
     # Convert to struct
-    spectrum = simulation.utility.Struct(**spectrum_dict)
+    spectrum = utilities.Struct(**spectrum_dict)
 
     # Check if more than 2 energies in spectrum
     if len(spectrum.energies) <= 1:
@@ -280,11 +303,6 @@ def read_spectrum(spectrum_file):
                 raise InputError(error_message)
     logger.debug("... done.")
     return spectrum
-
-# %% Private checking functions
-
-
-# %% Private utility functions
 
 
 def _nearest_value(array, value):

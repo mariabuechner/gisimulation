@@ -1,6 +1,12 @@
 """
 GUI mpodule for gi-simulation.
 
+Usage
+#####
+
+python maingui.py [Option...]::
+    -d, --debug     show debug logs
+
 @author: buechner_m  <maria.buechner@gmail.com>
 """
 import numpy as np
@@ -15,6 +21,8 @@ console.setFormatter(formatter)
 sys._kivy_logging_handler = console
 # Other imports
 import kivy
+# Check kivy version
+kivy.require('1.10.0')
 from kivy.base import ExceptionHandler
 from kivy.base import ExceptionManager
 from kivy.logger import Logger
@@ -25,6 +33,15 @@ from kivy.properties import StringProperty
 # UIX
 from kivy.factory import Factory as F
 
+# Parser
+import argparse
+parser = argparse.ArgumentParser(description="Set verbose level for debugger.")
+parser.add_argument('-v', '--verbose', action='count',
+                        help="Increase verbosity level. 'v': error, "
+                        "'vv': warning,"
+                        "'vvv': info (None=default), 'vvvv': debug")
+
+# Logging
 # Set logger before importing simulation modules (to set format for all)
 # Use Kivy logger to handle logging.Logger
 logging.Logger.manager.root = Logger  # Makes Kivy Logger root for all
@@ -34,9 +51,9 @@ logger = logging.getLogger(__name__)
 
 # gisimulation imports
 import kivy_test
+import simulation.utilities as utilities
+import simulation.check_input as check_input
 
-# Check kivy version
-kivy.require('1.10.0')
 
 # Set App Window configuration
 Window.maximize()  # NOTE: On desktop platforms only
@@ -51,14 +68,25 @@ POPUP_WINDOW_MAX_LETTERS = 80.0  # max 80 letters per line
 
 class FloatInput(F.TextInput):
     """
-    TextInoput which only allows positive floats.
+    TextInput which only allows positive floats.
+
+    Note
+    ####
+
+    Adapted from 'https://kivy.org/docs/api-kivy.uix.textinput.html'
+    (22.10.2017)
+
     """
+    multiline = False  # On enter, loose focus on textinput
+    write_tab = False  # On tab, loose focus on textinput
+
+    # Set input pattern
     pattern = re.compile('[^0-9]')  # Allowed input numbers
 
     def insert_text(self, substring, from_undo=False):
         """
         Overwrites the insert_text function to only accept numbers 0...9
-        and '.'.
+        and '.', and 1 line.
         """
         pattern = self.pattern
         if '.' in self.text:
@@ -67,6 +95,24 @@ class FloatInput(F.TextInput):
             s = '.'.join([re.sub(pattern, '', s) for s in substring.split('.',
                           1)])
         return super(FloatInput, self).insert_text(s, from_undo=from_undo)
+
+
+class IntInput(F.TextInput):  # Inherit and just change teyt input???
+    """
+    TextInput which only allows positive integers, and 1 line.
+    """
+    multiline = False  # On enter, loose focus on textinput
+    write_tab = False  # On tab, loose focus on textinput
+
+    pattern = re.compile('[^0-9]')  # Allowed input numbers
+
+    def insert_text(self, substring, from_undo=False):
+        """
+        Overwrites the insert_text function to only accept numbers 0...9.
+        """
+        pattern = self.pattern
+        s = re.sub(pattern, '', substring)
+        return super(IntInput, self).insert_text(s, from_undo=from_undo)
 
 
 class PopupWindow():
@@ -125,6 +171,45 @@ class LabelHelp(F.Label):
 # %% Utiliies
 
 
+def _convert_input(ids):
+    """
+    Converts self.ids from widget to dict and then to struct.
+
+    Parameters
+    ##########
+
+    ids [widget.ids]
+
+    Returns
+    #######
+
+    parameters [Struct]
+
+    Notes
+    #####
+
+    If input is empty, stores None.
+
+    """
+    parameters = dict()
+    logger.debug("Converting all label inputs...")
+    for key, value in ids.iteritems():
+        if value.text == '':
+                parameters[key] = None
+        elif 'FloatInput' in str(value):
+            parameters[key] = float(value.text)
+        elif 'IntInput' in str(value):
+            parameters[key] = int(value.text)
+        elif 'TextInput' in str(value):
+            parameters[key] = value.text
+    # Convert dict to struct
+    logger.debug("... done.")
+    parameters = utilities.Struct(**parameters)
+    return parameters
+
+# Handle exceptions in popup window
+
+
 class IgnoreExceptions(ExceptionHandler):
     """
     Kivy Exception Handler to either display the exception or exit the
@@ -159,7 +244,7 @@ class ErrorDisplay():
 def _scale_popup_window(message, window_size=None,
                         max_letters=POPUP_WINDOW_MAX_LETTERS):
     """
-    Scales popup window size based on number of lines and longes line (number
+    Scales popup window size based on number of lines and longest line (number
     of letters.)
 
     Parameters
@@ -196,8 +281,22 @@ def _scale_popup_window(message, window_size=None,
 
 class giGUI(F.BoxLayout):
     """
+    Main Widget, BoxLayout
     """
-    pass
+    # Functions callable in .kv file
+
+    def check_general_input(self):
+        # Convert input
+        parameters = _convert_input(self.ids)
+
+        # Check input
+        try:
+            logger.info("Checking general input...")
+            check_input.general_input(parameters)
+            logger.info("... done.")
+        except check_input.InputError as e:
+            logger.debug("Displaying error...")
+            ErrorDisplay('Input Error', str(e))
 
 # %% Main App
 
@@ -207,18 +306,9 @@ class giGUIApp(App):
         self.title = 'GI Simumlation'
         return giGUI()  # Main widget, root
 
-    # Functions callable in .kv file
-
-    def test(self):
-        try:
-            logger.info("bla ist: bla")
-            logger.info("calling 'check_input()'.")
-            kivy_test.check_input()
-        except kivy_test.InputError as e:
-            logger.info("Caught error in test().")
-            ErrorDisplay('Input Error', str(e))
 
 # %% Main
+
 
 if __name__ == '__main__':
     giGUIApp().run()
