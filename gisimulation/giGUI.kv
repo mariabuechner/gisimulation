@@ -118,6 +118,10 @@
                                 size_hint_x: 0.1
                                 text: 'Load'
                                 on_press: root.show_spectrum_load()
+                            Button:
+                                size_hint_x: 0.15
+                                text: 'Remove'
+                                on_press: root.spectrum_file_path = ''
                             TextInput:
                                 text: ntpath.basename(root.spectrum_file_path)
                                 id: spectrum_file

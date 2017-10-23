@@ -341,12 +341,28 @@ ExceptionManager.add_handler(_IgnoreExceptions())
 class giGUI(F.BoxLayout):
     """
     Main Widget, BoxLayout
+
+    Notes
+    #####
+
+    File loading and saving
+    Based on "https://kivy.org/docs/api-kivy.uix.filechooser.html"
+    (23.10.2017)
     """
-    # File loading and saving
-    # Based on "https://kivy.org/docs/api-kivy.uix.filechooser.html"
-    # (23.10.2017)
     spectrum_file_path = F.StringProperty()
     spectrum_file_loaded = F.BooleanProperty(defaultvalue=False)
+
+    def on_spectrum_file_path(self, instance, value):
+        """
+        Option: if parameters global, set spectrum_file here
+        ALSO: consider dict for parameters...
+        """
+        if value:
+            self.spectrum_file_loaded = True
+        else:
+            self.spectrum_file_loaded = False
+
+    # Loading and saving files
 
     def dismiss_popup(self):
         self._popup.dismiss()
@@ -362,7 +378,7 @@ class giGUI(F.BoxLayout):
         self.spectrum_file_path = os.path.join(path, filename[0])
         logger.debug("Spectrum filepath is: {}"
                      .format(self.spectrum_file_path))
-        self.spectrum_file_loaded = True
+#        self.spectrum_file_loaded = True
         self.dismiss_popup()
 
 
