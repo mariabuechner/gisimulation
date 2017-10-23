@@ -68,6 +68,12 @@
                 text: "Load"
                 on_release: root.load(spectrum_filechooser.path, spectrum_filechooser.selection)
 
+<ScrollableLabel>:
+    Label:
+        size_hint_y: None
+        height: self.texture_size[1]
+        text_size: self.width, None
+        text: root.text
 
 # gi GUI
 <giGUI>:
@@ -107,7 +113,7 @@
                             LabelHelp:
                                 size_hint_x: 0.4
                                 text: 'Choose spectrum file'
-                                help_message: parser_info['spectrum_file'][1]
+                                help_message: "Location of spectrum file (.csv).\nFile format:\nenergy,photons\ne1,p1\ne2,p2\n.,.\n.,.\n.,."
                             Button:
                                 size_hint_x: 0.1
                                 text: 'Load'

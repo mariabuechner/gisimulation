@@ -319,7 +319,14 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         nargs='?', type=str,
                         help="Location of spectrum file (.csv).\n"
                         "Full path or relative path ('./relative_path') "
-                        "from calling script.")
+                        "from calling script.\n"
+                        "File format:\n"
+                        "energy,photons\n"
+                        "e1,p1\n"
+                        "e2,p2\n"
+                        ".,.\n"
+                        ".,.\n"
+                        ".,.")
     parser.add_argument('-r', dest='spectrum_range',
                         action=_StoreNpArray,
                         metavar='SPECTRUM_RANGE',
@@ -369,6 +376,12 @@ def get_arguments_info(parser):
     optional_key = info[variable_name][0]
     help_message = info[variable_name][1]
 
+    Notes
+    #####
+
+    Removes all linebreaks in help message, as they are not the original
+    anymore, but defined via the help formatter used by parser.print_help
+
 
     """
     # Reset stdout
@@ -398,34 +411,11 @@ def get_arguments_info(parser):
         else:
             help_text = filter(None, words[2:])  # Remove ''
         help_text = ' '.join(help_text)
-        help_text = help_text[:-1]  # Remove training '\n'
+        help_text= re.sub('\n', '', help_text)  # remove print_help-format
+                                                # induces \n
         arguments_info[variable_name] = [optional_key, help_text]
 
     return arguments_info
-
-    #        self.name_pairs = dict()
-    #
-    #        # self.name_pairs[''] = '-'
-    #
-    #        # Design
-    #        self.name_pairs['talbot_order'] = '-to'
-    #        self.name_pairs['distance_source2grating'] = '-s2g'
-    #        self.name_pairs['distance_G2_detector'] = '-g2d'
-    #        # Detector
-    #        self.name_pairs['pixel_size'] = '-pxs'
-    #        self.name_pairs['field_of_view'] = '-fov'
-    #        self.name_pairs['material_detector'] = '-md'
-    #        self.name_pairs['thickness_detector'] = '-dd'
-    #        # Source
-    #        self.name_pairs['focal_spot_size'] = '-fs'
-    #        # Spectrum
-    #        self.name_pairs['design_energy'] = '-e'
-    #        self.name_pairs['spectrum_file'] = '-spec'
-    #        self.name_pairs['spectrum_range'] = '-r'
-    #        self.name_pairs['spectrum_step'] = '-sps'
-    #        # Calculations
-    #        self.name_pairs['sampling_rate'] = '-sr'
-
 
 # %% Private utilities
 

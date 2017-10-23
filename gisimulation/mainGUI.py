@@ -53,6 +53,7 @@ logger = logging.getLogger(__name__)
 
 # gisimulation imports
 import kivy_test
+import simulation.parser_def as parser_def
 import simulation.utilities as utilities
 import simulation.check_input as check_input
 
@@ -168,6 +169,12 @@ class LabelHelp(F.Label):
         return super(LabelHelp, self).on_touch_down(touch)
 
 
+class ScrollableLabel(F.ScrollView):
+    """
+    Label is scrolable in y direction. See .kv file for more info.
+    """
+    text = StringProperty('')
+
 # %% Utiliies
 
 
@@ -190,19 +197,21 @@ class _PopupWindow():
         Init function, creates layout and adds functunality.
         """
         # Custom Window with close button
-        popup_window = F.BoxLayout(orientation='vertical')
-        message_label = F.Label(text=str(message),
-                                size_hint=(1, None),
-                                height=LINE_HEIGHT * (message.count('\n')+1))
-        popup_window.add_widget(message_label)
+        popup_content = F.BoxLayout(orientation='vertical',
+                                    spacing=10)
+
+        message_label = F.ScrollableLabel(text=message)
+        popup_content.add_widget(message_label)
         close_popup_button = F.Button(text='OK')
-        popup_window.add_widget(close_popup_button)
+
+        popup_content.add_widget(close_popup_button)
 
         self.popup = F.Popup(title=title,
                              auto_dismiss=False,
-                             content=popup_window,
+                             content=popup_content,
                              size_hint=(None, None),
-                             size=(_scale_popup_window(message)))
+                             size=(550, 300))
+                             #size=(_scale_popup_window(message)))
         # Close help window when button 'OK' is pressed
         close_popup_button.bind(on_press=self.popup.dismiss)
 
@@ -366,6 +375,13 @@ class giGUI(F.BoxLayout):
         # Use full file path to spectrum file
         parameters.spectrum_file = self.spectrum_file_path
         print(parameters.spectrum_file)
+
+        parser_info = parser_def.get_arguments_info(parser_def.input_parser())
+        range_info = parser_info['spectrum_range'][1]
+        range_info = range_info.split()
+        for i in range_info:
+            print(i)
+
         # Check input
 #        try:
 #            logger.info("Checking general input...")
