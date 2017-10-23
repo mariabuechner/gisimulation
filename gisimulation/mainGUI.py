@@ -62,6 +62,7 @@ Window.maximize()  # NOTE: On desktop platforms only
 # %% Constants
 POPUP_WINDOW_SIZE = [550, 70]  # Width: 600 per line, Height: 80 per line
 POPUP_WINDOW_MAX_LETTERS = 80.0  # max 80 letters per line
+LINE_HEIGHT = 35
 
 # %% Custom Widgets
 
@@ -135,9 +136,10 @@ class PopupWindow():
         """
         # Custom Window with close button
         popup_window = F.BoxLayout(orientation='vertical')
-        popup_window.add_widget(F.Label(text=str(message)))#,
-#                                        size_hint=(None, None),
-#                                        size=(_scale_popup_window(message))))
+        message_label = F.Label(text=str(message),
+                                size_hint=(1, None),
+                                height=LINE_HEIGHT * (message.count('\n')+1))
+        popup_window.add_widget(message_label)
         close_popup_button = F.Button(text='OK')
         popup_window.add_widget(close_popup_button)
 
@@ -305,6 +307,7 @@ def _scale_popup_window(message, window_size=None,
     window_size[0] = POPUP_WINDOW_SIZE[0] * nwidth
     return window_size
 
+
 # %% Main GUI
 
 
@@ -326,6 +329,7 @@ class giGUI(F.BoxLayout):
 #        except check_input.InputError as e:
 #            logger.debug("Displaying error...")
 #            ErrorDisplay('Input Error', str(e))
+
 
 # %% Main App
 
