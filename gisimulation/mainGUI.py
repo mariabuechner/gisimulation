@@ -60,7 +60,7 @@ Window.maximize()  # NOTE: On desktop platforms only
 #Window.set_icon('path\to\icon')
 
 # %% Constants
-POPUP_WINDOW_SIZE = [550, 80]  # Width: 600 per line, Height: 80 per line
+POPUP_WINDOW_SIZE = [550, 70]  # Width: 600 per line, Height: 80 per line
 POPUP_WINDOW_MAX_LETTERS = 80.0  # max 80 letters per line
 
 # %% Custom Widgets
@@ -135,7 +135,9 @@ class PopupWindow():
         """
         # Custom Window with close button
         popup_window = F.BoxLayout(orientation='vertical')
-        popup_window.add_widget(F.Label(text=str(message)))
+        popup_window.add_widget(F.Label(text=str(message)))#,
+#                                        size_hint=(None, None),
+#                                        size=(_scale_popup_window(message))))
         close_popup_button = F.Button(text='OK')
         popup_window.add_widget(close_popup_button)
 

@@ -1,7 +1,9 @@
 #:kivy 1.10.0
 #:import np numpy
+#:import parser_def simulation.parser_def
 #:import test kivy_test
 
+#:set parser_info parser_def.get_arguments_info(parser_def.input_parser())
 #:set num_input_size 0.3
 #:set line_height 40
 
@@ -77,19 +79,19 @@
                         BoxLayout:
                             LabelHelp:
                                 text: 'Design Energy [keV]'
-                                help_message: "Design energy of GI [keV]."
+                                help_message: parser_info['design_energy'][1]
                             FloatInput:
                                 id: design_energy
                         BoxLayout:
                             LabelHelp:
                                 text: 'Spectrum file location'
-                                help_message: "Location of spectrum file (.csv).\nFull path or relative path ('./relative_path') from calling script."
+                                help_message: parser_info['spectrum_file'][1]
                             TextInput:
                                 id: spectrum_file
                         BoxLayout:
                             LabelHelp:
                                 text: 'Spectrum range [keV]'
-                                help_message: "Range of energies [keV]: min max.\nIf specturm from file: cut off at >= min and<= max.\nIf just range: from min to <=max in 1 keV steps."
+                                help_message: parser_info['spectrum_range'][1]
                             CheckBox:
                                 id: spectrum_range_set
                         BoxLayout:
@@ -112,7 +114,7 @@
                         BoxLayout:
                             LabelHelp:
                                 text: 'Spectrum step size [keV]'
-                                help_message: "Step size of spectrum range [keV]."
+                                help_message:parser_info['spectrum_step'][1]
                             FloatInput:
                                 id: spectrum_step
                                 text: '1.0'
@@ -130,7 +132,7 @@
                         BoxLayout:
                             LabelHelp:
                                 text: 'Geometry'
-                                help_message: "GI geometry. Choices are\n'sym': symmetrical, 'conv': conventional, 'inv': inverse, 'free': free input."
+                                help_message: parser_info['geometry'][1]
                             Spinner:
                                 id: geometry
                                 text: 'sym'

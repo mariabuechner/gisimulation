@@ -1,22 +1,21 @@
 """
 Module defining the parser for the gi_silmulation, which is called in main.py.
 
-Classes
-=======
+Also contains a dict class, which stores all parser optional arguments and
+the corresponding destination (variable) names.
 
-CustomFormatter:    Combines argparse.ArgumentDefaultsHelpFormatter and
-                    argparse.RawDescriptionHelpFormatter
+Usage
+=====
 
-Functions
-=========
-
-input_parser:       defines and returns parser
+input_parser():     defines and returns parser
                     Parameters:
                         numerical_type [numpy type] for all numerical arguments
 
 @author: buechner_m <maria.buechner@gmail.com>
 """
 import os.path
+import sys
+import re
 import argparse
 import numpy as np
 
@@ -156,11 +155,12 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
     # General input
     parser.add_argument('-bg', dest='beam_geometry', default='parallel',
                         type=str,
-                        choices=['cone', 'parallel'],
+                        choices=['cone', 'parallel'], metavar='BEAM_GEOMETRY',
                         help="Beam geometry.")
     parser.add_argument('-gi', dest='geometry', default='sym',
                         type=str,
                         choices=['sym', 'conv', 'inv', 'free'],
+                        metavar='GEOMETRY',
                         help="GI geometry. Choices are\n"
                         "'sym': symmetrical, 'conv': conventional, "
                         "'inv': inverse, 'free': free input.")
@@ -168,7 +168,7 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
     # G0
     parser.add_argument('-g0', dest='type_g0', default='mix',
                         type=str,
-                        choices=['mix', 'phase', 'abs'],
+                        choices=['mix', 'phase', 'abs'], metavar='TYPE_G0',
                         help="Choose which interaction will be considered "
                         "for G0. Default is 'mix', both phase shift and "
                         "absoprtion.")
@@ -203,7 +203,7 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
     # G1
     parser.add_argument('-g1', dest='type_g1', default='mix',
                         type=str,
-                        choices=['mix', 'phase', 'abs'],
+                        choices=['mix', 'phase', 'abs'], metavar='TYPE_G1',
                         help="Choose which interaction will be considered "
                         "for G1. Default is 'mix', both phase shift and "
                         "absoprtion.")
@@ -239,7 +239,7 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
     # G2
     parser.add_argument('-g2', dest='type_g2', default='mix',
                         type=str,
-                        choices=['mix', 'phase', 'abs'],
+                        choices=['mix', 'phase', 'abs'], metavar='TYPE_G2',
                         help="Choose which interaction will be considered "
                         "for G2. Default is 'mix', both phase shift and "
                         "absoprtion.")
@@ -290,6 +290,7 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         help="Pixel size (square) [um].")
     parser.add_argument('-fov', dest='field_of_view', nargs=2,
                         action=_StoreNpArray,
+                        metavar='FIELD_OF_VIEW',
                         type=np.int,
                         help="Number of pixels: x y.")
     parser.add_argument('-md', dest='material_detector',
@@ -314,18 +315,20 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         help="Design energy of GI [keV].")
     parser.add_argument('-spec', dest='spectrum_file',
                         action=_CheckFile,
+                        metavar='SPECTRUM_FILE',
                         nargs='?', type=str,
                         help="Location of spectrum file (.csv).\n"
                         "Full path or relative path ('./relative_path') "
                         "from calling script.")
     parser.add_argument('-r', dest='spectrum_range',
                         action=_StoreNpArray,
+                        metavar='SPECTRUM_RANGE',
                         nargs=2, type=numerical_type,
                         help=("Range of energies [keV]: min max.\n"
                         "If specturm from file: cut off at >= min and"
                         "<= max.\n"
                         "If just range: from min to <=max in 1 keV steps."))
-    parser.add_argument('-rs', dest='spectrum_step', default=1,
+    parser.add_argument('-sps', dest='spectrum_step', default=1,
                         action=_TruePositiveNumber,
                         type=numerical_type,
                         help="Step size of range [keV].")
@@ -339,3 +342,103 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
 
     # Return
     return parser
+
+
+def get_arguments_info(parser):
+    """
+    Read help message into variable by putting the stdout output from
+    parser.print_help() into a custom sdtout.
+
+    Parameters
+    ##########
+
+    parser [argparse.ArgumentParser]
+
+    Returns
+    #######
+
+    arguments_info [dict]:  arguments_info[variable_name] =
+                                [optional_key, help_message]
+
+    Usage
+    #####
+
+    info = get_arguments_info(parser)
+
+    # for variable_name
+    optional_key = info[variable_name][0]
+    help_message = info[variable_name][1]
+
+
+    """
+    # Reset stdout
+    old_stdout = sys.stdout
+    sys.stdout = parser_help_string = _ListStream()
+    parser.print_help()
+    # Set back to console
+    sys.stdout = old_stdout
+
+    # Get infos
+    complete_help_message = parser_help_string.data[0]
+    help_messages = complete_help_message.split('optional arguments:')[1]
+    help_messages = help_messages.split('-')[7:]
+    arguments_info = dict()
+    for help_message in help_messages:
+        # "optional_key METAVAR(S)       help_message\n"
+        words = re.split(' ', help_message)
+        optional_key = '-' + words[0]
+        variable_name = words[1].lower().rstrip()  # Make lower case and
+                                                   # remove trailing \n
+        # Remove potential [] (for e.g. file types)
+        variable_name = variable_name.replace("[", "")  # Remove potential []
+        variable_name = variable_name.replace("]", "")
+        # For nargs=2, remove second entry
+        if words[1] in words[2]:
+            help_text = filter(None, words[3:])  # Remove ''
+        else:
+            help_text = filter(None, words[2:])  # Remove ''
+        help_text = ' '.join(help_text)
+        help_text = help_text[:-1]  # Remove training '\n'
+        arguments_info[variable_name] = [optional_key, help_text]
+
+    return arguments_info
+
+    #        self.name_pairs = dict()
+    #
+    #        # self.name_pairs[''] = '-'
+    #
+    #        # Design
+    #        self.name_pairs['talbot_order'] = '-to'
+    #        self.name_pairs['distance_source2grating'] = '-s2g'
+    #        self.name_pairs['distance_G2_detector'] = '-g2d'
+    #        # Detector
+    #        self.name_pairs['pixel_size'] = '-pxs'
+    #        self.name_pairs['field_of_view'] = '-fov'
+    #        self.name_pairs['material_detector'] = '-md'
+    #        self.name_pairs['thickness_detector'] = '-dd'
+    #        # Source
+    #        self.name_pairs['focal_spot_size'] = '-fs'
+    #        # Spectrum
+    #        self.name_pairs['design_energy'] = '-e'
+    #        self.name_pairs['spectrum_file'] = '-spec'
+    #        self.name_pairs['spectrum_range'] = '-r'
+    #        self.name_pairs['spectrum_step'] = '-sps'
+    #        # Calculations
+    #        self.name_pairs['sampling_rate'] = '-sr'
+
+
+# %% Private utilities
+
+
+class _ListStream:
+    """
+    Custom stdout to print into list of string.
+    """
+    def __init__(self):
+        self.data = []
+    def write(self, s):
+        self.data.append(s)
+
+
+
+

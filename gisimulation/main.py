@@ -106,7 +106,7 @@ import numpy as np
 import sys
 # gisimulation modules
 import simulation.utilities as utilities
-from simulation.parser_def import input_parser
+import simulation.parser_def as parser_def
 import simulation.check_input as check_input
 # import materials
 # import geometry
@@ -122,7 +122,7 @@ NUMERICAL_TYPE = np.float
 if __name__ == '__main__':
     # Parse from command line
 
-    parser = input_parser(NUMERICAL_TYPE)
+    parser = parser_def.input_parser(NUMERICAL_TYPE)
     args = parser.parse_args()
     parameters = utilities.Struct(**vars(args))
 # =============================================================================
