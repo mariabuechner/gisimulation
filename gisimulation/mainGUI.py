@@ -12,6 +12,8 @@ python maingui.py [Option...]::
 import numpy as np
 import sys
 import re
+from functools import partial
+import os.path
 import logging
 # Set kivy logger console output format
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - '
@@ -60,11 +62,14 @@ Window.maximize()  # NOTE: On desktop platforms only
 #Window.set_icon('path\to\icon')
 
 # %% Constants
-POPUP_WINDOW_SIZE = [550, 70]  # Width: 600 per line, Height: 80 per line
+POPUP_WINDOW_SIZE = [550, 70]  # Width: per line, Height: per line
 POPUP_WINDOW_MAX_LETTERS = 80.0  # max 80 letters per line
 LINE_HEIGHT = 35
 
+
 # %% Custom Widgets
+
+# Inputs
 
 
 class FloatInput(F.TextInput):
@@ -115,8 +120,58 @@ class IntInput(F.TextInput):  # Inherit and just change teyt input???
         s = re.sub(pattern, '', substring)
         return super(IntInput, self).insert_text(s, from_undo=from_undo)
 
+# Load files
 
-class PopupWindow():
+
+class SpectrumDialog(F.FloatLayout):
+    """
+    """
+    load = F.ObjectProperty(None)
+    cancel = F.ObjectProperty(None)
+
+# Error popup
+
+
+class ErrorDisplay():
+    """
+    Popup window in case an exception is caught. Displays type of error and
+    error message.
+    """
+    def __init__(self, error_title, error_message):
+        """
+        Init PopupWindow and open popup.
+        """
+        error_popup = _PopupWindow(error_title, error_message)
+        error_popup.popup.open()
+
+# Help popup
+
+
+class LabelHelp(F.Label):
+    """
+    Label, but upon touch down a help message appears.
+    """
+    help_message = StringProperty()
+
+    def on_touch_down(self, touch):
+        """
+        On touch down a popup window is created, with its title indicating
+        the variable to which the help is referring and its help message.
+
+        """
+        # If mouse clicked on
+        if self.collide_point(touch.x, touch.y):
+            window_title = 'Help: {}'.format(self.text)
+            help_popup = _PopupWindow(window_title, self.help_message)
+            help_popup.popup.open()
+        # To manage input chain corectly
+        return super(LabelHelp, self).on_touch_down(touch)
+
+
+# %% Utiliies
+
+
+class _PopupWindow():
     """
     A popup window containing a label and a button.
     The size of the window is determined by the number of lines and the
@@ -152,27 +207,40 @@ class PopupWindow():
         close_popup_button.bind(on_press=self.popup.dismiss)
 
 
-class LabelHelp(F.Label):
+def _scale_popup_window(message, window_size=None,
+                        max_letters=POPUP_WINDOW_MAX_LETTERS):
     """
-    Label, but upon touch down a help message appears.
+    Scales popup window size based on number of lines and longest line (number
+    of letters.)
+
+    Parameters
+    ##########
+
+    message [str]
+    window_size [horizontal, vertical]:     One line base size.
+                                            Default: POPUP_WINDOW_SIZE
+    max_letters [float]:                    Default: POPUP_WINDOW_MAX_LETTERS
+
+    Returns
+    #######
+
+    window_size [horizontal, vertical]:     Scaled window size
+
     """
-    help_message = StringProperty()
+    # Init window size
+    window_size = [0, 0]
 
-    def on_touch_down(self, touch):
-        """
-        On touch down a popup window is created, with its title indicating
-        the variable to which the help is referring and its help message.
-
-        """
-        # If mouse clicked on
-        if self.collide_point(touch.x, touch.y):
-            window_title = 'Help: {}'.format(self.text)
-            self.help_popup = PopupWindow(window_title, self.help_message)
-            self.help_popup.popup.open()
-        # To manage input chain corectly
-        return super(LabelHelp, self).on_touch_down(touch)
-
-# %% Utiliies
+    # Count lines in help message to set height
+    nlines = message.count('\n')+1
+    # At least 2 lines to display title correctly (at one line it dissapears)
+    if nlines == 1:
+        nlines = 2
+    window_size[1] = POPUP_WINDOW_SIZE[1] * nlines
+    # Count sets of POPUP_WINDOW_MAX_LETTERS letters to set width
+    nletters = float(len(max(message.split('\n'), key=len)))
+    nwidth = int(nletters/POPUP_WINDOW_MAX_LETTERS)+1
+    window_size[0] = POPUP_WINDOW_SIZE[0] * nwidth
+    return window_size
 
 
 def _convert_input(ids):
@@ -241,7 +309,7 @@ def _convert_input(ids):
 # Handle exceptions in popup window
 
 
-class IgnoreExceptions(ExceptionHandler):
+class _IgnoreExceptions(ExceptionHandler):
     """
     Kivy Exception Handler to either display the exception or exit the
     program.
@@ -256,57 +324,7 @@ class IgnoreExceptions(ExceptionHandler):
         return ExceptionManager.PASS
 
 
-ExceptionManager.add_handler(IgnoreExceptions())
-
-
-class ErrorDisplay():
-    """
-    Popup window in case an exception is caught. Displays type of error and
-    error message.
-    """
-    def __init__(self, error_title, error_message):
-        """
-        Init PopupWindow and open popup.
-        """
-        error_popup = PopupWindow(error_title, error_message)
-        error_popup.popup.open()
-
-
-def _scale_popup_window(message, window_size=None,
-                        max_letters=POPUP_WINDOW_MAX_LETTERS):
-    """
-    Scales popup window size based on number of lines and longest line (number
-    of letters.)
-
-    Parameters
-    ##########
-
-    message [str]
-    window_size [horizontal, vertical]:     One line base size.
-                                            Default: POPUP_WINDOW_SIZE
-    max_letters [float]:                    Default: POPUP_WINDOW_MAX_LETTERS
-
-    Returns
-    #######
-
-    window_size [horizontal, vertical]:     Scaled window size
-
-    """
-    # Init window size
-    window_size = [0, 0]
-
-    # Count lines in help message to set height
-    nlines = message.count('\n')+1
-    # At least 2 lines to display title correctly (at one line it dissapears)
-    if nlines == 1:
-        nlines = 2
-    window_size[1] = POPUP_WINDOW_SIZE[1] * nlines
-    # Count sets of POPUP_WINDOW_MAX_LETTERS letters to set width
-    nletters = float(len(max(message.split('\n'), key=len)))
-    nwidth = int(nletters/POPUP_WINDOW_MAX_LETTERS)+1
-    window_size[0] = POPUP_WINDOW_SIZE[0] * nwidth
-    return window_size
-
+ExceptionManager.add_handler(_IgnoreExceptions())
 
 # %% Main GUI
 
@@ -315,7 +333,32 @@ class giGUI(F.BoxLayout):
     """
     Main Widget, BoxLayout
     """
+    # File loading and saving
+    # Based on "https://kivy.org/docs/api-kivy.uix.filechooser.html"
+    # (23.10.2017)
+    spectrum_file_path = F.StringProperty()
+    spectrum_file_loaded = F.BooleanProperty(defaultvalue=False)
+
+    def dismiss_popup(self):
+        self._popup.dismiss()
+
+    def show_spectrum_load(self):
+        content = SpectrumDialog(load=self.spectrum_load,
+                                 cancel=self.dismiss_popup)
+        self._popup = F.Popup(title="Load spectrum", content=content,
+                              size_hint=(0.9, 0.9))
+        self._popup.open()
+
+    def spectrum_load(self, path, filename):
+        self.spectrum_file_path = os.path.join(path, filename[0])
+        logger.debug("Spectrum filepath is: {}"
+                     .format(self.spectrum_file_path))
+        self.spectrum_file_loaded = True
+        self.dismiss_popup()
+
+
     # Functions callable in .kv file
+
 
     def check_general_input(self):
         # Convert input

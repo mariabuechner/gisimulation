@@ -1,5 +1,6 @@
 #:kivy 1.10.0
 #:import np numpy
+#:import ntpath ntpath
 #:import parser_def simulation.parser_def
 #:import test kivy_test
 
@@ -47,6 +48,26 @@
 
 # Set rules for custom classes
 
+<SpectrumDialog>:
+    BoxLayout:
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+        FileChooserListView:
+            path: "./"
+            id: spectrum_filechooser
+
+        BoxLayout:
+            size_hint_y: None
+            height: 30
+            Button:
+                text: "Cancel"
+                on_release: root.cancel()
+
+            Button:
+                text: "Load"
+                on_release: root.load(spectrum_filechooser.path, spectrum_filechooser.selection)
+
 
 # gi GUI
 <giGUI>:
@@ -84,9 +105,15 @@
                                 id: design_energy
                         BoxLayout:
                             LabelHelp:
-                                text: 'Spectrum file location'
+                                size_hint_x: 0.4
+                                text: 'Choose spectrum file'
                                 help_message: parser_info['spectrum_file'][1]
+                            Button:
+                                size_hint_x: 0.1
+                                text: 'Load'
+                                on_press: root.show_spectrum_load()
                             TextInput:
+                                text: ntpath.basename(root.spectrum_file_path)
                                 id: spectrum_file
                         BoxLayout:
                             LabelHelp:
@@ -118,8 +145,7 @@
                             FloatInput:
                                 id: spectrum_step
                                 text: '1.0'
-                                disabled: not spectrum_range_set.active
-                                          # And not a spcetum file loaded!!!
+                                disabled: not spectrum_range_set.active or root.spectrum_file_loaded
 
 
                 # GI input
