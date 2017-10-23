@@ -363,7 +363,9 @@ class giGUI(F.BoxLayout):
     def check_general_input(self):
         # Convert input
         parameters = _convert_input(self.ids)
-        print(parameters.spectrum_range)
+        # Use full file path to spectrum file
+        parameters.spectrum_file = self.spectrum_file_path
+        print(parameters.spectrum_file)
         # Check input
 #        try:
 #            logger.info("Checking general input...")
