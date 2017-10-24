@@ -332,9 +332,10 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         metavar='SPECTRUM_RANGE',
                         nargs=2, type=numerical_type,
                         help=("Range of energies [keV]: min max.\n"
-                        "If specturm from file: cut off at >= min and"
-                        "<= max.\n"
-                        "If just range: from min to <=max in 1 keV steps."))
+                              "If specturm from file: cut off at >= min and"
+                              "<= max.\n"
+                              "If just range: from min to <=max in 1 keV "
+                              "steps."))
     parser.add_argument('-sps', dest='spectrum_step', default=1,
                         action=_TruePositiveNumber,
                         type=numerical_type,

@@ -37,24 +37,30 @@ def check_parser(parameters):
     """
     checking all input (parser)
 
-    Parameters:
+    Parameters
+    ##########
+
+    parameters [dict]
     """
     logger.info("Checking general input...")
     # % Minimal required inpuf for all scenarios
-    general_input(parameters)
+    parameters = general_input(parameters)
     logger.info("... done.")
 
     # % Scenario specific requirements
     # General and connected parameters
 
-    return True
+    return parameters
 
 
 def general_input(parameters):
     """
     checking general input (GI, Geom, etc.)
 
-    Parameters:
+    Parameters
+    ##########
+
+    parameters [dict]
     """
     try:
         # % Minimal required inpuf for all scenarios
@@ -68,19 +74,21 @@ def general_input(parameters):
 
         # Spectrum:
         # Get spectrum
-        [parameters.spectrum, min_energy, max_energy] = \
-            _get_spectrum(parameters.spectrum_file, parameters.spectrum_range,
-                          parameters.spectrum_step, parameters.design_energy)
+        [parameters['spectrum'], min_energy, max_energy] = \
+            _get_spectrum(parameters['spectrum_file'],
+                          parameters['spectrum_range'],
+                          parameters['spectrum_step'],
+                          parameters['design_energy'])
 
         # Calculations:
-        if parameters.sampling_rate == 0:
+        if parameters['sampling_rate'] == 0:
             try:
                 logger.debug("Sampling rate is 0, set to pixel size * 1e-3.")
                 # Default to pixel_size *1e-3
-                parameters.sampling_rate = parameters.pixel_size * 1e-3
+                parameters['sampling_rate'] = parameters['pixel_size'] * 1e-3
                 logger.debug("Sampling rate is {0} um, with pixel size {1} "
-                             "um..".format(parameters.sampling_rate,
-                                           parameters.pixel_size))
+                             "um..".format(parameters['sampling_rate'],
+                                           parameters['pixel_size']))
             except TypeError:
                 error_message = "Input arguments missing: 'pixel_size' " \
                                 "('-pxs')."
@@ -88,17 +96,16 @@ def general_input(parameters):
                 raise InputError(error_message)
 
 #        # General input
-#        if parameters.geometry == 'free':
+#        if parameters['geometry'] == 'free':
 #            # =================================================================
 #            # Requirements:
 #            #     at least 1 grating
 #            # =================================================================
 #            pass
 
-        return True
+        return parameters
 
-    except AttributeError as e:  # For paramters.value and value not existing
-                                 # NECESSARY??? (in the end?)
+    except AttributeError as e:
         error_message = "Input arguments missing: {}." \
                         .format(str(e).split()[-1])
         logger.error(error_message)

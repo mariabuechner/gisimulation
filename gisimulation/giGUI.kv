@@ -48,26 +48,6 @@
 
 # Set rules for custom classes
 
-<SpectrumDialog>:
-    BoxLayout:
-        size: root.size
-        pos: root.pos
-        orientation: "vertical"
-        FileChooserListView:
-            path: "./data/spectra/"
-            id: spectrum_filechooser
-
-        BoxLayout:
-            size_hint_y: None
-            height: 30
-            Button:
-                text: "Cancel"
-                on_release: root.cancel()
-
-            Button:
-                text: "Load"
-                on_release: root.load(spectrum_filechooser.path, spectrum_filechooser.selection)
-
 <ScrollableLabel>:
     Label:
         size_hint_y: None
@@ -124,7 +104,6 @@
                                 on_press: root.spectrum_file_path = ''
                             TextInput:
                                 text: ntpath.basename(root.spectrum_file_path)
-                                id: spectrum_file
                         BoxLayout:
                             LabelHelp:
                                 text: 'Spectrum range [keV]'

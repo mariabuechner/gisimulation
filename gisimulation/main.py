@@ -124,7 +124,8 @@ if __name__ == '__main__':
 
     parser = parser_def.input_parser(NUMERICAL_TYPE)
     args = parser.parse_args()
-    parameters = utilities.Struct(**vars(args))
+    parameters = vars(args)
+#    parameters = utilities.Struct(**vars(args))
 # =============================================================================
 # LEAVE OUT FOR NOW, TRY TO CHECK INPUT WITH NONETYPES
 #     args = parser.parse_args()  # returns namespace
@@ -141,7 +142,7 @@ if __name__ == '__main__':
     # Config logger output
 
     # Get verbose level of logger
-    logger_level = utilities.get_logger_level(parameters.verbose)
+    logger_level = utilities.get_logger_level(parameters['verbose'])
     # Set logger config
     logging.basicConfig(level=logger_level, format='%(asctime)s - %(name)s '
                         '- %(levelname)s - '
@@ -150,7 +151,7 @@ if __name__ == '__main__':
     # Check input
     logger.debug("Checking parsed arguments...")
     try:
-        check_input.check_parser(parameters)
+        parameters = check_input.check_parser(parameters)
     except check_input.InputError:
         logger.info("Command line error, exiting...")
         sys.exit(2)  # 2: command line syntax errors

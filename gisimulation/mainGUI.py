@@ -9,6 +9,7 @@ python maingui.py [Option...]::
 
 @author: buechner_m  <maria.buechner@gmail.com>
 """
+DEBUGGING = True
 import numpy as np
 import sys
 import re
@@ -25,23 +26,16 @@ sys._kivy_logging_handler = console
 import kivy
 # Check kivy version
 kivy.require('1.10.0')
-from kivy.base import ExceptionHandler
-from kivy.base import ExceptionManager
+from kivy.base import ExceptionHandler, ExceptionManager
 from kivy.logger import Logger
 from kivy.app import App
+from kivy.garden.filebrowser import FileBrowser
+from kivy.utils import platform
 from kivy.core.window import Window
 # Properties
 from kivy.properties import StringProperty
 # UIX
 from kivy.factory import Factory as F
-
-# Parser
-import argparse
-parser = argparse.ArgumentParser(description="Set verbose level for debugger.")
-parser.add_argument('-v', '--verbose', action='count',
-                        help="Increase verbosity level. 'v': error, "
-                        "'vv': warning,"
-                        "'vvv': info (None=default), 'vvvv': debug")
 
 # Logging
 # Set logger before importing simulation modules (to set format for all)
@@ -63,10 +57,6 @@ Window.maximize()  # NOTE: On desktop platforms only
 #Window.set_icon('path\to\icon')
 
 # %% Constants
-POPUP_WINDOW_SIZE = [550, 70]  # Width: per line, Height: per line
-POPUP_WINDOW_MAX_LETTERS = 80.0  # max 80 letters per line
-LINE_HEIGHT = 35
-
 
 # %% Custom Widgets
 
@@ -121,14 +111,6 @@ class IntInput(F.TextInput):  # Inherit and just change teyt input???
         s = re.sub(pattern, '', substring)
         return super(IntInput, self).insert_text(s, from_undo=from_undo)
 
-# Load files
-
-
-class SpectrumDialog(F.FloatLayout):
-    """
-    """
-    load = F.ObjectProperty(None)
-    cancel = F.ObjectProperty(None)
 
 # Error popup
 
@@ -216,63 +198,27 @@ class _PopupWindow():
         close_popup_button.bind(on_press=self.popup.dismiss)
 
 
-def _scale_popup_window(message, window_size=None,
-                        max_letters=POPUP_WINDOW_MAX_LETTERS):
-    """
-    Scales popup window size based on number of lines and longest line (number
-    of letters.)
-
-    Parameters
-    ##########
-
-    message [str]
-    window_size [horizontal, vertical]:     One line base size.
-                                            Default: POPUP_WINDOW_SIZE
-    max_letters [float]:                    Default: POPUP_WINDOW_MAX_LETTERS
-
-    Returns
-    #######
-
-    window_size [horizontal, vertical]:     Scaled window size
-
-    """
-    # Init window size
-    window_size = [0, 0]
-
-    # Count lines in help message to set height
-    nlines = message.count('\n')+1
-    # At least 2 lines to display title correctly (at one line it dissapears)
-    if nlines == 1:
-        nlines = 2
-    window_size[1] = POPUP_WINDOW_SIZE[1] * nlines
-    # Count sets of POPUP_WINDOW_MAX_LETTERS letters to set width
-    nletters = float(len(max(message.split('\n'), key=len)))
-    nwidth = int(nletters/POPUP_WINDOW_MAX_LETTERS)+1
-    window_size[0] = POPUP_WINDOW_SIZE[0] * nwidth
-    return window_size
-
-
-def _convert_input(ids):
+def _collect_input(parameters, ids):
     """
     Converts self.ids from widget to dict and then to struct.
 
     Parameters
     ##########
 
+    parameters [dict]:      dict of already existing parameters
     ids [widget.ids]
 
     Returns
     #######
 
-    parameters [Struct]
+    parameters [dict]
 
     Notes
     #####
 
-    If input is empty, stores None.
+    If input is empty, stores None. Input parameters will be overwritten.
 
     """
-    parameters = dict()
     logger.debug("Converting all label inputs...")
     for key, value in ids.iteritems():
 #        logger.debug("Key is: {0}.\nValue is: {1}.".format(key, value))
@@ -286,8 +232,6 @@ def _convert_input(ids):
             parameters[key] = int(value.text)
         elif 'TextInput' in str(value):
             parameters[key] = value.text
-    # Convert dict to struct
-    logger.debug("... done.")
 
     # Handel double numeric inputs
     # Spectrum range
@@ -312,7 +256,8 @@ def _convert_input(ids):
 #    del parameters['field_of_view_x']
 #    del parameters['field_of_view_y']
 
-    parameters = utilities.Struct(**parameters)
+#    parameters = utilities.Struct(**parameters)  # PAST: converted to dict
+    logger.debug("... done.")
     return parameters
 
 # Handle exceptions in popup window
@@ -333,7 +278,8 @@ class _IgnoreExceptions(ExceptionHandler):
         return ExceptionManager.PASS
 
 
-ExceptionManager.add_handler(_IgnoreExceptions())
+if not DEBUGGING:
+    ExceptionManager.add_handler(_IgnoreExceptions())
 
 # %% Main GUI
 
@@ -349,6 +295,7 @@ class giGUI(F.BoxLayout):
     Based on "https://kivy.org/docs/api-kivy.uix.filechooser.html"
     (23.10.2017)
     """
+    parameters = F.DictProperty()
     spectrum_file_path = F.StringProperty()
     spectrum_file_loaded = F.BooleanProperty(defaultvalue=False)
 
@@ -359,8 +306,10 @@ class giGUI(F.BoxLayout):
         """
         if value:
             self.spectrum_file_loaded = True
+            self.parameters['spectrum_file'] = self.spectrum_file_path
         else:
             self.spectrum_file_loaded = False
+            self.parameters['spectrum_file'] = None
 
     # Loading and saving files
 
@@ -368,17 +317,33 @@ class giGUI(F.BoxLayout):
         self._popup.dismiss()
 
     def show_spectrum_load(self):
-        content = SpectrumDialog(load=self.spectrum_load,
-                                 cancel=self.dismiss_popup)
-        self._popup = F.Popup(title="Load spectrum", content=content,
+        """
+        Upon call, open popup with file browser to load spectrum_file_path
+        """
+        # Define browser
+        spectra_path = os.path.join(os.path.dirname(os.path.
+                                                    realpath(__file__)),
+                                    'data', 'spectra')
+        logger.debug("Start path is {}".format(spectra_path))
+        browser = FileBrowser(select_string='Select',
+                              path=spectra_path,  # Folder to open at start
+                              filters=['*.csv','*.txt'])
+        browser.bind(on_success=self._spectra_fbrowser_success,
+                     on_canceled=self._fbrowser_canceled)
+
+        # Add to popup
+        self._popup = F.Popup(title="Load spectrum", content=browser,
                               size_hint=(0.9, 0.9))
         self._popup.open()
 
-    def spectrum_load(self, path, filename):
-        self.spectrum_file_path = os.path.join(path, filename[0])
-        logger.debug("Spectrum filepath is: {}"
-                     .format(self.spectrum_file_path))
-#        self.spectrum_file_loaded = True
+    def _fbrowser_canceled(self, instance):
+        logger.debug('FileBrowser canceled, closing itself.')
+        self.dismiss_popup()
+
+    def _spectra_fbrowser_success(self, instance):
+        logger.debug("type of selection is {}".format(instance.selection[0]))
+        self.spectrum_file_path = instance.selection[0]
+        logger.debug("Spectrum filepath is: {}".format(self.spectrum_file_path))
         self.dismiss_popup()
 
 
@@ -387,25 +352,10 @@ class giGUI(F.BoxLayout):
 
     def check_general_input(self):
         # Convert input
-        parameters = _convert_input(self.ids)
-        # Use full file path to spectrum file
-        parameters.spectrum_file = self.spectrum_file_path
-        print(parameters.spectrum_file)
+        self.parameters = _collect_input(self.parameters, self.ids)
+        print(self.parameters)
 
-        parser_info = parser_def.get_arguments_info(parser_def.input_parser())
-        range_info = parser_info['spectrum_range'][1]
-        range_info = range_info.split()
-        for i in range_info:
-            print(i)
 
-        # Check input
-#        try:
-#            logger.info("Checking general input...")
-#            check_input.general_input(parameters)
-#            logger.info("... done.")
-#        except check_input.InputError as e:
-#            logger.debug("Displaying error...")
-#            ErrorDisplay('Input Error', str(e))
 
 
 # %% Main App
@@ -423,8 +373,4 @@ class giGUIApp(App):
 if __name__ == '__main__':
     giGUIApp().run()
 
-    # If necessary
-#    try:
-#        giGUIApp().run()
-#    except CriticalError as e:
-#        close_gracefully()
+
