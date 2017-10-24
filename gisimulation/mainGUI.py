@@ -32,6 +32,12 @@ from kivy.app import App
 from kivy.garden.filebrowser import FileBrowser
 from kivy.utils import platform
 from kivy.core.window import Window
+# ActionBar
+from kivy.base import runTouchApp
+#from kivy.uix.actionbar import ActionBar
+#from kivy.uix.actionbar import ActionView
+#from kivy.uix.actionbar import ActionButton
+#from kivy.uix.actionbar import ActionPrevious
 # Properties
 from kivy.properties import StringProperty
 # UIX
@@ -355,6 +361,47 @@ class giGUI(F.BoxLayout):
         self.parameters = _collect_input(self.parameters, self.ids)
         print(self.parameters)
 
+    def calc_boxlayout_height(self, childen_height, boxlayout):
+        """
+        Calculates the height of a boxlayout, in case it is only filled with
+        childen of height = children_height.
+
+        Parameters
+        ##########
+
+        childen_height [pxls]
+        boxlayout [BoxLayout]
+
+        Returns
+        #######
+
+        boxlayout_height [pxls]
+
+        """
+        boxlayout_height = (childen_height + boxlayout.spacing \
+                            + boxlayout.padding[1] + boxlayout.padding[3]) \
+                            * len(boxlayout.children)
+        return boxlayout_height
+
+    def calc_widget_height(self, widget):
+        """
+        Calculates the height of a widget based on its children heights.
+
+        Parameters
+        ##########
+
+        widget [Layout]
+
+        Returns
+        #######
+
+        height [pxls]
+
+        """
+        height = 0
+        for child in widget.children:
+            height = height + child.height
+        return height
 
 
 
@@ -372,5 +419,3 @@ class giGUIApp(App):
 
 if __name__ == '__main__':
     giGUIApp().run()
-
-

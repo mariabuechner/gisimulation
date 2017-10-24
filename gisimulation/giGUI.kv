@@ -7,14 +7,19 @@
 #:set parser_info parser_def.get_arguments_info(parser_def.input_parser())
 #:set num_input_size 0.3
 #:set line_height 40
+#:set dark_grey np.divide([88, 88, 88, 50],[255., 255., 255., 100.])
 
 # All labels
 <Label>:
+    text_size: self.size
+    halign: 'center'
+    valign: 'center'
+    max_lines: 1
     size_hint_y: None
     height: line_height
     canvas.before:
         Color:
-            rgba: np.divide([88, 88, 88, 50],[255., 255., 255., 100.])
+            rgba: dark_grey
         Rectangle:
             pos: self.pos
             size: self.size
@@ -33,7 +38,7 @@
     width: line_height
     canvas.before:
         Color:
-            rgba: np.divide([88, 88, 88, 50],[255., 255., 255., 100.])
+            rgba: dark_grey
         Rectangle:
             pos: self.pos
             size: self.size
@@ -41,10 +46,11 @@
 
 # All BoxLayouts
 <BoxLayout>:
-    spacing: 1
-    padding: 1
+    padding: (1, 1, 0, 0 )
 
-
+# All StaackLayouts
+<StackLayout>:
+    padding: (1, 1, 0, 0 )
 
 # Set rules for custom classes
 
@@ -70,19 +76,141 @@
         # Content of 'general input window'
         BoxLayout:
             orientation: 'vertical'
+
+            # ActionBar on top  # Kivy's action not working with app.run()
+            StackLayout:
+                orientation: 'lr-tb'
+                Button:
+                    size_hint_x: None
+                    width: 100
+                    text: 'File'
+                    on_press: input_dropdown.open(self)
+                DropDown:
+                    id: input_dropdown
+                    on_select: self.dismiss()
+                    Button:
+                        text: 'First Item'
+                    Label:
+                        text: 'Second Item'
+                    Button:
+                        text: 'Third Item'
+
+
             # Name of window
             Label:
-                text: 'General parameters'
+                text: 'General Parameters'
+                bold: True
 
+            # General input
             GridLayout:
-                cols: 2
-                # General input
-                BoxLayout:
-                    orientation: 'vertical'
+                cols: 3
+                StackLayout:
                     Label:
-                        text: 'General Input'
+                        text: 'Spectrum'
+                        bold: True
                     BoxLayout:
                         orientation: 'vertical'
+                        size_hint_y: None
+                        height: root.calc_boxlayout_height(line_height, self)
+                        BoxLayout:
+                            LabelHelp:
+                                text: 'Design Energy [keV]'
+                                help_message: parser_info['design_energy'][1]
+                            FloatInput:
+                                id: design_energy
+                        BoxLayout:
+                            LabelHelp:
+                                size_hint_x: 0.4
+                                text: 'Choose spectrum file'
+                                help_message: "Location of spectrum file (.csv).\nFile format:\nenergy,photons\ne1,p1\ne2,p2\n.,.\n.,.\n.,."
+                            Button:
+                                size_hint_x: 0.1
+                                text: 'Load'
+                                on_press: root.show_spectrum_load()
+                            Button:
+                                size_hint_x: 0.15
+                                text: 'Remove'
+                                on_press: root.spectrum_file_path = ''
+                            TextInput:
+                                text: ntpath.basename(root.spectrum_file_path)
+                        BoxLayout:
+                            LabelHelp:
+                                text: 'Spectrum range [keV]'
+                                help_message: parser_info['spectrum_range'][1]
+                            CheckBox:
+                                id: spectrum_range_set
+                        BoxLayout:
+                            BoxLayout:
+                                size_hint_x: 0.5
+                                Label:
+                                    text: 'Min'
+                                FloatInput:
+                                    id: spectrum_range_min
+                                    size_hint_x: 1
+                                    disabled: not spectrum_range_set.active
+                            BoxLayout:
+                                size_hint_x: 0.5
+                                Label:
+                                    text: 'Max'
+                                FloatInput:
+                                    id: spectrum_range_max
+                                    size_hint_x: 1
+                                    disabled: not spectrum_range_set.active
+                        BoxLayout:
+                            LabelHelp:
+                                text: 'Spectrum step size [keV]'
+                                help_message:parser_info['spectrum_step'][1]
+                            FloatInput:
+                                id: spectrum_step
+                                text: '1.0'
+                                disabled: not spectrum_range_set.active or root.spectrum_file_loaded
+
+                # GI input
+                StackLayout:
+                    Label:
+                        text: 'GI Input'
+                        bold: True
+                    BoxLayout:
+                        orientation: 'vertical'
+                        size_hint_y: None
+                        height: root.calc_boxlayout_height(line_height, self)
+                        BoxLayout:
+                            LabelHelp:
+                                text: 'Geometry'
+                                help_message: parser_info['geometry'][1]
+                            Spinner:
+                                id: geometry
+                                text: 'sym'
+                                values: ['sym', 'conv', 'inv', 'free']
+
+
+                StackLayout:
+                    Label:
+                        text: '3. block'
+                    BoxLayout:
+                        orientation: 'vertical'
+                        size_hint_y: None
+                        height: root.calc_boxlayout_height(line_height, self)
+                        Button:
+                        Button:
+                        Button:
+
+
+            # Grating input
+            GridLayout:
+                cols: 3
+                StackLayout:
+                    BoxLayout:
+                        Label:
+                            text: 'G0'
+                            bold: True
+                        CheckBox:
+                            id: g0_set
+                    BoxLayout:
+                        orientation: 'vertical'
+                        size_hint_y: None
+                        height: root.calc_boxlayout_height(line_height, self)
+                        disabled: not g0_set.active
                         BoxLayout:
                             LabelHelp:
                                 text: 'Design Energy [keV]'
@@ -138,12 +266,18 @@
 
 
                 # GI input
-                BoxLayout:
-                    orientation: 'vertical'
-                    Label:
-                        text: 'GI Input'
+                StackLayout:
+                    BoxLayout:
+                        Label:
+                            text: 'G1'
+                            bold: True
+                        CheckBox:
+                            id: g1_set
                     BoxLayout:
                         orientation: 'vertical'
+                        size_hint_y: None
+                        height: root.calc_boxlayout_height(line_height, self)
+                        disabled: not g1_set.active
                         BoxLayout:
                             LabelHelp:
                                 text: 'Geometry'
@@ -153,16 +287,30 @@
                                 text: 'sym'
                                 values: ['sym', 'conv', 'inv', 'free']
 
-                BoxLayout:
-                    orientation: 'vertical'
-                    Label:
-                        text: '3. block'
+
+                StackLayout:
+                    BoxLayout:
+                        Label:
+                            text: 'G2'
+                            bold: True
+                        CheckBox:
+                            id: g2_set
                     BoxLayout:
                         orientation: 'vertical'
+                        size_hint_y: None
+                        height: root.calc_boxlayout_height(line_height, self)
+                        disabled: not g2_set.active
                         Button:
                         Button:
                         Button:
 
+            Widget:
+            Widget:
+            Widget:
+
+            Button:
+                text: 'Check input'
+                on_press: root.check_general_input()
 
 
 
