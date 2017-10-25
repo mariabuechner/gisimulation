@@ -14,25 +14,27 @@ Module to run grating interferometer simulation and metrics calculation
         beam_geometry [string]:         'cone' (default), 'parallel'
         geometry [string]:              'sym' (default), 'conv', 'inv', 'free'
         @file.txt                       parse from txt file.
-                                        Can use multiple files. Arguments can
+                                        Can use multiple files, in case of
+                                        double entries, the last file
+                                        overwrites the previous one(s).
                                         be overwritten afterwards in command
                                         line.
                                         File layout:
-                                            ArgName1
-                                            ArgValue1
-                                            ArgName2
-                                            ArgValue2
+                                        ArgName1
+                                        ArgValue1
+                                        ArgName2
+                                        ArgValue2
                                             .
                                             .
                                             .
                                         Example:
-                                            -sr
-                                            100
-                                            -p0
-                                            2.4
-                                            .
-                                            .
-                                            .
+                                        -sr
+                                        100
+                                        -p0
+                                        2.4
+                                         .
+                                         .
+                                         .
 
     Grating interferometer:
         G0:

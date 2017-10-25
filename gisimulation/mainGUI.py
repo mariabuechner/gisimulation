@@ -32,12 +32,6 @@ from kivy.app import App
 from kivy.garden.filebrowser import FileBrowser
 from kivy.utils import platform
 from kivy.core.window import Window
-# ActionBar
-from kivy.base import runTouchApp
-from kivy.uix.actionbar import ActionBar
-from kivy.uix.actionbar import ActionView
-from kivy.uix.actionbar import ActionButton
-from kivy.uix.actionbar import ActionPrevious
 # Properties
 from kivy.properties import StringProperty
 # UIX
@@ -71,14 +65,25 @@ Window.maximize()  # NOTE: On desktop platforms only
 
 class MenuSpinnerButton(F.Button):
     """
+    Custom button for MenuSpinner, defined in .kv.
     """
     pass
 
 class MenuSpinner(F.Spinner):
     """
+    Custom Spinner, uses MenuSpinnerButton.
     """
     option_cls = F.ObjectProperty(MenuSpinnerButton)
 
+
+# FileBrowser: does not work with golbally modified Label, use custom label
+# for everything else
+class NonFileBrowserLabel(F.Label):
+    """
+    Custom Label to avoid conflivt with FileBrowser and allow global changes,
+    defined in .kv.
+    """
+    pass
 
 # Inputs
 
@@ -150,7 +155,7 @@ class ErrorDisplay():
 # Help popup
 
 
-class LabelHelp(F.Label):
+class LabelHelp(NonFileBrowserLabel):
     """
     Label, but upon touch down a help message appears.
     """
@@ -209,14 +214,43 @@ class _PopupWindow():
         popup_content.add_widget(close_popup_button)
 
         self.popup = F.Popup(title=title,
+                             title_size=20,
                              auto_dismiss=False,
                              content=popup_content,
                              size_hint=(None, None),
-                             size=(550, 300))
+                             size=(600, 450))
                              #size=(_scale_popup_window(message)))
         # Close help window when button 'OK' is pressed
         close_popup_button.bind(on_press=self.popup.dismiss)
 
+def _load_input_file(input_file_path):
+    """
+    Load (private, check path, check content)
+    """
+    input_parameters = dict()
+    # Read lines from file
+    with open(input_file_path) as f:
+        input_lines = f.readlines()
+    input_lines = [line.strip() for line in input_lines]  # Strip spaces and \n
+
+    # Find all keys
+    key_indices = [i for i, str_ in enumerate(input_lines) if '-' in str_]
+    # go from key-entry+1 to next-key-entry-1 to get all values in between
+    key_indices.append(len(input_lines))  # Add last entry
+    for number_key_index, key_index in enumerate(key_indices[:-1]):
+        key = input_lines[key_index]
+        value = input_lines[key_index+1:key_indices[number_key_index+1]]
+        input_parameters[key] = value
+    return input_parameters
+
+
+def _save_input_file(input_file_path, parameters):
+    """
+    """
+#    for var_key, value in key_parameters.iteritem():
+#        print key in line
+#        print value in next line
+    pass
 
 def _collect_input(parameters, ids):
     """
@@ -240,18 +274,21 @@ def _collect_input(parameters, ids):
 
     """
     logger.debug("Converting all label inputs...")
-    for key, value in ids.iteritems():
-#        logger.debug("Key is: {0}.\nValue is: {1}.".format(key, value))
+    for var_name, value in ids.iteritems():
+        logger.debug("Key is: {0}.\nValue is: {1}.".format(var_name, value))
         if 'CheckBox' in str(value):
             continue
         elif value.text == '':
-                parameters[key] = None
+                parameters[var_name] = None
         elif 'FloatInput' in str(value):
-            parameters[key] = float(value.text)
+            parameters[var_name] = float(value.text)
         elif 'IntInput' in str(value):
-            parameters[key] = int(value.text)
+            parameters[var_name] = int(value.text)
         elif 'TextInput' in str(value):
-            parameters[key] = value.text
+            parameters[var_name] = value.text
+        elif 'Spinner' in str(value):
+            parameters[var_name] = value.text
+        logger.debug("value.text is: {0}".format(value.text))
 
     # Handel double numeric inputs
     # Spectrum range
@@ -316,17 +353,39 @@ class giGUI(F.BoxLayout):
     (23.10.2017)
     """
     # Global variables (must be kivy properties)
-    parameters = F.DictProperty()
+    parameters = F.DictProperty()  # Will be params[var_name] = value
+    parser_info = F.DictProperty()  # Will be params[var_name]
+                                                  # = [var_key, var_help]
+    parser_link = F.DictProperty()  # Will be params[var_key] = var_name
+#    parameters = dict()  # Will be params[var_name] = value
+
     spectrum_file_path = F.StringProperty()
     spectrum_file_loaded = F.BooleanProperty(defaultvalue=False)
+    load_input_file_paths = F.ListProperty()
 
+
+    def __init__(self, **kwargs):
+        super(giGUI, self).__init__(**kwargs)
+        # parser_info[var_name] = [var_key, var_help]
+        self.parser_info = \
+            parser_def.get_arguments_info(parser_def.input_parser())
+        for var_name, value in self.parser_info.iteritems():
+            self.parser_link[value[0]] = var_name
+        # Init self.parameters
+        self.parameters = _collect_input(self.parameters, self.ids)
+
+    # General simulation functions
+
+    def check_general_input(self):
+        # Convert input
+        self.parameters = _collect_input(self.parameters, self.ids)
+        logger.debug(self.parameters['design_energy'])
 
     # Manage global variables and widget behavior
 
     def on_spectrum_file_path(self, instance, value):
         """
-        Option: if parameters global, set spectrum_file here
-        ALSO: consider dict for parameters...
+        When spectrum_file_oath changes, set parameters and check load status.
         """
         if value:
             self.spectrum_file_loaded = True
@@ -334,6 +393,51 @@ class giGUI(F.BoxLayout):
         else:
             self.spectrum_file_loaded = False
             self.parameters['spectrum_file'] = None
+
+    def on_load_input_file_paths(self, instance, value):
+        """
+        Notes
+        #####
+
+        input_parameters [dict]:    input_parameters[var_key] = str(value)
+        self.parameters [dict]:     widget_parameters[var_name] = value
+        self.parser_link [dict]:    parser_link[var_key] = var_name
+
+        """
+        # Do for all files in load_input_file_paths and merge results.
+        # Later fiels overwrite first files.
+        for input_file in value:
+            logger.debug("Loading input from file at: {0}".format(input_file))
+            input_parameters = _load_input_file(input_file)
+        # Set widget content
+        for var_key, value_str in input_parameters.iteritems():
+            logger.debug("var_key is {0}".format(var_key))
+            logger.debug("value_str is {0}".format(value_str))
+            if var_key not in self.parser_link:
+                # Input key not implemented in parser
+                logger.warning("Key '{0}' read from input file, but not "
+                               "defined in parser.".format(var_key))
+                continue
+            var_name = self.parser_link[var_key]
+            logger.debug("var_name is {0}".format(var_name))
+            if var_name not in self.parameters:
+                # Input key not implemented in GUI
+                logger.warning("Key '{0}' with name '{1}' read from input file, "
+                               "but not defined in App.".format(var_key, var_name))
+                continue
+            # Set input values to ids.texts
+            if var_name == 'spectrum_range':
+                self.ids['spectrum_range_min'].text = value_str[0]
+                self.ids['spectrum_range_max'].text = value_str[1]
+            elif var_name == 'field_of_view':
+                self.ids['field_of_view_x'].text = value_str[0]
+                self.ids['field_of_view_y'].text = value_str[1]
+            else:
+                logger.debug("Setting text of widget '{0}' to: {1}"
+                             .format(var_name, value_str[0]))
+                self.ids[var_name].text = value_str[0]
+
+
 
     def on_save_spinner(self, spinner):
         selected = spinner.text
@@ -343,10 +447,43 @@ class giGUI(F.BoxLayout):
         elif selected == 'Results...':
             self.save_results()
 
+    def on_help_spinner(self, spinner):
+        selected = spinner.text
+        spinner.text = 'Help...'
+        if selected != 'Help...':
+            if selected == 'Spectrum file':
+                help_message = ("File format:\n"
+                                "energy,photons\n"
+                                "e1,p1\n"
+                                "e2,p2\n"
+                                ".,.\n"
+                                ".,.\n"
+                                ".,.")
+            if selected == 'Input file':
+                help_message = ("File type: .txt\n"
+                                "Can use multiple files, in case of double "
+                                "entries, the last file overwrites the "
+                                "previous one(s).\n"
+                                "File layout:        Example:\n"
+                                "ArgName1                -sr\n"
+                                "ArgValue1               100\n"
+                                "ArgName2                -p0\n"
+                                "ArgValue2               2.4\n"
+                                "    .                    .\n"
+                                "    .                    .\n"
+                                "    .                    .")
+            help_popup = _PopupWindow("Help: [0]".format(selected),
+                                      help_message)
+            help_popup.popup.open()
+
     # Loading and saving files
 
     def dismiss_popup(self):
         self._popup.dismiss()
+
+    def _fbrowser_canceled(self, instance):
+        logger.debug('FileBrowser canceled, closing itself.')
+        self.dismiss_popup()
 
     # Spectrum
 
@@ -358,7 +495,6 @@ class giGUI(F.BoxLayout):
         spectra_path = os.path.join(os.path.dirname(os.path.
                                                     realpath(__file__)),
                                     'data', 'spectra')
-        logger.debug("Start path is {}".format(spectra_path))
         browser = FileBrowser(select_string='Select',
                               path=spectra_path,  # Folder to open at start
                               filters=['*.csv','*.txt'])
@@ -370,39 +506,54 @@ class giGUI(F.BoxLayout):
                               size_hint=(0.9, 0.9))
         self._popup.open()
 
-    def _fbrowser_canceled(self, instance):
-        logger.debug('FileBrowser canceled, closing itself.')
-        self.dismiss_popup()
-
     def _spectra_fbrowser_success(self, instance):
-        logger.debug("type of selection is {}".format(instance.selection[0]))
         self.spectrum_file_path = instance.selection[0]
         logger.debug("Spectrum filepath is: {}"
                      .format(self.spectrum_file_path))
         self.dismiss_popup()
 
+    # Input file
+
     # Load input file
 
-    def load_input(self):
-        logger.info("Loading from info file.")
+    def show_input_load(self):
+        """
+        Upon call, open popup with file browser to load input file location.
+        """
+        # Define browser
+        input_path = os.path.join(os.path.dirname(os.path.
+                                                    realpath(__file__)),
+                                    'data')
+        browser = FileBrowser(select_string='Select',
+                              multiselect=True,
+                              path=input_path,  # Folder to open at start
+                              filters=['*.txt'])
+        browser.bind(on_success=self._input_load_fbrowser_success,
+                     on_canceled=self._fbrowser_canceled)
+
+        # Add to popup
+        self._popup = F.Popup(title="Load input file", content=browser,
+                              size_hint=(0.9, 0.9))
+        self._popup.open()
+
+    def _input_load_fbrowser_success(self, instance):
+        self.load_input_file_paths = instance.selection
+        logger.debug("{0} input files loaded."
+                     .format(len(self.load_input_file_paths)))
+        self.dismiss_popup()
+
 
     # Save input file
 
     def save_input(self):
          logger.info("Saving info file.")
 
+    # Results
+
     # Save results
 
     def save_results(self):
          logger.info("Saving results.")
-
-
-    # General functions
-
-    def check_general_input(self):
-        # Convert input
-        self.parameters = _collect_input(self.parameters, self.ids)
-        print(self.parameters)
 
     # Utility functions
 

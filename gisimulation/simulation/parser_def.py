@@ -400,7 +400,7 @@ def get_arguments_info(parser):
     for help_message in help_messages:
         # "optional_key METAVAR(S)       help_message\n"
         words = re.split(' ', help_message)
-        optional_key = '-' + words[0]
+        variable_key = '-' + words[0]
         variable_name = words[1].lower().rstrip()  # Make lower case and
                                                    # remove trailing \n
         # Remove potential [] (for e.g. file types)
@@ -408,13 +408,13 @@ def get_arguments_info(parser):
         variable_name = variable_name.replace("]", "")
         # For nargs=2, remove second entry
         if words[1] in words[2]:
-            help_text = filter(None, words[3:])  # Remove ''
+            variable_help = filter(None, words[3:])  # Remove ''
         else:
-            help_text = filter(None, words[2:])  # Remove ''
-        help_text = ' '.join(help_text)
-        help_text= re.sub('\n', '', help_text)  # remove print_help-format
+            variable_help = filter(None, words[2:])  # Remove ''
+        variable_help = ' '.join(variable_help)
+        variable_help= re.sub('\n', '', variable_help)  # remove print_help-format
                                                 # induces \n
-        arguments_info[variable_name] = [optional_key, help_text]
+        arguments_info[variable_name] = [variable_key, variable_help]
 
     return arguments_info
 

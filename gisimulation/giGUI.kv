@@ -6,26 +6,23 @@
 
 #:set parser_info parser_def.get_arguments_info(parser_def.input_parser())
 #:set num_input_size 0.3
+#:set default_font_size 18
 #:set line_height 40
 #:set menu_button_width 100
 #:set dark_grey np.divide([88, 88, 88, 50],[255., 255., 255., 100.])
 #:set dark_red_button np.divide([255, 50, 50, 100],[255., 255., 255., 100.])
 #:set dark_red_menu np.divide([154, 31, 31, 100],[255., 255., 255., 100.])
 
-# All labels
-<Label>:
+
+# All buttons
+<Button>:
+    font_size: default_font_size
     text_size: self.size
     halign: 'center'
     valign: 'center'
     max_lines: 1
     size_hint_y: None
     height: line_height
-    canvas.before:
-        Color:
-            rgba: dark_grey
-        Rectangle:
-            pos: self.pos
-            size: self.size
 
 # All text inputs
 <TextInput>:
@@ -33,15 +30,6 @@
     height: line_height
     size_hint_x: num_input_size
     multiline: False
-
-# All buttons
-<Button>:
-    text_size: self.size
-    halign: 'center'
-    valign: 'center'
-    max_lines: 1
-    size_hint_y: None
-    height: line_height
 
 # All checkboxes
 <CheckBox>:
@@ -66,15 +54,38 @@
 
 # Set rules for custom classes
 
+# All NonFileBrowserLabel
+<NonFileBrowserLabel>:
+    font_size: default_font_size
+    text_size: self.size
+    halign: 'center'
+    valign: 'center'
+    max_lines: 1
+    size_hint_y: None
+    height: line_height
+    canvas.before:
+        Color:
+            rgba: dark_grey
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+
 <MenuSpinnerButton>:
     background_color: dark_red_button
+    halign: 'left'
 
 <ScrollableLabel>:
-    Label:
+    NonFileBrowserLabel:
+        font_size: default_font_size
+        max_lines: 0
         size_hint_y: None
         height: self.texture_size[1]
         text_size: self.width, None
         text: root.text
+        halign: 'left'
+        valign: 'top'
+        strip: True  #remove leading or trailing newlines or spaces
 
 # gi GUI
 <giGUI>:
@@ -91,8 +102,9 @@
             Rectangle:
                 pos: self.pos
                 size: self.size
-        Label:
+        NonFileBrowserLabel:
             size_hint_x: 0.1
+            bold: True
             text: 'GI Simulation'
             canvas.before:
                 Color:
@@ -103,8 +115,8 @@
         Button:
             size_hint_x: 0.1
             background_color: dark_red_button
-            text: 'Load inout file...'
-            on_release: root.load_input()
+            text: 'Load input file...'
+            on_release: root.show_input_load()
         MenuSpinner:
             size_hint_x: 0.1
             background_color: dark_red_button
@@ -114,6 +126,13 @@
             on_text: root.on_save_spinner(self)
         Widget:
 
+        MenuSpinner:
+            size_hint_x: 0.1
+            background_color: dark_red_button
+            id: help_spinner
+            text: 'Help...'
+            values: ['Spectrum file', 'Input file']
+            on_text: root.on_help_spinner(self)
         Button:
             background_color: dark_red_button
             size_hint_x: 0.05
@@ -137,7 +156,7 @@
                 orientation: 'vertical'
 
                 # Name of window
-                Label:
+                NonFileBrowserLabel:
                     text: 'General Parameters'
                     bold: True
 
@@ -145,7 +164,7 @@
                 GridLayout:
                     cols: 3
                     StackLayout:
-                        Label:
+                        NonFileBrowserLabel:
                             text: 'Spectrum'
                             bold: True
                         BoxLayout:
@@ -182,7 +201,7 @@
                             BoxLayout:
                                 BoxLayout:
                                     size_hint_x: 0.5
-                                    Label:
+                                    NonFileBrowserLabel:
                                         text: 'Min'
                                     FloatInput:
                                         id: spectrum_range_min
@@ -190,7 +209,7 @@
                                         disabled: not spectrum_range_set.active
                                 BoxLayout:
                                     size_hint_x: 0.5
-                                    Label:
+                                    NonFileBrowserLabel:
                                         text: 'Max'
                                     FloatInput:
                                         id: spectrum_range_max
@@ -207,7 +226,7 @@
 
                     # GI input
                     StackLayout:
-                        Label:
+                        NonFileBrowserLabel:
                             text: 'GI Input'
                             bold: True
                         BoxLayout:
@@ -225,7 +244,7 @@
 
 
                     StackLayout:
-                        Label:
+                        NonFileBrowserLabel:
                             text: '3. block'
                         BoxLayout:
                             orientation: 'vertical'
@@ -241,7 +260,7 @@
                     cols: 3
                     StackLayout:
                         BoxLayout:
-                            Label:
+                            NonFileBrowserLabel:
                                 text: 'G0'
                                 bold: True
                             CheckBox:
@@ -256,7 +275,6 @@
                                     text: 'Design Energy [keV]'
                                     help_message: parser_info['design_energy'][1]
                                 FloatInput:
-                                    id: design_energy
                             BoxLayout:
                                 LabelHelp:
                                     size_hint_x: 0.4
@@ -277,22 +295,19 @@
                                     text: 'Spectrum range [keV]'
                                     help_message: parser_info['spectrum_range'][1]
                                 CheckBox:
-                                    id: spectrum_range_set
                             BoxLayout:
                                 BoxLayout:
                                     size_hint_x: 0.5
-                                    Label:
+                                    NonFileBrowserLabel:
                                         text: 'Min'
                                     FloatInput:
-                                        id: spectrum_range_min
                                         size_hint_x: 1
                                         disabled: not spectrum_range_set.active
                                 BoxLayout:
                                     size_hint_x: 0.5
-                                    Label:
+                                    NonFileBrowserLabel:
                                         text: 'Max'
                                     FloatInput:
-                                        id: spectrum_range_max
                                         size_hint_x: 1
                                         disabled: not spectrum_range_set.active
                             BoxLayout:
@@ -300,7 +315,6 @@
                                     text: 'Spectrum step size [keV]'
                                     help_message:parser_info['spectrum_step'][1]
                                 FloatInput:
-                                    id: spectrum_step
                                     text: '1.0'
                                     disabled: not spectrum_range_set.active or root.spectrum_file_loaded
 
@@ -308,7 +322,7 @@
                     # GI input
                     StackLayout:
                         BoxLayout:
-                            Label:
+                            NonFileBrowserLabel:
                                 text: 'G1'
                                 bold: True
                             CheckBox:
@@ -323,14 +337,13 @@
                                     text: 'Geometry'
                                     help_message: parser_info['geometry'][1]
                                 Spinner:
-                                    id: geometry
                                     text: 'sym'
                                     values: ['sym', 'conv', 'inv', 'free']
 
 
                     StackLayout:
                         BoxLayout:
-                            Label:
+                            NonFileBrowserLabel:
                                 text: 'G2'
                                 bold: True
                             CheckBox:
@@ -362,20 +375,20 @@
             # Geometry
             TabbedPanelItem:
                 text: 'Geometry'
-                Label:
+                NonFileBrowserLabel:
                     text: '1. tab content area'
 
             # Visibility
             TabbedPanelItem:
                 text: 'Visibility'
-                Label:
+                NonFileBrowserLabel:
                     text: '2. tab content area'
 
             # CT
             TabbedPanelItem:
                 text: 'CT'
                 BoxLayout:
-                    Label:
+                    NonFileBrowserLabel:
                         text: 'bla'
                     Button:
                         text: 'Raise error and display'

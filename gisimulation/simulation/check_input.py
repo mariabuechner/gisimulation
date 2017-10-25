@@ -254,16 +254,15 @@ def _get_spectrum(spectrum_file, range_, spectrum_step, design_energy):
     return spectrum, min_energy, max_energy
 
 
-def _read_spectrum(spectrum_file):
+def _read_spectrum(spectrum_file_path):
     """
     Read from spectrum file.
 
     Parameters
     ##########
 
-    spectrum_file [str] or [argparse.FileType('r')]     to .csv or .txt file.
-                                                        Delimiter is ',', see
-                                                        Format
+    spectrum_file_path [str]:       to .csv or .txt file.
+                                    Delimiter is ',', see Format
 
     Returns
     #######
@@ -283,9 +282,9 @@ def _read_spectrum(spectrum_file):
 
     """
     # Read dict from file
-    logger.debug("Reading from file {}...".format(spectrum_file))
-    spectrum_struct_array = np.genfromtxt(spectrum_file, delimiter=',',
-                                          names=True)
+    logger.debug("Reading from file {}...".format(spectrum_file_path))
+    spectrum_struct_array = np.genfromtxt(spectrum_file_path, delimiter=',',
+                                          names=True)  # np ndarray
     if 'energy' in spectrum_struct_array.dtype.names:
         # Rename 'energy' to 'energies'
         spectrum_struct_array.dtype.names = ('energies', 'photons')
@@ -296,7 +295,7 @@ def _read_spectrum(spectrum_file):
         spectrum_dict['photons'] = spectrum_struct_array['photons']
     except AttributeError as e:
         error_message = "Spectrum file at {0} is missing '{1}'-column." \
-                        .format(spectrum_file, str(e).split()[-1])
+                        .format(spectrum_file_path, str(e).split()[-1])
         logger.error()
         raise InputError
     # Convert to struct
