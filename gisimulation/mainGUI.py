@@ -244,13 +244,12 @@ def _load_input_file(input_file_path):
     return input_parameters
 
 
-def _save_input_file(input_file_path, parameters):
+def _save_input_file(input_file_path, input_parameters):
     """
     """
-#    for var_key, value in key_parameters.iteritem():
+#    for var_key, value in input_parameters.iteritem():
 #        print key in line
 #        print value in next line
-    pass
 
 def _collect_input(parameters, ids):
     """
@@ -437,7 +436,10 @@ class giGUI(F.BoxLayout):
                              .format(var_name, value_str[0]))
                 self.ids[var_name].text = value_str[0]
 
-
+    def on_save_input_file_path(self, instance, value):
+        """
+        """
+        #prepare paramrs and call save function
 
     def on_save_spinner(self, spinner):
         selected = spinner.text
@@ -547,6 +549,7 @@ class giGUI(F.BoxLayout):
 
     def save_input(self):
          logger.info("Saving info file.")
+         #popup to set fiole, see internet
 
     # Results
 
