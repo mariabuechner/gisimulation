@@ -34,10 +34,10 @@ from kivy.utils import platform
 from kivy.core.window import Window
 # ActionBar
 from kivy.base import runTouchApp
-#from kivy.uix.actionbar import ActionBar
-#from kivy.uix.actionbar import ActionView
-#from kivy.uix.actionbar import ActionButton
-#from kivy.uix.actionbar import ActionPrevious
+from kivy.uix.actionbar import ActionBar
+from kivy.uix.actionbar import ActionView
+from kivy.uix.actionbar import ActionButton
+from kivy.uix.actionbar import ActionPrevious
 # Properties
 from kivy.properties import StringProperty
 # UIX
@@ -65,6 +65,20 @@ Window.maximize()  # NOTE: On desktop platforms only
 # %% Constants
 
 # %% Custom Widgets
+
+
+# Menu
+
+class MenuSpinnerButton(F.Button):
+    """
+    """
+    pass
+
+class MenuSpinner(F.Spinner):
+    """
+    """
+    option_cls = F.ObjectProperty(MenuSpinnerButton)
+
 
 # Inputs
 
@@ -301,9 +315,13 @@ class giGUI(F.BoxLayout):
     Based on "https://kivy.org/docs/api-kivy.uix.filechooser.html"
     (23.10.2017)
     """
+    # Global variables (must be kivy properties)
     parameters = F.DictProperty()
     spectrum_file_path = F.StringProperty()
     spectrum_file_loaded = F.BooleanProperty(defaultvalue=False)
+
+
+    # Manage global variables and widget behavior
 
     def on_spectrum_file_path(self, instance, value):
         """
@@ -317,10 +335,20 @@ class giGUI(F.BoxLayout):
             self.spectrum_file_loaded = False
             self.parameters['spectrum_file'] = None
 
+    def on_save_spinner(self, spinner):
+        selected = spinner.text
+        spinner.text = 'Save...'
+        if selected == 'Input file...':
+            self.save_input()
+        elif selected == 'Results...':
+            self.save_results()
+
     # Loading and saving files
 
     def dismiss_popup(self):
         self._popup.dismiss()
+
+    # Spectrum
 
     def show_spectrum_load(self):
         """
@@ -349,17 +377,38 @@ class giGUI(F.BoxLayout):
     def _spectra_fbrowser_success(self, instance):
         logger.debug("type of selection is {}".format(instance.selection[0]))
         self.spectrum_file_path = instance.selection[0]
-        logger.debug("Spectrum filepath is: {}".format(self.spectrum_file_path))
+        logger.debug("Spectrum filepath is: {}"
+                     .format(self.spectrum_file_path))
         self.dismiss_popup()
 
+    # Load input file
 
-    # Functions callable in .kv file
+    def load_input(self):
+        logger.info("Loading from info file.")
 
+    # Save input file
+
+    def save_input(self):
+         logger.info("Saving info file.")
+
+    # Save results
+
+    def save_results(self):
+         logger.info("Saving results.")
+
+
+    # General functions
 
     def check_general_input(self):
         # Convert input
         self.parameters = _collect_input(self.parameters, self.ids)
         print(self.parameters)
+
+    # Utility functions
+
+    def exit_app(self):
+        logger.info("Exiting App...")
+        sys.exit(2)
 
     def calc_boxlayout_height(self, childen_height, boxlayout):
         """
@@ -383,25 +432,6 @@ class giGUI(F.BoxLayout):
                             * len(boxlayout.children)
         return boxlayout_height
 
-    def calc_widget_height(self, widget):
-        """
-        Calculates the height of a widget based on its children heights.
-
-        Parameters
-        ##########
-
-        widget [Layout]
-
-        Returns
-        #######
-
-        height [pxls]
-
-        """
-        height = 0
-        for child in widget.children:
-            height = height + child.height
-        return height
 
 
 
@@ -412,6 +442,11 @@ class giGUIApp(App):
     def build(self):
         self.title = 'GI Simumlation'
         return giGUI()  # Main widget, root
+
+    # When app window is closed
+    def on_stop(self):
+        logger.info("Exiting App...")
+        sys.exit(2)
 
 
 # %% Main
