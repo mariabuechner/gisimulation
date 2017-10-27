@@ -13,6 +13,7 @@ DEBUGGING = True
 import numpy as np
 import sys
 import re
+import time
 from functools import partial
 import os.path
 import logging
@@ -57,6 +58,9 @@ Window.maximize()  # NOTE: On desktop platforms only
 #Window.set_icon('path\to\icon')
 
 # %% Constants
+
+ERROR_MESSAGE_SIZE = (600, 450)  # absolute
+FILE_BROWSER_SIZE = (0.9, 0.9)  # relative
 
 # %% Custom Widgets
 
@@ -147,10 +151,30 @@ class ErrorDisplay():
     """
     def __init__(self, error_title, error_message):
         """
-        Init PopupWindow and open popup.
+        Init _OKPopupWindow and open popup.
         """
-        error_popup = _PopupWindow(error_title, error_message)
+        error_popup = _OKPopupWindow(error_title, error_message)
         error_popup.popup.open()
+
+class WarningDisplay():
+    """
+    Popup window in case an exception is caught and user can choose to
+    continue. Displays type of error and error message.
+    """
+    def __init__(self, warning_title, warning_message,
+                 finish_continue, check_input_save,
+                 finish_cancel):
+        """
+        Init _ContinueCancelPopupWindow and open popup.
+        """
+        self.warning_popup = _ContinueCancelPopupWindow(warning_title,
+                                                        warning_message,
+                                                        finish_continue,
+                                                        check_input_save,
+                                                        finish_cancel)
+        self.warning_popup.popup.open()
+
+
 
 # Help popup
 
@@ -170,7 +194,7 @@ class LabelHelp(NonFileBrowserLabel):
         # If mouse clicked on
         if self.collide_point(touch.x, touch.y):
             window_title = 'Help: {}'.format(self.text)
-            help_popup = _PopupWindow(window_title, self.help_message)
+            help_popup = _OKPopupWindow(window_title, self.help_message)
             help_popup.popup.open()
         # To manage input chain corectly
         return super(LabelHelp, self).on_touch_down(touch)
@@ -185,17 +209,16 @@ class ScrollableLabel(F.ScrollView):
 # %% Utiliies
 
 
-class _PopupWindow():
+class _OKPopupWindow():
     """
     A popup window containing a label and a button.
-    The size of the window is determined by the number of lines and the
-    length of the longest line of the help message.
+
     The button closes the window.
 
     Parameters
     ##########
 
-    title [str]:    titel of popup window
+    title [str]:    title of popup window
     message [str]:  message displayed
 
     """
@@ -218,10 +241,89 @@ class _PopupWindow():
                              auto_dismiss=False,
                              content=popup_content,
                              size_hint=(None, None),
-                             size=(600, 450))
+                             size=ERROR_MESSAGE_SIZE)
                              #size=(_scale_popup_window(message)))
-        # Close help window when button 'OK' is pressed
         close_popup_button.bind(on_press=self.popup.dismiss)
+
+
+class _ContinueCancelPopupWindow():
+    """
+    A popup window containing a label and 2 buttons (cancel and continue).
+
+
+    Parameters
+    ##########
+
+    title [str]:    title of popup window
+    message [str]:  message displayed
+
+    Notes
+    #####
+
+    continue_ stores the choice, True if continue, False if cancel.
+
+    """
+    def __init__(self, title, message,
+                 finish_continue, check_input_save,
+                 finish_cancel):
+        """
+        Init function, creates layout and adds functunality.
+        """
+        # Init continuation state
+        self.continue_ = False
+        self.finish_continue = finish_continue
+        self.check_input_save = check_input_save
+        self.finish_cancel = finish_cancel
+        # Custom Window with continue and cancel button
+        popup_content = F.BoxLayout(orientation='vertical',
+                                    spacing=10)
+
+        message_label = F.ScrollableLabel(text=message)
+        popup_content.add_widget(message_label)
+
+        button_layout = F.BoxLayout(spacing=10)
+        continue_popup_button = F.Button(text='Continue')
+        cancel_popup_button = F.Button(text='Cancel')
+
+        button_layout.add_widget(continue_popup_button)
+        button_layout.add_widget(cancel_popup_button)
+
+        popup_content.add_widget(button_layout)
+
+        self.popup = F.Popup(title=title,
+                             title_size=20,
+                             auto_dismiss=False,
+                             content=popup_content,
+                             size_hint=(None, None),
+                             size=ERROR_MESSAGE_SIZE)
+
+        # Close help window when button 'OK' is pressed
+        continue_popup_button.bind(on_press=partial(self.close, True))
+        cancel_popup_button.bind(on_press=partial(self.close, False))
+
+        self.popup.bind(on_dismiss=self.finish_choice)  # Wait for dismiss
+
+    def close(self, *args):
+        """
+        Parameters
+        ##########
+
+        continue_ [boolean]:    Continue with action or cancel action
+
+        """
+        self.continue_ = args[0]
+        self.popup.dismiss()
+
+    def finish_choice(self, *args):
+        if self.continue_:
+            logger.debug("Overwriting file!")
+            self.finish_continue()
+            self.check_input_save()
+            logger.debug('... done.')
+        else:
+            logger.warning("... canceled.")
+            self.finish_cancel()
+
 
 def _load_input_file(input_file_path):
     """
@@ -246,10 +348,19 @@ def _load_input_file(input_file_path):
 
 def _save_input_file(input_file_path, input_parameters):
     """
+
     """
-#    for var_key, value in input_parameters.iteritem():
-#        print key in line
-#        print value in next line
+    with open(input_file_path, 'w') as f:
+        for var_key, value in input_parameters.iteritems():
+            f.writelines(var_key+'\n')
+
+            if type(value) is np.ndarray:  # For FOV anf Range
+                f.writelines(str(value[0])+'\n')
+                f.writelines(str(value[1])+'\n')
+            else:
+                f.writelines(str(value)+'\n')
+    return True
+
 
 def _collect_input(parameters, ids):
     """
@@ -361,6 +472,8 @@ class giGUI(F.BoxLayout):
     spectrum_file_path = F.StringProperty()
     spectrum_file_loaded = F.BooleanProperty(defaultvalue=False)
     load_input_file_paths = F.ListProperty()
+    save_input_file_path = F.StringProperty()
+    input_file_saved = F.BooleanProperty(defaultvalue=False)
 
 
     def __init__(self, **kwargs):
@@ -421,8 +534,9 @@ class giGUI(F.BoxLayout):
             logger.debug("var_name is {0}".format(var_name))
             if var_name not in self.parameters:
                 # Input key not implemented in GUI
-                logger.warning("Key '{0}' with name '{1}' read from input file, "
-                               "but not defined in App.".format(var_key, var_name))
+                logger.warning("Key '{0}' with name '{1}' read from input "
+                               "file, but not defined in App."
+                               .format(var_key, var_name))
                 continue
             # Set input values to ids.texts
             if var_name == 'spectrum_range':
@@ -438,14 +552,54 @@ class giGUI(F.BoxLayout):
 
     def on_save_input_file_path(self, instance, value):
         """
+        Notes
+        #####
+
+        self.parameters [dict]:     widget_parameters[var_name] = value
+        self.parser_info [dict]:    parser_link[var_name] = [var_key, var_help]
         """
-        #prepare paramrs and call save function
+        if self.save_input_file_path != '':  # e.g. after reset.
+            # Select parameters to save
+            logger.debug("Collecting all paramters to save...")
+            input_parameters = dict()
+            for var_name, var_value in self.parameters.iteritems():
+                if var_name in self.parser_info and var_value is not None:
+                    var_key = self.parser_info[var_name][0]
+                    input_parameters[var_key] = var_value
+            # Save at save_input_file_path (=value)
+            logger.debug('... done.')
+            logger.debug("Saving input to file...")
+            if os.path.isfile(value):
+                # File exists
+                logger.warning("File '{0}' already exists!".format(value))
+                warning = WarningDisplay("File already exists!",
+                                         "Do you want to overwrite it?",
+                                         partial(_save_input_file,
+                                                 value,
+                                                 input_parameters),
+                                         self.check_input_save,
+                                         self.reset_input_save)
+            else:
+                # File new
+                self.input_file_saved = _save_input_file(value,
+                                                         input_parameters)
+                logger.debug('... done.')
+
+
+    def check_input_save(self):
+        self.input_file_saved = True
+
+
+    def reset_input_save(self):
+        self.input_file_saved = False
+        self.save_input_file_path = ''
+
 
     def on_save_spinner(self, spinner):
         selected = spinner.text
         spinner.text = 'Save...'
         if selected == 'Input file...':
-            self.save_input()
+            self.show_input_save()
         elif selected == 'Results...':
             self.save_results()
 
@@ -474,8 +628,8 @@ class giGUI(F.BoxLayout):
                                 "    .                    .\n"
                                 "    .                    .\n"
                                 "    .                    .")
-            help_popup = _PopupWindow("Help: [0]".format(selected),
-                                      help_message)
+            help_popup = _OKPopupWindow("Help: [0]".format(selected),
+                                        help_message)
             help_popup.popup.open()
 
     # Loading and saving files
@@ -505,7 +659,7 @@ class giGUI(F.BoxLayout):
 
         # Add to popup
         self._popup = F.Popup(title="Load spectrum", content=browser,
-                              size_hint=(0.9, 0.9))
+                              size_hint=FILE_BROWSER_SIZE)
         self._popup.open()
 
     def _spectra_fbrowser_success(self, instance):
@@ -535,7 +689,7 @@ class giGUI(F.BoxLayout):
 
         # Add to popup
         self._popup = F.Popup(title="Load input file", content=browser,
-                              size_hint=(0.9, 0.9))
+                              size_hint=FILE_BROWSER_SIZE)
         self._popup.open()
 
     def _input_load_fbrowser_success(self, instance):
@@ -547,9 +701,50 @@ class giGUI(F.BoxLayout):
 
     # Save input file
 
-    def save_input(self):
-         logger.info("Saving info file.")
-         #popup to set fiole, see internet
+    def show_input_save(self):
+        """
+        Upon call, open popup with file browser to save input file.
+        """
+        # Define browser
+        input_path = os.path.join(os.path.dirname(os.path.
+                                                    realpath(__file__)),
+                                    'data')
+        browser = FileBrowser(select_string='Save',
+                              path=input_path,  # Folder to open at start
+                              filters=['*.txt'])
+        browser.bind(on_success=self._input_save_fbrowser_success,
+                     on_canceled=self._fbrowser_canceled)
+
+        # Add to popup
+        self._popup = F.Popup(title="Save input file", content=browser,
+                              size_hint=FILE_BROWSER_SIZE)
+        self._popup.open()
+
+    def _input_save_fbrowser_success(self, instance):
+        filename = instance.filename
+        # Check extension
+        if filename.split('.')[-1] == instance.filters[0].split('.')[-1]:
+            # Correct extention
+            file_path = os.path.join(instance.path, filename)
+        elif filename.split('.')[-1] == '':
+            # Just '.' set
+            file_path = os.path.join(instance.path, filename+'txt')
+        elif filename.split('.')[-1] == filename:
+            # Not extention set
+            file_path = os.path.join(instance.path, filename+'.txt')
+        else:
+            # Wrong file extention
+            error_message = ("Input file must be of type '{0}'"
+                             .format(instance.filters[0]))
+            logger.error(error_message)
+            ErrorDisplay('Saving input file: Wrong file extention.',
+                         error_message)
+            return
+        logger.debug("Save input to file: {0}"
+                     .format(file_path))
+        self.save_input_file_path = file_path
+        if self.input_file_saved:
+            self.dismiss_popup()
 
     # Results
 

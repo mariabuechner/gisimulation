@@ -27,3 +27,4 @@ def check_input():
         logger.error(error_message)
         logger.info("Raising InputError.")
         raise InputError(error_message)
+
