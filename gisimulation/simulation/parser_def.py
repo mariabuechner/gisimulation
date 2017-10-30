@@ -152,18 +152,124 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         "'vv': warning,"
                         "'vvv': info (None=default), 'vvvv': debug")
 
-    # General input
-    parser.add_argument('-bg', dest='beam_geometry', default='parallel',
-                        type=str,
-                        choices=['cone', 'parallel'], metavar='BEAM_GEOMETRY',
-                        help="Beam geometry.")
+    # General and GI Design
     parser.add_argument('-gi', dest='geometry', default='sym',
                         type=str,
                         choices=['sym', 'conv', 'inv', 'free'],
                         metavar='GEOMETRY',
                         help="GI geometry. Choices are\n"
                         "'sym': symmetrical, 'conv': conventional, "
-                        "'inv': inverse, 'free': free input.")
+                        "'inv': inverse, 'free': free input.\n")
+    parser.add_argument('-t', dest='talbot_order',
+                        type=numerical_type,
+                        help="Talbot order.")
+    parser.add_argument('-sr', dest='sampling_rate',
+                        action=_PositiveNumber,
+                        type=numerical_type,
+                        help="Sampling voxel size (cube). "
+                        "If not set, it is pixel_size * 1e-3.")
+    parser.add_argument('-bg', dest='beam_geometry', default='parallel',
+                        type=str,
+                        choices=['cone', 'parallel'], metavar='BEAM_GEOMETRY',
+                        help="Beam geometry. Choices are\n"
+                        "'cone': cone/divergent beam, "
+                        "'parallel': parallel beam (infinite source size).")
+    parser.add_argument('-e', dest='design_energy', required=True,
+                        action=_TruePositiveNumber,
+                        type=numerical_type,
+                        help="Design energy of GI [keV].")
+
+    # Source
+    parser.add_argument('-fs', dest='focal_spot_size',
+                        action=_TruePositiveNumber,
+                        type=numerical_type,
+                        help="Focal spot size [um]. Is infinite in case of "
+                        "parallel beam greometry.")
+    parser.add_argument('-spec', dest='spectrum_file',
+                        action=_CheckFile,
+                        metavar='SPECTRUM_FILE',
+                        nargs='?', type=str,
+                        help="Location of spectrum file (.csv).\n"
+                        "Full path or relative path ('./relative_path') "
+                        "from calling script.\n"
+                        "File format:\n"
+                        "energy,photons\n"
+                        "e1,p1\n"
+                        "e2,p2\n"
+                        ".,.\n"
+                        ".,.\n"
+                        ".,.")
+    parser.add_argument('-r', dest='spectrum_range',
+                        action=_StoreNpArray,
+                        metavar='SPECTRUM_RANGE',
+                        nargs=2, type=numerical_type,
+                        help=("Range of energies [keV]: min max.\n"
+                              "If specturm from file: cut off at >= min and"
+                              "<= max.\n"
+                              "If just range: from min to <=max in 1 keV "
+                              "steps."))
+    parser.add_argument('-sps', dest='spectrum_step', default=1,
+                        action=_TruePositiveNumber,
+                        type=numerical_type,
+                        help="Step size of range [keV].")
+
+    # Detector
+    parser.add_argument('-dt', dest='detector_type', default='photon',
+                        type=str,
+                        choices=['photon', 'conv'],
+                        metavar='DETECTOR_TYPE',
+                        help="Detector type. Choices are\n"
+                        "'photon': photon counting (PSF of one pixel), "
+                        "'conv': conventional (PSF larger one pixel).")
+    parser.add_argument('-psf', dest='point_spread_function',
+                        action=_TruePositiveNumber,
+                        type=numerical_type,
+                        help="Point spread function (PSF) [um]: "
+                        "FWHM (Full width at half maximum) of gaussian shape.")
+    parser.add_argument('-pxs', dest='pixel_size', required=True,
+                        action=_TruePositiveNumber,
+                        type=numerical_type,
+                        help="Pixel size (square) [um].")
+    parser.add_argument('-fov', dest='field_of_view', nargs=2,
+                        required=True,
+                        action=_StoreNpArray,
+                        metavar='FIELD_OF_VIEW',
+                        type=np.int,
+                        help="Number of pixels: x y.")
+    parser.add_argument('-dth', dest='detector_threshold',
+                        action=_TruePositiveNumber,
+                        type=numerical_type,
+                        help="Cut of threshold of detector [keV], everything "
+                        "below will not be displayed.")
+    parser.add_argument('-md', dest='material_detector',
+                        type=str,
+                        help="Choose detector material.")
+    parser.add_argument('-dd', dest='thickness_detector',
+                        action=_TruePositiveNumber,
+                        type=numerical_type,
+                        help="Depth of detector [um].")
+
+
+
+    # Distances ???
+#    parser.add_argument('-sp', dest='sample_position', default='after',
+#                        type=str,
+#                        choices=['after', 'before'],
+#                        metavar='SAMPLE_POSITION',
+#                        help="Relative sample position with respect to G1. "
+#                        "Choices are\n"
+#                        "'after': upstream of G1, "
+#                        "'before': downstream of G1.")
+    parser.add_argument('-s2g', dest='distance_source2grating',
+                        type=numerical_type,
+                        help="Distance from source to first grating [mm].")
+    parser.add_argument('-g2d', dest='distance_G2_detector',
+                        type=numerical_type,
+                        help="Distance from G2 to detector [mm].")
+
+
+
+
     # Grating parameters
     # G0
     parser.add_argument('-g0', dest='type_g0', default='mix',
@@ -272,81 +378,9 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         action=_TruePositiveNumber,
                         type=numerical_type,
                         help="Depth of G2 filling [um].")
-    # Design
-    parser.add_argument('-t', dest='talbot_order',
-                        type=numerical_type,
-                        help="Talbot order.")
-    parser.add_argument('-s2g', dest='distance_source2grating',
-                        type=numerical_type,
-                        help="Distance from source to first grating [mm].")
-    parser.add_argument('-g2d', dest='distance_G2_detector',
-                        type=numerical_type,
-                        help="Distance from G2 to detector [mm].")
 
-    # Detector
-    parser.add_argument('-pxs', dest='pixel_size',
-                        action=_TruePositiveNumber,
-                        type=numerical_type,
-                        help="Pixel size (square) [um].")
-    parser.add_argument('-fov', dest='field_of_view', nargs=2,
-                        action=_StoreNpArray,
-                        metavar='FIELD_OF_VIEW',
-                        type=np.int,
-                        help="Number of pixels: x y.")
-    parser.add_argument('-md', dest='material_detector',
-                        type=str,
-                        help="Choose detector material.")
-    parser.add_argument('-dd', dest='thickness_detector',
-                        action=_TruePositiveNumber,
-                        type=numerical_type,
-                        help="Depth of detector [um].")
 
-    # Source
-    parser.add_argument('-fs', dest='focal_spot_size', default=0,
-                        action=_PositiveNumber,
-                        type=numerical_type,
-                        help="Focal spot size [um]. If 0, infinite source "
-                        "size.")
 
-    # Spectrum
-    parser.add_argument('-e', dest='design_energy', required=True,
-                        action=_TruePositiveNumber,
-                        type=numerical_type,
-                        help="Design energy of GI [keV].")
-    parser.add_argument('-spec', dest='spectrum_file',
-                        action=_CheckFile,
-                        metavar='SPECTRUM_FILE',
-                        nargs='?', type=str,
-                        help="Location of spectrum file (.csv).\n"
-                        "Full path or relative path ('./relative_path') "
-                        "from calling script.\n"
-                        "File format:\n"
-                        "energy,photons\n"
-                        "e1,p1\n"
-                        "e2,p2\n"
-                        ".,.\n"
-                        ".,.\n"
-                        ".,.")
-    parser.add_argument('-r', dest='spectrum_range',
-                        action=_StoreNpArray,
-                        metavar='SPECTRUM_RANGE',
-                        nargs=2, type=numerical_type,
-                        help=("Range of energies [keV]: min max.\n"
-                              "If specturm from file: cut off at >= min and"
-                              "<= max.\n"
-                              "If just range: from min to <=max in 1 keV "
-                              "steps."))
-    parser.add_argument('-sps', dest='spectrum_step', default=1,
-                        action=_TruePositiveNumber,
-                        type=numerical_type,
-                        help="Step size of range [keV].")
-
-    # Calculations
-    parser.add_argument('-sr', dest='sampling_rate', default=0,
-                        action=_PositiveNumber,
-                        type=numerical_type,
-                        help="sampling voxel size (cube). "
-                        "If 0, it is pixel_size * 1e-3.")
 
     # Return
     return parser

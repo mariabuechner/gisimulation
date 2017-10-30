@@ -162,16 +162,16 @@ class WarningDisplay():
     continue. Displays type of error and error message.
     """
     def __init__(self, warning_title, warning_message,
-                 finish_continue, check_input_save,
-                 finish_cancel):
+                 overwrite, overwrite_finish,
+                 cancel_finish):
         """
         Init _ContinueCancelPopupWindow and open popup.
         """
         self.warning_popup = _ContinueCancelPopupWindow(warning_title,
                                                         warning_message,
-                                                        finish_continue,
-                                                        check_input_save,
-                                                        finish_cancel)
+                                                        overwrite,
+                                                        overwrite_finish,
+                                                        cancel_finish)
         self.warning_popup.popup.open()
 
 
@@ -260,20 +260,20 @@ class _ContinueCancelPopupWindow():
     Notes
     #####
 
-    continue_ stores the choice, True if continue, False if cancel.
+    _continue stores the choice, True if continue, False if cancel.
 
     """
     def __init__(self, title, message,
-                 finish_continue, check_input_save,
-                 finish_cancel):
+                 overwrite, overwrite_finish,
+                 cancel_finish):
         """
         Init function, creates layout and adds functunality.
         """
         # Init continuation state
-        self.continue_ = False
-        self.finish_continue = finish_continue
-        self.check_input_save = check_input_save
-        self.finish_cancel = finish_cancel
+        self._continue = False
+        self.overwrite = overwrite
+        self.overwrite_finish = overwrite_finish
+        self.cancel_finish = cancel_finish
         # Custom Window with continue and cancel button
         popup_content = F.BoxLayout(orientation='vertical',
                                     spacing=10)
@@ -301,7 +301,7 @@ class _ContinueCancelPopupWindow():
         continue_popup_button.bind(on_press=partial(self.close, True))
         cancel_popup_button.bind(on_press=partial(self.close, False))
 
-        self.popup.bind(on_dismiss=self.finish_choice)  # Wait for dismiss
+        self.popup.bind(on_dismiss=self.finish)  # Wait for dismiss
 
     def close(self, *args):
         """
@@ -311,18 +311,18 @@ class _ContinueCancelPopupWindow():
         continue_ [boolean]:    Continue with action or cancel action
 
         """
-        self.continue_ = args[0]
+        self._continue = args[0]
         self.popup.dismiss()
 
-    def finish_choice(self, *args):
-        if self.continue_:
+    def finish(self, *args):
+        if self._continue:
             logger.debug("Overwriting file!")
-            self.finish_continue()
-            self.check_input_save()
+            self.overwrite()
             logger.debug('... done.')
+            self.overwrite_finish()
         else:
             logger.warning("... canceled.")
-            self.finish_cancel()
+            self.cancel_finish()
 
 
 def _load_input_file(input_file_path):
@@ -473,7 +473,6 @@ class giGUI(F.BoxLayout):
     spectrum_file_loaded = F.BooleanProperty(defaultvalue=False)
     load_input_file_paths = F.ListProperty()
     save_input_file_path = F.StringProperty()
-    input_file_saved = F.BooleanProperty(defaultvalue=False)
 
 
     def __init__(self, **kwargs):
@@ -485,13 +484,17 @@ class giGUI(F.BoxLayout):
             self.parser_link[value[0]] = var_name
         # Init self.parameters
         self.parameters = _collect_input(self.parameters, self.ids)
+        self.parameters['spectrum_file'] = None
 
     # General simulation functions
 
     def check_general_input(self):
         # Convert input
         self.parameters = _collect_input(self.parameters, self.ids)
-        logger.debug(self.parameters['design_energy'])
+        logger.debug(self.parameters['spectrum_file'])
+        self.parameters = check_input.general_input(self.parameters)
+        # Update widget content
+        self._set_widgets(self.parameters)
 
     # Manage global variables and widget behavior
 
@@ -522,33 +525,7 @@ class giGUI(F.BoxLayout):
             logger.debug("Loading input from file at: {0}".format(input_file))
             input_parameters = _load_input_file(input_file)
         # Set widget content
-        for var_key, value_str in input_parameters.iteritems():
-            logger.debug("var_key is {0}".format(var_key))
-            logger.debug("value_str is {0}".format(value_str))
-            if var_key not in self.parser_link:
-                # Input key not implemented in parser
-                logger.warning("Key '{0}' read from input file, but not "
-                               "defined in parser.".format(var_key))
-                continue
-            var_name = self.parser_link[var_key]
-            logger.debug("var_name is {0}".format(var_name))
-            if var_name not in self.parameters:
-                # Input key not implemented in GUI
-                logger.warning("Key '{0}' with name '{1}' read from input "
-                               "file, but not defined in App."
-                               .format(var_key, var_name))
-                continue
-            # Set input values to ids.texts
-            if var_name == 'spectrum_range':
-                self.ids['spectrum_range_min'].text = value_str[0]
-                self.ids['spectrum_range_max'].text = value_str[1]
-            elif var_name == 'field_of_view':
-                self.ids['field_of_view_x'].text = value_str[0]
-                self.ids['field_of_view_y'].text = value_str[1]
-            else:
-                logger.debug("Setting text of widget '{0}' to: {1}"
-                             .format(var_name, value_str[0]))
-                self.ids[var_name].text = value_str[0]
+        self._set_widgets(input_parameters)
 
     def on_save_input_file_path(self, instance, value):
         """
@@ -559,6 +536,8 @@ class giGUI(F.BoxLayout):
         self.parser_info [dict]:    parser_link[var_name] = [var_key, var_help]
         """
         if self.save_input_file_path != '':  # e.g. after reset.
+            # Check input
+            self.parameters = _collect_input(self.parameters, self.ids)
             # Select parameters to save
             logger.debug("Collecting all paramters to save...")
             input_parameters = dict()
@@ -577,23 +556,22 @@ class giGUI(F.BoxLayout):
                                          partial(_save_input_file,
                                                  value,
                                                  input_parameters),
-                                         self.check_input_save,
-                                         self.reset_input_save)
+                                         self.overwrite_save,
+                                         self.cancel_save)
             else:
                 # File new
-                self.input_file_saved = _save_input_file(value,
-                                                         input_parameters)
+                _save_input_file(value, input_parameters)
                 logger.debug('... done.')
+                self.dismiss_popup()
 
+    def overwrite_save(self):
+        self.dismiss_popup()
+        self.save_input_file_path = ''  # Reset to allow next save at same file
 
-    def check_input_save(self):
-        self.input_file_saved = True
+    def cancel_save(self):
+        self.save_input_file_path = ''  # Reset to allow next save at same file
 
-
-    def reset_input_save(self):
-        self.input_file_saved = False
-        self.save_input_file_path = ''
-
+    # Menu spinners
 
     def on_save_spinner(self, spinner):
         selected = spinner.text
@@ -631,6 +609,8 @@ class giGUI(F.BoxLayout):
             help_popup = _OKPopupWindow("Help: [0]".format(selected),
                                         help_message)
             help_popup.popup.open()
+
+    # Conditional input rules
 
     # Loading and saving files
 
@@ -743,8 +723,6 @@ class giGUI(F.BoxLayout):
         logger.debug("Save input to file: {0}"
                      .format(file_path))
         self.save_input_file_path = file_path
-        if self.input_file_saved:
-            self.dismiss_popup()
 
     # Results
 
@@ -752,6 +730,38 @@ class giGUI(F.BoxLayout):
 
     def save_results(self):
          logger.info("Saving results.")
+
+    # Set widgete values
+    def _set_widgets(self, input_parameters):
+        """
+        """
+        for var_key, value_str in input_parameters.iteritems():
+            logger.debug("var_key is {0}".format(var_key))
+            logger.debug("value_str is {0}".format(value_str))
+            if var_key not in self.parser_link:
+                # Input key not implemented in parser
+                logger.warning("Key '{0}' read from input file, but not "
+                               "defined in parser.".format(var_key))
+                continue
+            var_name = self.parser_link[var_key]
+            logger.debug("var_name is {0}".format(var_name))
+            if var_name not in self.parameters:
+                # Input key not implemented in GUI
+                logger.warning("Key '{0}' with name '{1}' read from input "
+                               "file, but not defined in App."
+                               .format(var_key, var_name))
+                continue
+            # Set input values to ids.texts
+            if var_name == 'spectrum_range':
+                self.ids['spectrum_range_min'].text = value_str[0]
+                self.ids['spectrum_range_max'].text = value_str[1]
+            elif var_name == 'field_of_view':
+                self.ids['field_of_view_x'].text = value_str[0]
+                self.ids['field_of_view_y'].text = value_str[1]
+            else:
+                logger.debug("Setting text of widget '{0}' to: {1}"
+                             .format(var_name, value_str[0]))
+                self.ids[var_name].text = value_str[0]
 
     # Utility functions
 

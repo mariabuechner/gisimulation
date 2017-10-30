@@ -43,12 +43,12 @@ def check_parser(parameters):
     parameters [dict]
     """
     logger.info("Checking general input...")
-    # % Minimal required inpuf for all scenarios
+    # % Minimal required input for all scenarios
     parameters = general_input(parameters)
     logger.info("... done.")
 
     # % Scenario specific requirements
-    # General and connected parameters
+    # General and connected parameters (calculated geom., Metrices, ct, ...)
 
     return parameters
 
@@ -66,10 +66,25 @@ def general_input(parameters):
         # % Minimal required inpuf for all scenarios
 
         # Source:
-
+        # Check if it was set
+        if not parameters['focal_spot_size'] and \
+          parameters['beam_geometry'] == 'cone':
+            error_message = "Input arguments missing: 'focal_spot_size' " \
+                                "('-fs')."
+            logger.error(error_message)
+            raise InputError(error_message)
+        # If parallel beam, set source size to 0
+        if parameters['beam_geometry'] == 'parallel':
+            parameters['focal_spot_size'] = 0
 
         # Detector:
-        # if not rnge, set range min with threshold. else: check if they match
+        # Threshold (<= max energy)
+        # If photon counting detector, set source size to 0
+        if not parameters['point_spread_function'] and \
+          parameters['detector_type'] == 'conv':
+              pass
+        if parameters['detector_type'] == 'photon':
+            parameters['point_spread_function'] = 0
 
 
         # Spectrum:
@@ -81,9 +96,10 @@ def general_input(parameters):
                           parameters['design_energy'])
 
         # Calculations:
-        if parameters['sampling_rate'] == 0:
+        if not parameters['sampling_rate']:
             try:
-                logger.debug("Sampling rate is 0, set to pixel size * 1e-3.")
+                logger.debug("Sampling rate is not specified, "
+                             "set to pixel size * 1e-3.")
                 # Default to pixel_size *1e-3
                 parameters['sampling_rate'] = parameters['pixel_size'] * 1e-3
                 logger.debug("Sampling rate is {0} um, with pixel size {1} "
@@ -95,13 +111,16 @@ def general_input(parameters):
                 logger.error(error_message)
                 raise InputError(error_message)
 
-#        # General input
-#        if parameters['geometry'] == 'free':
-#            # =================================================================
-#            # Requirements:
-#            #     at least 1 grating
-#            # =================================================================
-#            pass
+        # General input
+        if parameters['beam_geometry'] == 'parallel':
+            # =================================================================
+            # Conditions:
+            #     focal_spot_size = 0
+            #     no G0
+            # Requirements:
+            #     no gratings, G1 or G1+G2
+            # =================================================================
+            pass
 
         return parameters
 

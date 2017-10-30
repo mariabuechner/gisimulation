@@ -90,7 +90,6 @@
 # gi GUI
 <giGUI>:
     orientation: 'vertical'
-    color:
 
     # Main Menu
     BoxLayout:
@@ -163,9 +162,11 @@
                 # General input
                 GridLayout:
                     cols: 3
+
+                    # GI input
                     StackLayout:
                         NonFileBrowserLabel:
-                            text: 'Spectrum'
+                            text: 'GI Design'
                             bold: True
                         BoxLayout:
                             orientation: 'vertical'
@@ -173,10 +174,57 @@
                             height: root.calc_boxlayout_height(line_height, self)
                             BoxLayout:
                                 LabelHelp:
+                                    text: 'Geometry'
+                                    help_message: parser_info['geometry'][1]
+                                Spinner:
+                                    id: geometry
+                                    text: 'free'
+                                    values: ['sym', 'conv', 'inv', 'free'] if beam_geometry.text == 'cone' else ['conv', 'free']
+                            BoxLayout:
+                                LabelHelp:
+                                    text: 'Beam geometry'
+                                    help_message: parser_info['beam_geometry'][1]
+                                Spinner:
+                                    id: beam_geometry
+                                    text: 'parallel'
+                                    values: ['cone', 'parallel']
+                                    on_text: geometry.text = 'free'  # Mode changes, reset GI geometry options
+                            BoxLayout:
+                                LabelHelp:
                                     text: 'Design Energy [keV]'
                                     help_message: parser_info['design_energy'][1]
                                 FloatInput:
                                     id: design_energy
+                            BoxLayout:
+                                disabled: geometry.text != 'free'
+                                LabelHelp:
+                                    text: 'Talbot order'
+                                    help_message: parser_info['talbot_order'][1]
+                                FloatInput:
+                                    id: talbot_order
+                            BoxLayout:
+                                LabelHelp:
+                                    text: 'Sampling voxel size [um]'
+                                    help_message: parser_info['sampling_rate'][1]
+                                FloatInput:
+                                    id: sampling_rate
+
+                    # Source
+                    StackLayout:
+                        NonFileBrowserLabel:
+                            text: 'Source'
+                            bold: True
+                        BoxLayout:
+                            orientation: 'vertical'
+                            size_hint_y: None
+                            height: root.calc_boxlayout_height(line_height, self)
+                            BoxLayout:
+                                disabled: beam_geometry.text == 'parallel'
+                                LabelHelp:
+                                    text: 'Source size [um]'
+                                    help_message: parser_info['focal_spot_size'][1]
+                                FloatInput:
+                                    id: focal_spot_size
                             BoxLayout:
                                 LabelHelp:
                                     size_hint_x: 0.4
@@ -224,40 +272,69 @@
                                     text: '1.0'
                                     disabled: not spectrum_range_set.active or root.spectrum_file_loaded
 
-                    # GI input
+
+                    # Detector
                     StackLayout:
                         NonFileBrowserLabel:
-                            text: 'GI Input'
-                            bold: True
+                            text: 'Detector'
                         BoxLayout:
                             orientation: 'vertical'
                             size_hint_y: None
                             height: root.calc_boxlayout_height(line_height, self)
                             BoxLayout:
                                 LabelHelp:
-                                    text: 'Geometry'
-                                    help_message: parser_info['geometry'][1]
+                                    text: 'Detector type'
+                                    help_message: parser_info['detector_type'][1]
                                 Spinner:
-                                    id: geometry
-                                    text: 'sym'
-                                    values: ['sym', 'conv', 'inv', 'free']
-
-
-                    StackLayout:
-                        NonFileBrowserLabel:
-                            text: '3. block'
-                        BoxLayout:
-                            orientation: 'vertical'
-                            size_hint_y: None
-                            height: root.calc_boxlayout_height(line_height, self)
-                            Button:
-                            Button:
-                            Button:
-
+                                    id: detector_type
+                                    text: 'photon'
+                                    values: ['photon', 'conv']
+                            BoxLayout:
+                                disabled: detector_type.text == 'photon'
+                                LabelHelp:
+                                    text: 'PSF [um]'
+                                    help_message:parser_info['point_spread_function'][1]
+                                FloatInput:
+                                    id: point_spread_function
+                            BoxLayout:
+                                LabelHelp:
+                                    text: 'Pixel size [um]'
+                                    help_message:parser_info['pixel_size'][1]
+                                FloatInput:
+                                    id: pixel_size
+                            BoxLayout:
+                                LabelHelp:
+                                    text: 'Field of view [no. pixels] (x, y)'
+                                    help_message: parser_info['field_of_view'][1]
+                                IntInput:
+                                    id: field_of_view_x
+                                    size_hint_x: 0.25
+                                IntInput:
+                                    id: field_of_view_y
+                                    size_hint_x: 0.25
+                            BoxLayout:
+                                LabelHelp:
+                                    text: 'Detector material'
+                                    help_message:parser_info['material_detector'][1]
+                                TextInput:
+                                    id: material_detector
+                            BoxLayout:
+                                LabelHelp:
+                                    text: 'Detector thickness [um]'
+                                    help_message:parser_info['thickness_detector'][1]
+                                FloatInput:
+                                    id: thickness_detector
+                            BoxLayout:
+                                LabelHelp:
+                                    text: 'Detector thickness [um]'
+                                    help_message:parser_info['thickness_detector'][1]
+                                FloatInput:
+                                    id: thickness_detector
 
                 # Grating input
                 GridLayout:
                     cols: 3
+                    # G0
                     StackLayout:
                         BoxLayout:
                             NonFileBrowserLabel:
@@ -319,7 +396,7 @@
                                     disabled: not spectrum_range_set.active or root.spectrum_file_loaded
 
 
-                    # GI input
+                    # G1
                     StackLayout:
                         BoxLayout:
                             NonFileBrowserLabel:
@@ -340,7 +417,7 @@
                                     text: 'sym'
                                     values: ['sym', 'conv', 'inv', 'free']
 
-
+                    # G2
                     StackLayout:
                         BoxLayout:
                             NonFileBrowserLabel:
@@ -357,7 +434,7 @@
                             Button:
                             Button:
 
-                Widget:
+
                 Widget:
                 Widget:
 

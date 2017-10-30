@@ -1,4 +1,10 @@
+-md
+Si
 -gi
-sym
+free
 -sps
 1.0
+-dt
+conv
+-bg
+parallel
