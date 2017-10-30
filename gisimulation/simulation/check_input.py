@@ -41,6 +41,12 @@ def check_parser(parameters):
     ##########
 
     parameters [dict]
+
+    Returns
+    #######
+
+    parameters [dict]:
+
     """
     logger.info("Checking general input...")
     # % Minimal required input for all scenarios
@@ -55,7 +61,7 @@ def check_parser(parameters):
 
 def general_input(parameters):
     """
-    checking general input (GI, Geom, etc.)
+    checking general input (everything to calculate the geometries)
 
     Parameters
     ##########
@@ -63,7 +69,7 @@ def general_input(parameters):
     parameters [dict]
     """
     try:
-        # % Minimal required inpuf for all scenarios
+        # % Minimal required input for 'free', 'parallel', no gatings
 
         # Source:
         # Check if it was set
@@ -111,7 +117,7 @@ def general_input(parameters):
                 logger.error(error_message)
                 raise InputError(error_message)
 
-        # General input
+        # Special scenarios
         if parameters['beam_geometry'] == 'parallel':
             # =================================================================
             # Conditions:

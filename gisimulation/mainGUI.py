@@ -282,8 +282,8 @@ class _ContinueCancelPopupWindow():
         popup_content.add_widget(message_label)
 
         button_layout = F.BoxLayout(spacing=10)
-        continue_popup_button = F.Button(text='Continue')
         cancel_popup_button = F.Button(text='Cancel')
+        continue_popup_button = F.Button(text='Continue')
 
         button_layout.add_widget(continue_popup_button)
         button_layout.add_widget(cancel_popup_button)
@@ -388,6 +388,8 @@ def _collect_input(parameters, ids):
         logger.debug("Key is: {0}.\nValue is: {1}.".format(var_name, value))
         if 'CheckBox' in str(value):
             continue
+        elif 'TabbedPanel' in str(value):
+            continue
         elif value.text == '':
                 parameters[var_name] = None
         elif 'FloatInput' in str(value):
@@ -412,16 +414,16 @@ def _collect_input(parameters, ids):
                      dtype=float)
     del parameters['spectrum_range_min']
     del parameters['spectrum_range_max']
-#    # FOV (FUTURE)
-#    if parameters['field_of_view_x'] is None or \
-#            parameters['field_of_view_y'] is None:
-#        parameters['spectrum_range'] = None
-#    else:
-#        parameters['field_of_view'] = np.array([parameters['field_of_view_x'],
-#                                               parameters['field_of_view_y']],
-#                                               dtype=float)
-#    del parameters['field_of_view_x']
-#    del parameters['field_of_view_y']
+    # FOV (FUTURE)
+    if parameters['field_of_view_x'] is None or \
+            parameters['field_of_view_y'] is None:
+        parameters['spectrum_range'] = None
+    else:
+        parameters['field_of_view'] = np.array([parameters['field_of_view_x'],
+                                               parameters['field_of_view_y']],
+                                               dtype=float)
+    del parameters['field_of_view_x']
+    del parameters['field_of_view_y']
 
 #    parameters = utilities.Struct(**parameters)  # PAST: converted to dict
     logger.debug("... done.")
@@ -489,12 +491,24 @@ class giGUI(F.BoxLayout):
     # General simulation functions
 
     def check_general_input(self):
+        """
+        """
         # Convert input
         self.parameters = _collect_input(self.parameters, self.ids)
         logger.debug(self.parameters['spectrum_file'])
         self.parameters = check_input.general_input(self.parameters)
         # Update widget content
         self._set_widgets(self.parameters)
+
+    def calculate_geometry(self):
+        """
+        """
+        self.ids.result_tabs.switch_to(self.ids.geometry_results)
+
+    def calculate_visibility(self):
+        """
+        """
+        self.ids.result_tabs.switch_to(self.ids.visibility_results)
 
     # Manage global variables and widget behavior
 
