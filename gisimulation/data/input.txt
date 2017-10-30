@@ -17,3 +17,6 @@ SI
 500
 -bg
 parallel
+-r
+20
+40

@@ -160,24 +160,24 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         help="GI geometry. Choices are\n"
                         "'sym': symmetrical, 'conv': conventional, "
                         "'inv': inverse, 'free': free input.\n")
+    parser.add_argument('-e', dest='design_energy', required=True,
+                        action=_TruePositiveNumber,
+                        type=numerical_type,
+                        help="Design energy of GI [keV].")
     parser.add_argument('-t', dest='talbot_order',
                         type=numerical_type,
                         help="Talbot order.")
-    parser.add_argument('-sr', dest='sampling_rate',
-                        action=_PositiveNumber,
-                        type=numerical_type,
-                        help="Sampling voxel size (cube). "
-                        "If not set, it is pixel_size * 1e-3.")
     parser.add_argument('-bg', dest='beam_geometry', default='parallel',
                         type=str,
                         choices=['cone', 'parallel'], metavar='BEAM_GEOMETRY',
                         help="Beam geometry. Choices are\n"
                         "'cone': cone/divergent beam, "
                         "'parallel': parallel beam (infinite source size).")
-    parser.add_argument('-e', dest='design_energy', required=True,
-                        action=_TruePositiveNumber,
+    parser.add_argument('-sr', dest='sampling_rate',
+                        action=_PositiveNumber,
                         type=numerical_type,
-                        help="Design energy of GI [keV].")
+                        help="Sampling voxel size (cube). "
+                        "If not set, it is pixel_size * 1e-3.")
 
     # Source
     parser.add_argument('-fs', dest='focal_spot_size',

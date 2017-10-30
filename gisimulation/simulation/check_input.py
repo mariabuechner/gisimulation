@@ -67,41 +67,17 @@ def general_input(parameters):
     ##########
 
     parameters [dict]
+
+    Notes
+    #####
+
+    If an parser argument is required, it can be None from the GUI. Thus,
+    check it the first time it is called.
     """
     try:
         # % Minimal required input for 'free', 'parallel', no gatings
 
-        # Source:
-        # Check if it was set
-        if not parameters['focal_spot_size'] and \
-          parameters['beam_geometry'] == 'cone':
-            error_message = "Input arguments missing: 'focal_spot_size' " \
-                                "('-fs')."
-            logger.error(error_message)
-            raise InputError(error_message)
-        # If parallel beam, set source size to 0
-        if parameters['beam_geometry'] == 'parallel':
-            parameters['focal_spot_size'] = 0
-
-        # Detector:
-        # Threshold (<= max energy)
-        # If photon counting detector, set source size to 0
-        if not parameters['point_spread_function'] and \
-          parameters['detector_type'] == 'conv':
-              pass
-        if parameters['detector_type'] == 'photon':
-            parameters['point_spread_function'] = 0
-
-
-        # Spectrum:
-        # Get spectrum
-        [parameters['spectrum'], min_energy, max_energy] = \
-            _get_spectrum(parameters['spectrum_file'],
-                          parameters['spectrum_range'],
-                          parameters['spectrum_step'],
-                          parameters['design_energy'])
-
-        # Calculations:
+        # General and GI Design
         if not parameters['sampling_rate']:
             try:
                 logger.debug("Sampling rate is not specified, "
@@ -112,10 +88,75 @@ def general_input(parameters):
                              "um..".format(parameters['sampling_rate'],
                                            parameters['pixel_size']))
             except TypeError:
+                # Pixel size required in Sim, but not in GUI: check for it
                 error_message = "Input arguments missing: 'pixel_size' " \
                                 "('-pxs')."
                 logger.error(error_message)
                 raise InputError(error_message)
+
+        # Source:
+        if parameters['beam_geometry'] == 'cone':
+            if not parameters['focal_spot_size']:
+                error_message = "Input argument missing: 'focal_spot_size' " \
+                                "('-fs')."
+                logger.error(error_message)
+                raise InputError(error_message)
+        elif parameters['beam_geometry'] == 'parallel':
+            parameters['focal_spot_size'] = 0
+
+        # Detector:
+        # PSF right size?
+        if parameters['detector_type'] == 'conv':
+            if not parameters['point_spread_function'] :
+                error_message = "Input argument missing: " \
+                                "'point_spread_function' ('-psf')."
+                logger.error(error_message)
+                raise InputError(error_message)
+            if parameters['point_spread_function'] <= \
+            parameters['pixel_size']:
+                # PSF too small, but be larger
+                error_message = "PSF must be at larger than the  pixel "
+                "size."
+                logger.error(error_message)
+                raise InputError(error_message)
+        elif parameters['detector_type'] == 'photon':
+            parameters['point_spread_function'] = 0
+        # FOV larger 0? (check for GUI)
+        try:
+            if not all(parameters['field_of_view']>0):
+                error_message = "FOV must be at least (1, 1)."
+                logger.error(error_message)
+                raise InputError(error_message)
+        except TypeError:
+            # FOV required in Sim, but not in GUI: check for it
+            error_message = "Input argument missing: 'field_of_view' " \
+                            "('-fov')."
+            logger.error(error_message)
+            raise InputError(error_message)
+        # Threshold (error if > max energy and warninglog if < min)
+
+        # material (in detector module, if None, assume 100 % efficiency)
+
+        # material thickness (if defined, material must be defined)
+
+
+        # Spectrum:
+        # Get spectrum
+        # Design energy required in Sim, but not in GUI: check for it
+        if not parameters['design_energy']:
+            # Design energy required in Sim, but not in GUI: check for it
+            error_message = "Input argument missing: 'design_energy' " \
+                            "('-e')."
+            logger.error(error_message)
+            raise InputError(error_message)
+        [parameters['spectrum'], min_energy, max_energy] = \
+            _get_spectrum(parameters['spectrum_file'],
+                          parameters['spectrum_range'],
+                          parameters['spectrum_step'],
+                          parameters['design_energy'])
+
+
+
 
         # Special scenarios
         if parameters['beam_geometry'] == 'parallel':

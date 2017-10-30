@@ -52,11 +52,6 @@
 <StackLayout>:
     padding: (1, 1, 0, 0 )
 
-# All Tab panels
-<TabbedPanel>:
-    do_default_tab: False
-    #tab_width: self.size[0]/len(self.tab_list)  # Not possible here because of 0 tabs devide
-
 # Set rules for custom classes
 
 # All NonFileBrowserLabel
@@ -141,7 +136,7 @@
             background_color: dark_red_button
             size_hint_x: 0.05
             text: 'Exit'
-            on_release: root.exit_app()
+            on_release: app.stop()
 
 
     # Splitter to seperate general input area (left) and Tabs for results
@@ -155,10 +150,14 @@
 
             # Right side of splitter
             TabbedPanel:
+                id: input_tabs
+                do_default_tab: False
                 tab_width: self.size[0]/len(self.tab_list)
+                default_tab: general_inputs
 
                 # Content of 'general input window'
                 TabbedPanelItem:
+                    id: general_inputs
                     text: 'General Parameters'
                     BoxLayout:
                         orientation: 'vertical'
@@ -200,7 +199,7 @@
                                         FloatInput:
                                             id: design_energy
                                     BoxLayout:
-                                        disabled: geometry.text != 'free'
+                                        disabled: geometry.text == 'free'
                                         LabelHelp:
                                             text: 'Talbot order'
                                             help_message: parser_info['talbot_order'][1]
@@ -478,6 +477,7 @@
         # Left side of splitter
         TabbedPanel:
             id: result_tabs
+            do_default_tab: False
             tab_width: self.size[0]/len(self.tab_list)
 
             # Geometry

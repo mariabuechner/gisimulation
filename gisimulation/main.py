@@ -158,4 +158,5 @@ if __name__ == '__main__':
         logger.info("Command line error, exiting...")
         sys.exit(2)  # 2: command line syntax errors
 #    finally:
+#        # close all open files!?
 #        logger.debug("...done.")

@@ -13,7 +13,6 @@ DEBUGGING = True
 import numpy as np
 import sys
 import re
-import time
 from functools import partial
 import os.path
 import logging
@@ -385,7 +384,7 @@ def _collect_input(parameters, ids):
     """
     logger.debug("Converting all label inputs...")
     for var_name, value in ids.iteritems():
-        logger.debug("Key is: {0}.\nValue is: {1}.".format(var_name, value))
+#        logger.debug("Key is: {0}.\nValue is: {1}.".format(var_name, value))
         if 'CheckBox' in str(value):
             continue
         elif 'TabbedPanel' in str(value):
@@ -400,6 +399,7 @@ def _collect_input(parameters, ids):
             parameters[var_name] = value.text
         elif 'Spinner' in str(value):
             parameters[var_name] = value.text
+        logger.debug("var_name is: {0}".format(var_name))
         logger.debug("value.text is: {0}".format(value.text))
 
     # Handel double numeric inputs
@@ -414,10 +414,10 @@ def _collect_input(parameters, ids):
                      dtype=float)
     del parameters['spectrum_range_min']
     del parameters['spectrum_range_max']
-    # FOV (FUTURE)
+    # FOV
     if parameters['field_of_view_x'] is None or \
             parameters['field_of_view_y'] is None:
-        parameters['spectrum_range'] = None
+        parameters['field_of_view'] = None
     else:
         parameters['field_of_view'] = np.array([parameters['field_of_view_x'],
                                                parameters['field_of_view_y']],
@@ -487,18 +487,22 @@ class giGUI(F.BoxLayout):
         # Init self.parameters
         self.parameters = _collect_input(self.parameters, self.ids)
         self.parameters['spectrum_file'] = None
-
+        for var_name, value in self.parameters.iteritems():
+            logger.debug(var_name)
     # General simulation functions
 
     def check_general_input(self):
         """
         """
-        # Convert input
-        self.parameters = _collect_input(self.parameters, self.ids)
-        logger.debug(self.parameters['spectrum_file'])
-        self.parameters = check_input.general_input(self.parameters)
-        # Update widget content
-        self._set_widgets(self.parameters)
+        try:
+            # Convert input
+            self.parameters = _collect_input(self.parameters, self.ids)
+            logger.debug(self.parameters['design_energy'])
+            self.parameters = check_input.general_input(self.parameters)
+#            # Update widget content
+#            self._set_widgets(self.parameters)
+        except check_input.InputError as e:
+            ErrorDisplay('Input Error', str(e))
 
     def calculate_geometry(self):
         """
@@ -529,8 +533,6 @@ class giGUI(F.BoxLayout):
         #####
 
         input_parameters [dict]:    input_parameters[var_key] = str(value)
-        self.parameters [dict]:     widget_parameters[var_name] = value
-        self.parser_link [dict]:    parser_link[var_key] = var_name
 
         """
         # Do for all files in load_input_file_paths and merge results.
@@ -547,7 +549,7 @@ class giGUI(F.BoxLayout):
         #####
 
         self.parameters [dict]:     widget_parameters[var_name] = value
-        self.parser_info [dict]:    parser_link[var_name] = [var_key, var_help]
+
         """
         if self.save_input_file_path != '':  # e.g. after reset.
             # Check input
@@ -748,6 +750,8 @@ class giGUI(F.BoxLayout):
     # Set widgete values
     def _set_widgets(self, input_parameters):
         """
+        self.parameters [dict]:     widget_parameters[var_name] = value
+        self.parser_link [dict]:    parser_link[var_key] = var_name
         """
         for var_key, value_str in input_parameters.iteritems():
             logger.debug("var_key is {0}".format(var_key))
@@ -778,10 +782,6 @@ class giGUI(F.BoxLayout):
                 self.ids[var_name].text = value_str[0]
 
     # Utility functions
-
-    def exit_app(self):
-        logger.info("Exiting App...")
-        sys.exit(2)
 
     def calc_boxlayout_height(self, childen_height, boxlayout):
         """
@@ -816,10 +816,6 @@ class giGUIApp(App):
         self.title = 'GI Simumlation'
         return giGUI()  # Main widget, root
 
-    # When app window is closed
-    def on_stop(self):
-        logger.info("Exiting App...")
-        sys.exit(2)
 
 
 # %% Main
