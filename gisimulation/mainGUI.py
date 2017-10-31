@@ -102,8 +102,6 @@ class FloatInput(F.TextInput):
     (22.10.2017)
 
     """
-    multiline = False  # On enter, loose focus on textinput
-    write_tab = False  # On tab, loose focus on textinput
 
     # Set input pattern
     pattern = re.compile('[^0-9]')  # Allowed input numbers
@@ -126,8 +124,6 @@ class IntInput(F.TextInput):  # Inherit and just change teyt input???
     """
     TextInput which only allows positive integers, and 1 line.
     """
-    multiline = False  # On enter, loose focus on textinput
-    write_tab = False  # On tab, loose focus on textinput
 
     pattern = re.compile('[^0-9]')  # Allowed input numbers
 
@@ -497,10 +493,35 @@ class giGUI(F.BoxLayout):
         try:
             # Convert input
             self.parameters = _collect_input(self.parameters, self.ids)
-            logger.debug(self.parameters['design_energy'])
+
+            # Check values
+            # Are required (in parser) defined?
+            if not self.parameters['pixel_size']:
+                error_message = "Input arguments missing: 'pixel_size' " \
+                                "('-pxs')."
+                logger.error(error_message)
+                raise check_input.InputError(error_message)
+            if self.parameters['field_of_view'] is None:
+                error_message = "Input argument missing: 'field_of_view' " \
+                                "('-fov')."
+                logger.error(error_message)
+                raise check_input.InputError(error_message)
+            else:
+                if not all(self.parameters['field_of_view'] > 0):
+                    error_message = "FOV must be at least (1, 1)."
+                    logger.error(error_message)
+                    raise check_input.InputError(error_message)
+            if not self.parameters['design_energy']:
+                error_message = "Input argument missing: 'design_energy' " \
+                                "('-e')."
+                logger.error(error_message)
+                raise check_input.InputError(error_message)
+            # Check rest
             self.parameters = check_input.general_input(self.parameters)
-#            # Update widget content
-#            self._set_widgets(self.parameters)
+
+            # Update widget content
+            self._set_widgets(self.parameters, from_file=False)
+
         except check_input.InputError as e:
             ErrorDisplay('Input Error', str(e))
 
@@ -541,7 +562,7 @@ class giGUI(F.BoxLayout):
             logger.debug("Loading input from file at: {0}".format(input_file))
             input_parameters = _load_input_file(input_file)
         # Set widget content
-        self._set_widgets(input_parameters)
+        self._set_widgets(input_parameters, from_file=True)
 
     def on_save_input_file_path(self, instance, value):
         """
@@ -748,38 +769,76 @@ class giGUI(F.BoxLayout):
          logger.info("Saving results.")
 
     # Set widgete values
-    def _set_widgets(self, input_parameters):
+    def _set_widgets(self, input_parameters, from_file):
         """
-        self.parameters [dict]:     widget_parameters[var_name] = value
-        self.parser_link [dict]:    parser_link[var_key] = var_name
+
+        if from file:
+
+            input_parameters [dict]:    input_parameters[var_key] = value
+
+        if from app (not from file):
+
+            input_parameters [dict]:    parameters[var_name] = value
+
+        self.parameters [dict]:         widget_parameters[var_name] = value
+        self.parser_link [dict]:        parser_link[var_key] = var_name
+        self.parser_info [dict]:        parser_info[var_name] = [var_key,
+                                                                 var_help]
         """
-        for var_key, value_str in input_parameters.iteritems():
-            logger.debug("var_key is {0}".format(var_key))
-            logger.debug("value_str is {0}".format(value_str))
-            if var_key not in self.parser_link:
-                # Input key not implemented in parser
-                logger.warning("Key '{0}' read from input file, but not "
-                               "defined in parser.".format(var_key))
-                continue
-            var_name = self.parser_link[var_key]
-            logger.debug("var_name is {0}".format(var_name))
-            if var_name not in self.parameters:
-                # Input key not implemented in GUI
-                logger.warning("Key '{0}' with name '{1}' read from input "
-                               "file, but not defined in App."
-                               .format(var_key, var_name))
-                continue
-            # Set input values to ids.texts
-            if var_name == 'spectrum_range':
-                self.ids['spectrum_range_min'].text = value_str[0]
-                self.ids['spectrum_range_max'].text = value_str[1]
-            elif var_name == 'field_of_view':
-                self.ids['field_of_view_x'].text = value_str[0]
-                self.ids['field_of_view_y'].text = value_str[1]
-            else:
-                logger.debug("Setting text of widget '{0}' to: {1}"
-                             .format(var_name, value_str[0]))
-                self.ids[var_name].text = value_str[0]
+        if from_file:
+            for var_key, value_str in input_parameters.iteritems():
+                logger.debug("var_key is {0}".format(var_key))
+                logger.debug("value_str is {0}".format(value_str))
+                if var_key not in self.parser_link:
+                    # Input key not implemented in parser
+                    logger.warning("Key '{0}' read from input file, but not "
+                                   "defined in parser. Skipping..."
+                                   .format(var_key))
+                    continue
+                var_name = self.parser_link[var_key]
+                logger.debug("var_name is {0}".format(var_name))
+                if var_name not in self.parameters:
+                    # Input key not implemented in GUI
+                    logger.warning("Key '{0}' with name '{1}' read from input "
+                                   "file, but not defined in App. Skipping..."
+                                   .format(var_key, var_name))
+                    continue
+                # Set input values to ids.texts
+                if var_name == 'spectrum_range':
+                    self.ids['spectrum_range_min'].text = value_str[0]
+                    self.ids['spectrum_range_max'].text = value_str[1]
+                elif var_name == 'field_of_view':
+                    self.ids['field_of_view_x'].text = value_str[0]
+                    self.ids['field_of_view_y'].text = value_str[1]
+                else:
+                    logger.debug("Setting text of widget '{0}' to: {1}"
+                                 .format(var_name, value_str[0]))
+                    self.ids[var_name].text = value_str[0]
+        else:
+            for var_name, value in input_parameters.iteritems():
+                # Skip all the not-set parameters
+                if value is not None:
+                    logger.debug("var_name is {0}".format(var_name))
+                    logger.debug("value is {0}".format(value))
+                    if var_name not in self.parser_info:
+                        # Input variable not implemented in parser
+                        logger.warning("Parameter '{0}' read from app, but not "
+                                       "defined in parser. Skipping..."
+                                       .format(var_name))
+                        continue
+                    var_key = self.parser_info[var_name][0]
+                    logger.debug("var_key is {0}".format(var_key))
+                    # Set input values to ids.texts
+                    if var_name == 'spectrum_range':
+                        self.ids['spectrum_range_min'].text = str(value[0])
+                        self.ids['spectrum_range_max'].text = str(value[1])
+                    elif var_name == 'field_of_view':
+                        self.ids['field_of_view_x'].text = str(value[0])
+                        self.ids['field_of_view_y'].text = str(value[1])
+                    else:
+                        logger.debug("Setting text of widget '{0}' to: {1}"
+                                     .format(var_name, value))
+                        self.ids[var_name].text = str(value)
 
     # Utility functions
 

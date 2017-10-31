@@ -29,7 +29,8 @@
     size_hint_y: None
     height: line_height
     size_hint_x: num_input_size
-    multiline: False
+    multiline: False  # On enter, loose focus on textinput
+    write_tab: False  # On tab, loose focus on textinput
 
 # All checkboxes
 <CheckBox>:
@@ -243,6 +244,9 @@
                                             on_press: root.spectrum_file_path = ''
                                         TextInput:
                                             text: ntpath.basename(root.spectrum_file_path)
+                                            background_disabled_normal: self.background_normal
+                                            disabled_foreground_color: self.foreground_color
+                                            disabled: True
                                     BoxLayout:
                                         LabelHelp:
                                             text: 'Spectrum range [keV]'

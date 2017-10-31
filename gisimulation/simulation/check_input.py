@@ -79,21 +79,13 @@ def general_input(parameters):
 
         # General and GI Design
         if not parameters['sampling_rate']:
-            try:
-                logger.debug("Sampling rate is not specified, "
-                             "set to pixel size * 1e-3.")
-                # Default to pixel_size *1e-3
-                parameters['sampling_rate'] = parameters['pixel_size'] * 1e-3
-                logger.debug("Sampling rate is {0} um, with pixel size {1} "
-                             "um..".format(parameters['sampling_rate'],
-                                           parameters['pixel_size']))
-            except TypeError:
-                # Pixel size required in Sim, but not in GUI: check for it
-                error_message = "Input arguments missing: 'pixel_size' " \
-                                "('-pxs')."
-                logger.error(error_message)
-                raise InputError(error_message)
-
+            logger.debug("Sampling rate is not specified, "
+                         "set to pixel size * 1e-3.")
+            # Default to pixel_size *1e-3
+            parameters['sampling_rate'] = parameters['pixel_size'] * 1e-3
+            logger.debug("Sampling rate is {0} um, with pixel size {1} "
+                         "um..".format(parameters['sampling_rate'],
+                                       parameters['pixel_size']))
         # Source:
         if parameters['beam_geometry'] == 'cone':
             if not parameters['focal_spot_size']:
@@ -121,18 +113,7 @@ def general_input(parameters):
                 raise InputError(error_message)
         elif parameters['detector_type'] == 'photon':
             parameters['point_spread_function'] = 0
-        # FOV larger 0? (check for GUI)
-        try:
-            if not all(parameters['field_of_view']>0):
-                error_message = "FOV must be at least (1, 1)."
-                logger.error(error_message)
-                raise InputError(error_message)
-        except TypeError:
-            # FOV required in Sim, but not in GUI: check for it
-            error_message = "Input argument missing: 'field_of_view' " \
-                            "('-fov')."
-            logger.error(error_message)
-            raise InputError(error_message)
+
         # Threshold (error if > max energy and warninglog if < min)
 
         # material (in detector module, if None, assume 100 % efficiency)
@@ -142,13 +123,6 @@ def general_input(parameters):
 
         # Spectrum:
         # Get spectrum
-        # Design energy required in Sim, but not in GUI: check for it
-        if not parameters['design_energy']:
-            # Design energy required in Sim, but not in GUI: check for it
-            error_message = "Input argument missing: 'design_energy' " \
-                            "('-e')."
-            logger.error(error_message)
-            raise InputError(error_message)
         [parameters['spectrum'], min_energy, max_energy] = \
             _get_spectrum(parameters['spectrum_file'],
                           parameters['spectrum_range'],
