@@ -385,6 +385,8 @@ def _collect_input(parameters, ids):
             continue
         elif 'TabbedPanel' in str(value):
             continue
+        elif 'Layout' in str(value):
+            continue
         elif value.text == '':
                 parameters[var_name] = None
         elif 'FloatInput' in str(value):
@@ -472,7 +474,8 @@ class giGUI(F.BoxLayout):
     save_input_file_path = F.StringProperty()
 
     setup_components = F.ListProperty()  # Lsit of all components in the setup
-    sample_just_added = False
+    sample_added = False
+    available_gratings = F.ListProperty()
 
     def __init__(self, **kwargs):
         super(giGUI, self).__init__(**kwargs)
@@ -488,6 +491,7 @@ class giGUI(F.BoxLayout):
             logger.debug(var_name)
         # Init components trackers
         self.setup_components = ['Source', 'Detector']
+        self.available_gratings = ['G0', 'G1', 'G2']
 
     # General simulation functions
 
@@ -653,10 +657,75 @@ class giGUI(F.BoxLayout):
 
     # Conditional input rules
 
+    def on_geometry(self):
+        """
+        Set sample position options and activate required gratings.
+        """
+        # Remove sample if it was set
+        if 'Sample' in self.setup_components:
+                self.ids.add_sample.active = False
+        # Required gratings
+        if self.ids.geometry.text != 'free':
+            # G1 and G2 required
+            self.ids.g1_set.active = True
+            self.ids.g2_set.active = True
+            # Sample relative to G1
+            self.ids.sample_relative_to.text = 'G1'
+            self.ids.sample_relative_to.values = ['G1']
+        # Sample position
+        else:
+            # Reset to 'free' (same as start)
+            self.ids.sample_relative_position.text = 'after'
+            self.ids.sample_relative_position.values = ['after']
+            self.ids.sample_relative_to.text = 'Source'
+            if 'Sample' not in self.setup_components:
+                self.ids.sample_relative_to.values = self.setup_components
+            else:
+                self.ids.sample_relative_to.values = \
+                    list(self.setup_components).remove('Sample')
+        # GI cases
+        if self.ids.geometry.text == 'conv':
+            self.ids.sample_relative_position.text = 'before'
+            self.ids.sample_relative_position.values = ['before']
+            if self.ids.beam_geometry.text == 'parallel':
+                self.ids.sample_relative_position.values = ['after', 'before']
+        elif self.ids.geometry.text == 'inv':
+            self.ids.sample_relative_position.text = 'after'
+            self.ids.sample_relative_position.values = ['after']
+        else:
+            # Symmetrical case
+            self.ids.sample_relative_position.text = 'after'
+            self.ids.sample_relative_position.values = ['after', 'before']
+
+
+
+    def on_beam_geometry(self):
+        """
+        Set and deactivate required gratings.
+        """
+        # Remove sample if it was set
+        if 'Sample' in self.setup_components:
+                self.ids.add_sample.active = False
+        if self.ids.beam_geometry.text == 'parallel':
+            # Change GI geometry text
+            if self.ids.geometry.text == 'sym' or \
+              self.ids.geometry.text == 'inv':
+                # Mode changes, reset GI geometry
+                self.ids.geometry.text = 'free'
+            # Set available and deactive gratings
+            self.ids.g0_set.active = False
+            self.available_gratings = ['G1', 'G2']
+            if self.ids.fixed_grating.text == 'G0':
+                self.ids.fixed_grating.text = 'G1'
+        else:
+            # Update geometry conditions for cone beam
+            self.on_geometry()
+            self.available_gratings = ['G0', 'G1', 'G2']
+
+
     def on_setup_components(self, instance, value):
         # On change in component list, update sample_relative_to spinner text
-        # and
-        if not self.sample_just_added:
+        if not self.sample_added:
             self.ids.sample_relative_to.text = self.setup_components[0]
 
     def on_grating_checkbox_active(self, state, checkbox_name):
@@ -681,13 +750,13 @@ class giGUI(F.BoxLayout):
         elif self.ids.sample_relative_to.text == 'Detector':
             self.ids.sample_relative_position.values = ['before']
             self.ids.sample_relative_position.text = 'before'
-        else:
+        elif self.ids.geometry.text == 'free':
             self.ids.sample_relative_position.values = ['after', 'before']
 
     def on_sample_checkbox_active(self, state):
         if state:
             # Add sample at right position
-            self.sample_just_added = True
+            self.sample_added = True
             reference_index = \
                 self.setup_components.index(self.ids.sample_relative_to.text)
             if self.ids.sample_relative_position.text == 'after':
@@ -697,7 +766,7 @@ class giGUI(F.BoxLayout):
         else:
             # Remove sample, in case that geometry is changing
             self.setup_components.remove('Sample')
-            self.sample_just_added = False
+            self.sample_added = False
 
         logger.debug("Current setup consists of:\n{0}"
                      .format(self.setup_components))

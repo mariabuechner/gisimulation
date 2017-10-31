@@ -93,8 +93,6 @@ def general_input(parameters):
                                 "('-fs')."
                 logger.error(error_message)
                 raise InputError(error_message)
-        elif parameters['beam_geometry'] == 'parallel':
-            parameters['focal_spot_size'] = 0
 
         # Get spectrum
         [parameters['spectrum'], min_energy, max_energy] = \
@@ -118,8 +116,6 @@ def general_input(parameters):
                 "size."
                 logger.error(error_message)
                 raise InputError(error_message)
-        elif parameters['detector_type'] == 'photon':
-            parameters['point_spread_function'] = 0
 
         # Threshold (error if > max energy and warninglog if < min)
         if parameters['detector_threshold'] > max_energy:
