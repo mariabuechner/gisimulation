@@ -96,6 +96,13 @@ def general_input(parameters):
         elif parameters['beam_geometry'] == 'parallel':
             parameters['focal_spot_size'] = 0
 
+        # Get spectrum
+        [parameters['spectrum'], min_energy, max_energy] = \
+            _get_spectrum(parameters['spectrum_file'],
+                          parameters['spectrum_range'],
+                          parameters['spectrum_step'],
+                          parameters['design_energy'])
+
         # Detector:
         # PSF right size?
         if parameters['detector_type'] == 'conv':
@@ -115,19 +122,22 @@ def general_input(parameters):
             parameters['point_spread_function'] = 0
 
         # Threshold (error if > max energy and warninglog if < min)
-
-        # material (in detector module, if None, assume 100 % efficiency)
+        if parameters['detector_threshold'] > max_energy:
+            error_message = "Detector threshold must be <= the maximal energy."
+            logger.error(error_message)
+            raise InputError(error_message)
+        elif parameters['detector_threshold'] < min_energy:
+            logger.warning("Detector threshold is smaller than the minimal "
+                           "energy.")
 
         # material thickness (if defined, material must be defined)
+        if parameters['thickness_detector'] and \
+        not parameters['material_detector']:
+            error_message = "Detector material not specified."
+            logger.error(error_message)
+            raise InputError(error_message)
 
 
-        # Spectrum:
-        # Get spectrum
-        [parameters['spectrum'], min_energy, max_energy] = \
-            _get_spectrum(parameters['spectrum_file'],
-                          parameters['spectrum_range'],
-                          parameters['spectrum_step'],
-                          parameters['design_energy'])
 
 
 

@@ -321,16 +321,16 @@
                                             size_hint_x: 0.25
                                     BoxLayout:
                                         LabelHelp:
+                                            text: 'Detector threshold [keV]'
+                                            help_message: parser_info['detector_threshold'][1]
+                                        FloatInput:
+                                            id: detector_threshold
+                                    BoxLayout:
+                                        LabelHelp:
                                             text: 'Detector material'
                                             help_message: parser_info['material_detector'][1]
                                         TextInput:
                                             id: material_detector
-                                    BoxLayout:
-                                        LabelHelp:
-                                            text: 'Detector thickness [um]'
-                                            help_message: parser_info['thickness_detector'][1]
-                                        FloatInput:
-                                            id: thickness_detector
                                     BoxLayout:
                                         LabelHelp:
                                             text: 'Detector thickness [um]'
@@ -345,10 +345,12 @@
                             StackLayout:
                                 BoxLayout:
                                     NonFileBrowserLabel:
+                                        id: g0_set_name
                                         text: 'G0'
                                         bold: True
                                     CheckBox:
                                         id: g0_set
+                                        on_active: root.on_grating_checkbox_active(self.active, g0_set_name.text)
                                 BoxLayout:
                                     orientation: 'vertical'
                                     size_hint_y: None
@@ -407,10 +409,12 @@
                             StackLayout:
                                 BoxLayout:
                                     NonFileBrowserLabel:
+                                        id: g1_set_name
                                         text: 'G1'
                                         bold: True
                                     CheckBox:
                                         id: g1_set
+                                        on_active: root.on_grating_checkbox_active(self.active, g1_set_name.text)
                                 BoxLayout:
                                     orientation: 'vertical'
                                     size_hint_y: None
@@ -428,10 +432,12 @@
                             StackLayout:
                                 BoxLayout:
                                     NonFileBrowserLabel:
+                                        id: g2_set_name
                                         text: 'G2'
                                         bold: True
                                     CheckBox:
                                         id: g2_set
+                                        on_active: root.on_grating_checkbox_active(self.active, g2_set_name.text)
                                 BoxLayout:
                                     orientation: 'vertical'
                                     size_hint_y: None
@@ -458,9 +464,19 @@
                         height: root.calc_boxlayout_height(line_height, self)
                         BoxLayout:
                             NonFileBrowserLabel:
-                                text: 'Add sample?'
+                                text: 'Add sample'
+                            Spinner:
+                                id: sample_relative_position
+                                text: 'after'
+                                values: ['after']
+                            Spinner:
+                                id: sample_relative_to
+                                text: 'Source'
+                                on_text: root.on_sample_relative_to()
+                                values: root.setup_components if 'Sample' not in root.setup_components else list(self.setup_components).remove('Sample')
                             CheckBox:
                                 id: add_sample
+                                on_active: root.on_sample_checkbox_active(self.active)
                         BoxLayout:
                             orientation: 'vertical'
                             size_hint_y: None

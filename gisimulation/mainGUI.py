@@ -465,13 +465,14 @@ class giGUI(F.BoxLayout):
     parser_info = F.DictProperty()  # Will be params[var_name]
                                                   # = [var_key, var_help]
     parser_link = F.DictProperty()  # Will be params[var_key] = var_name
-#    parameters = dict()  # Will be params[var_name] = value
 
     spectrum_file_path = F.StringProperty()
     spectrum_file_loaded = F.BooleanProperty(defaultvalue=False)
     load_input_file_paths = F.ListProperty()
     save_input_file_path = F.StringProperty()
 
+    setup_components = F.ListProperty()  # Lsit of all components in the setup
+    sample_just_added = False
 
     def __init__(self, **kwargs):
         super(giGUI, self).__init__(**kwargs)
@@ -485,6 +486,9 @@ class giGUI(F.BoxLayout):
         self.parameters['spectrum_file'] = None
         for var_name, value in self.parameters.iteritems():
             logger.debug(var_name)
+        # Init components trackers
+        self.setup_components = ['Source', 'Detector']
+
     # General simulation functions
 
     def check_general_input(self):
@@ -648,6 +652,55 @@ class giGUI(F.BoxLayout):
             help_popup.popup.open()
 
     # Conditional input rules
+
+    def on_setup_components(self, instance, value):
+        # On change in component list, update sample_relative_to spinner text
+        # and
+        if not self.sample_just_added:
+            self.ids.sample_relative_to.text = self.setup_components[0]
+
+    def on_grating_checkbox_active(self, state, checkbox_name):
+        if state:
+            self.setup_components.append(checkbox_name)
+            self.setup_components.sort()
+            # After sort, switch Source and Detector
+            self.setup_components[0], self.setup_components[-1] = \
+              self.setup_components[-1], self.setup_components[0]
+        else:
+            self.setup_components.remove(checkbox_name)
+            # Also uncheck sample_added
+            self.ids.add_sample.active = False
+            self.ids.sample_relative_to.text = self.setup_components[0]
+        logger.debug("Current setup consists of:\n{0}"
+                     .format(self.setup_components))
+
+    def on_sample_relative_to(self):
+        if self.ids.sample_relative_to.text == 'Source':
+            self.ids.sample_relative_position.values = ['after']
+            self.ids.sample_relative_position.text = 'after'
+        elif self.ids.sample_relative_to.text == 'Detector':
+            self.ids.sample_relative_position.values = ['before']
+            self.ids.sample_relative_position.text = 'before'
+        else:
+            self.ids.sample_relative_position.values = ['after', 'before']
+
+    def on_sample_checkbox_active(self, state):
+        if state:
+            # Add sample at right position
+            self.sample_just_added = True
+            reference_index = \
+                self.setup_components.index(self.ids.sample_relative_to.text)
+            if self.ids.sample_relative_position.text == 'after':
+                self.setup_components.insert(reference_index+1, 'Sample')
+            else:
+                self.setup_components.insert(reference_index, 'Sample')
+        else:
+            # Remove sample, in case that geometry is changing
+            self.setup_components.remove('Sample')
+            self.sample_just_added = False
+
+        logger.debug("Current setup consists of:\n{0}"
+                     .format(self.setup_components))
 
     # Loading and saving files
 
