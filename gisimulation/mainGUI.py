@@ -1,5 +1,5 @@
 """
-GUI mpodule for gi-simulation.
+GUI module for gi-simulation.
 
 Usage
 #####
@@ -32,8 +32,6 @@ from kivy.app import App
 from kivy.garden.filebrowser import FileBrowser
 from kivy.utils import platform
 from kivy.core.window import Window
-# Properties
-from kivy.properties import StringProperty
 # UIX
 from kivy.factory import Factory as F
 
@@ -46,7 +44,6 @@ logging.Logger.manager.root = Logger  # Makes Kivy Logger root for all
 logger = logging.getLogger(__name__)
 
 # gisimulation imports
-import kivy_test
 import simulation.parser_def as parser_def
 import simulation.utilities as utilities
 import simulation.check_input as check_input
@@ -60,6 +57,7 @@ Window.maximize()  # NOTE: On desktop platforms only
 
 ERROR_MESSAGE_SIZE = (600, 450)  # absolute
 FILE_BROWSER_SIZE = (0.9, 0.9)  # relative
+LINE_HEIGHT = 40
 
 # %% Custom Widgets
 
@@ -89,7 +87,6 @@ class NonFileBrowserLabel(F.Label):
     pass
 
 # Inputs
-
 
 class FloatInput(F.TextInput):
     """
@@ -122,7 +119,7 @@ class FloatInput(F.TextInput):
 
 class IntInput(F.TextInput):  # Inherit and just change teyt input???
     """
-    TextInput which only allows positive integers, and 1 line.
+    TextInput which only allows positive integers.
     """
 
     pattern = re.compile('[^0-9]')  # Allowed input numbers
@@ -136,6 +133,39 @@ class IntInput(F.TextInput):  # Inherit and just change teyt input???
         return super(IntInput, self).insert_text(s, from_undo=from_undo)
 
 
+class Distances(F.GridLayout):
+    def __init__(self, **kwargs):
+        super(Distances, self).__init__(**kwargs)
+        self.cols = 1
+        self.update(['Source', 'Detector'])
+
+
+    def update(self, component_list):
+        # Remove all old widgets
+        self.clear_widgets()
+        #
+        self.size_hint_y=None
+        self.height=(len(component_list)-1) * LINE_HEIGHT
+        # Add new ones for all comonents
+        for index, component in enumerate(component_list[:-1]):
+            logger.debug("component: {}".format(component))
+            distance_container = F.BoxLayout()
+
+            distance_text = ("Distance from {0} to {1} [mm]"
+                             .format(component, component_list[index+1]))
+            distance_label = NonFileBrowserLabel(text=distance_text)
+
+            distance_value = FloatInput(sixe_hint_x=0.2)
+            distance_id = "{0}_{1}".format(component, component_list[index+1])
+            distance_value.id = distance_id
+
+            distance_container.add_widget(distance_label)
+            distance_container.add_widget(distance_value)
+            self.add_widget(distance_container)
+            #self.add_widget(distance_container)
+            logger.debug("Added label '{0}' with input ID '{1}'"
+                         .format(distance_text, distance_id))
+
 # Error popup
 
 
@@ -143,6 +173,13 @@ class ErrorDisplay():
     """
     Popup window in case an exception is caught. Displays type of error and
     error message.
+
+    Parameters
+    ##########
+
+    error_title [str]:      type of error
+    error_message [str]:    error message
+
     """
     def __init__(self, error_title, error_message):
         """
@@ -154,7 +191,18 @@ class ErrorDisplay():
 class WarningDisplay():
     """
     Popup window in case an exception is caught and user can choose to
-    continue. Displays type of error and error message.
+    continue. Displays type of warning and warning message.
+
+    Parameters
+    ##########
+
+    warning_title [str]:        type of warning
+    warning_message [str]:      warning message
+
+    overwrite [func]:           function to execute if 'continue'
+    overwrite_finish [func]:    after overwrite, finish up
+    cancel_finish [func]:       after cancel, finish up
+
     """
     def __init__(self, warning_title, warning_message,
                  overwrite, overwrite_finish,
@@ -177,8 +225,14 @@ class WarningDisplay():
 class LabelHelp(NonFileBrowserLabel):
     """
     Label, but upon touch down a help message appears.
+
+    Parameters
+    ##########
+
+    help_message [StringProperty]
+
     """
-    help_message = StringProperty()
+    help_message = F.StringProperty()
 
     def on_touch_down(self, touch):
         """
@@ -197,9 +251,9 @@ class LabelHelp(NonFileBrowserLabel):
 
 class ScrollableLabel(F.ScrollView):
     """
-    Label is scrolable in y direction. See .kv file for more info.
+    Label is scrolable in y direction. See .kv file for more information.
     """
-    text = StringProperty('')
+    text = F.StringProperty('')
 
 # %% Utiliies
 
@@ -220,6 +274,7 @@ class _OKPopupWindow():
     def __init__(self, title, message):
         """
         Init function, creates layout and adds functunality.
+
         """
         # Custom Window with close button
         popup_content = F.BoxLayout(orientation='vertical',
@@ -300,29 +355,53 @@ class _ContinueCancelPopupWindow():
 
     def close(self, *args):
         """
+        Executed on press of any button, stores continuation indicator.
+
         Parameters
         ##########
 
-        continue_ [boolean]:    Continue with action or cancel action
+        continue_ [boolean]:    Continue (True) with action or cancel (False)
+                                action
 
         """
         self._continue = args[0]
         self.popup.dismiss()
 
     def finish(self, *args):
+        """
+        Finishing function bound to popup's dismiss. If 'continue' was pressed,
+        execute 'overwrite()' and the 'overwrite_finish()', else the
+        'cancel_finish'.
+        """
         if self._continue:
-            logger.debug("Overwriting file!")
+            logger.info("Overwriting file!")
             self.overwrite()
-            logger.debug('... done.')
+            logger.info('... done.')
             self.overwrite_finish()
         else:
-            logger.warning("... canceled.")
+            logger.info("... canceled.")
             self.cancel_finish()
 
 
 def _load_input_file(input_file_path):
     """
-    Load (private, check path, check content)
+    Load string parameter keys and string values from input file.
+
+    Parameters
+    ##########
+
+    input_file_path [str]:      file path to input file, including name.
+
+    Returns
+    #######
+
+    input_parameters [dict]:    input_parameters['var_key'] = var_value
+
+    Notes
+    #####
+
+    var_value is string, var_key is string
+
     """
     input_parameters = dict()
     # Read lines from file
@@ -343,6 +422,18 @@ def _load_input_file(input_file_path):
 
 def _save_input_file(input_file_path, input_parameters):
     """
+    Save string parameter keys and values (as strings) to input file.
+
+    Parameters
+    ##########
+
+    input_file_path [str]:      file path to (nes) input file, including name.
+    input_parameters [dict]:    input_parameters['var_key'] = var_value
+
+    Returns
+    #######
+
+    input_parameters [dict]:    input_parameters['var_key'] = var_value
 
     """
     with open(input_file_path, 'w') as f:
@@ -354,8 +445,6 @@ def _save_input_file(input_file_path, input_parameters):
                 f.writelines(str(value[1])+'\n')
             else:
                 f.writelines(str(value)+'\n')
-    return True
-
 
 def _collect_input(parameters, ids):
     """
@@ -386,6 +475,8 @@ def _collect_input(parameters, ids):
         elif 'TabbedPanel' in str(value):
             continue
         elif 'Layout' in str(value):
+            continue
+        elif 'Distances' in str(value):
             continue
         elif value.text == '':
                 parameters[var_name] = None
@@ -423,12 +514,10 @@ def _collect_input(parameters, ids):
     del parameters['field_of_view_x']
     del parameters['field_of_view_y']
 
-#    parameters = utilities.Struct(**parameters)  # PAST: converted to dict
     logger.debug("... done.")
     return parameters
 
 # Handle exceptions in popup window
-
 
 class _IgnoreExceptions(ExceptionHandler):
     """
@@ -445,10 +534,13 @@ class _IgnoreExceptions(ExceptionHandler):
         return ExceptionManager.PASS
 
 
-if not DEBUGGING:
+if not DEBUGGING:  # FUTURE: Remove if and DEBUGGING; and always subpress
     ExceptionManager.add_handler(_IgnoreExceptions())
 
 # %% Main GUI
+
+
+
 
 
 class giGUI(F.BoxLayout):
@@ -458,14 +550,13 @@ class giGUI(F.BoxLayout):
     Notes
     #####
 
-    File loading and saving
-    Based on "https://kivy.org/docs/api-kivy.uix.filechooser.html"
-    (23.10.2017)
+    File loading and saving based on
+    "https://kivy.org/docs/api-kivy.uix.filechooser.html" (23.10.2017)
     """
     # Global variables (must be kivy properties)
     parameters = F.DictProperty()  # Will be params[var_name] = value
     parser_info = F.DictProperty()  # Will be params[var_name]
-                                                  # = [var_key, var_help]
+                                    #           = [var_key, var_help]
     parser_link = F.DictProperty()  # Will be params[var_key] = var_name
 
     previous_results = F.DictProperty()
@@ -481,7 +572,6 @@ class giGUI(F.BoxLayout):
 
     def __init__(self, **kwargs):
         super(giGUI, self).__init__(**kwargs)
-        # parser_info[var_name] = [var_key, var_help]
         self.parser_info = \
             parser_def.get_arguments_info(parser_def.input_parser())
         for var_name, value in self.parser_info.iteritems():
@@ -489,8 +579,6 @@ class giGUI(F.BoxLayout):
         # parameters
         self.parameters = _collect_input(self.parameters, self.ids)
         self.parameters['spectrum_file'] = None
-        for var_name, value in self.parameters.iteritems():
-            logger.debug(var_name)
         # Components trackers
         self.setup_components = ['Source', 'Detector']
         # Avail fixed gratings
@@ -503,6 +591,11 @@ class giGUI(F.BoxLayout):
 
     def check_general_input(self):
         """
+        Check general input, by
+            1) load values from all widgets,
+            2) check manually the required parameters from parser
+            3) check values with check_input.general_input(...)
+            4) Reset widget values to include newly calculated parameters
         """
         try:
             # Convert input
@@ -553,7 +646,7 @@ class giGUI(F.BoxLayout):
 
     def on_spectrum_file_path(self, instance, value):
         """
-        When spectrum_file_oath changes, set parameters and check load status.
+        When spectrum_file_path changes, set parameters and update load status.
         """
         if value:
             self.spectrum_file_loaded = True
@@ -564,6 +657,10 @@ class giGUI(F.BoxLayout):
 
     def on_load_input_file_paths(self, instance, value):
         """
+        When load_input_file_paths changes, laod keys and values from all files
+        in selection list.
+        Update widget content accordingly.
+
         Notes
         #####
 
@@ -573,17 +670,26 @@ class giGUI(F.BoxLayout):
         # Do for all files in load_input_file_paths and merge results.
         # Later fiels overwrite first files.
         for input_file in value:
-            logger.debug("Loading input from file at: {0}".format(input_file))
+            logger.info("Loading input from file at: {0}".format(input_file))
             input_parameters = _load_input_file(input_file)
         # Set widget content
         self._set_widgets(input_parameters, from_file=True)
 
     def on_save_input_file_path(self, instance, value):
         """
+        When save_input_file_path changes, try to save parameters var_name and
+        value pairs that are listed in parser to file.
+
         Notes
         #####
 
         self.parameters [dict]:     widget_parameters[var_name] = value
+
+        If file exists:             Popup to ask to 'continue' or 'cancel',
+                                    give following functions to popup:
+                                    _save_input_file:       overwrite
+                                    self.overwrite_save:    overwrite_finish
+                                    self.cancel_save:       cancel_finish
 
         """
         if self.save_input_file_path != '':  # e.g. after reset.
@@ -598,33 +704,55 @@ class giGUI(F.BoxLayout):
                     input_parameters[var_key] = var_value
             # Save at save_input_file_path (=value)
             logger.debug('... done.')
-            logger.debug("Saving input to file...")
+            logger.info("Saving input to file...")
             if os.path.isfile(value):
                 # File exists
                 logger.warning("File '{0}' already exists!".format(value))
-                warning = WarningDisplay("File already exists!",
-                                         "Do you want to overwrite it?",
-                                         partial(_save_input_file,
-                                                 value,
-                                                 input_parameters),
-                                         self.overwrite_save,
-                                         self.cancel_save)
+                WarningDisplay("File already exists!",
+                               "Do you want to overwrite it?",
+                               partial(_save_input_file,
+                                       value,
+                                       input_parameters),
+                               self.overwrite_save,
+                               self.cancel_save)
             else:
                 # File new
                 _save_input_file(value, input_parameters)
-                logger.debug('... done.')
+                logger.info('... done.')
                 self.dismiss_popup()
 
     def overwrite_save(self):
+        """
+        Finish action if file is overwritten.
+
+        Notes
+        #####
+
+        Reset save_input_file_path to '' to allow next save at same file.
+
+        """
         self.dismiss_popup()
-        self.save_input_file_path = ''  # Reset to allow next save at same file
+        self.save_input_file_path = ''
 
     def cancel_save(self):
-        self.save_input_file_path = ''  # Reset to allow next save at same file
+        """
+        Finish action if file saving is canceled (do not overwrite).
+
+        Notes
+        #####
+
+        Reset save_input_file_path to '' to allow next save at same file.
+
+        """
+        self.save_input_file_path = ''
 
     # Menu spinners
 
     def on_save_spinner(self, spinner):
+        """
+        On save_spinner change, keep text the same and call respective
+        functions to execute.
+        """
         selected = spinner.text
         spinner.text = 'Save...'
         if selected == 'Input file...':
@@ -633,6 +761,10 @@ class giGUI(F.BoxLayout):
             self.save_results()
 
     def on_help_spinner(self, spinner):
+        """
+        On help_spinner change, keep text the same and show popup with
+        corresponding help message.
+        """
         selected = spinner.text
         spinner.text = 'Help...'
         if selected != 'Help...':
@@ -667,7 +799,7 @@ class giGUI(F.BoxLayout):
         """
         Set sample position options and activate required gratings.
         """
-        # Remove sample if it was set
+        # Remove sample if it was set before (to start fresh)
         if 'Sample' in self.setup_components:
                 self.ids.add_sample.active = False
         # Required gratings
@@ -705,7 +837,8 @@ class giGUI(F.BoxLayout):
 
     def on_beam_geometry(self):
         """
-        Set and deactivate required gratings.
+        Set availabel gratings, update geometry options and deactivate
+        required gratings.
         """
         # Remove sample if it was set
         if 'Sample' in self.setup_components:
@@ -719,8 +852,6 @@ class giGUI(F.BoxLayout):
             # Set available and deactive gratings
             self.ids.g0_set.active = False
             self.available_gratings = ['G1', 'G2']
-#            if self.ids.fixed_grating.text == 'G0':
-#                self.ids.fixed_grating.text = 'G1'
         else:
             # Update geometry conditions for cone beam
             self.on_geometry()
@@ -728,12 +859,18 @@ class giGUI(F.BoxLayout):
         self.ids.fixed_grating.text = 'Choose fixed grating...'
 
     def on_setup_components(self, instance, value):
-        # On change in component list, update sample_relative_to spinner text
+        """
+        On change in component list, update sample_relative_to spinner text.
+        """
         if not self.sample_added:
             self.ids.sample_relative_to.text = self.setup_components[0]
 
 
     def on_grating_checkbox_active(self, state, checkbox_name):
+        """
+        Add/remove activate/deactivaded grating to/from component list and
+        update distances.
+        """
         if state:
             self.setup_components.append(checkbox_name)
             self.setup_components.sort()
@@ -747,8 +884,14 @@ class giGUI(F.BoxLayout):
             self.ids.sample_relative_to.text = self.setup_components[0]
         logger.debug("Current setup consists of: {0}"
                      .format(self.setup_components))
+        # Update distances options
+        self.ids.distances.update(self.setup_components)
 
     def on_sample_relative_to(self):
+        """
+        Update sample_relative_position valeus and text accoring to selected
+        sample_relative_to, update sample in components and distances.
+        """
         if self.ids.sample_relative_to.text == 'Source':
             self.ids.sample_relative_position.values = ['after']
             self.ids.sample_relative_position.text = 'after'
@@ -757,8 +900,26 @@ class giGUI(F.BoxLayout):
             self.ids.sample_relative_position.text = 'before'
         elif self.ids.geometry.text == 'free':
             self.ids.sample_relative_position.values = ['after', 'before']
+        # If sample is selected, Update component list and distances
+        if self.ids.add_sample:
+            self.ids.add_sample = False
+            self.ids.add_sample = True
+
+    def on_sample_relative_position(self):
+        """
+        Update sample_relative_position valeus and text accoring to selected
+        sample_relative_position, update sample in components and distances.
+        """
+        # If sample is selected, Update component list and distances
+        if self.ids.add_sample:
+            self.on_sample_checkbox_active(False)
+            self.on_sample_checkbox_active(True)
+
 
     def on_sample_checkbox_active(self, state):
+        """
+        Add/Remove sample to/from component list and update distances.
+        """
         if state:
             # Add sample at right position
             self.sample_added = True
@@ -775,13 +936,21 @@ class giGUI(F.BoxLayout):
 
         logger.debug("Current setup consists of:\n{0}"
                      .format(self.setup_components))
+        # Add sample to distances
+        self.ids.distances.update(self.setup_components)
 
     # Loading and saving files
 
     def dismiss_popup(self):
+        """
+        Dismisses current self._popup.
+        """
         self._popup.dismiss()
 
     def _fbrowser_canceled(self, instance):
+        """
+        Closes current FileBrowser.
+        """
         logger.debug('FileBrowser canceled, closing itself.')
         self.dismiss_popup()
 
@@ -789,7 +958,14 @@ class giGUI(F.BoxLayout):
 
     def show_spectrum_load(self):
         """
-        Upon call, open popup with file browser to load spectrum_file_path
+        Open popup with FileBrowser to load spectrum_file_path.
+
+        Notes
+        #####
+
+        Default path:               ./data/spectra/
+        Available file extentions:  ['*.csv','*.txt']
+
         """
         # Define browser
         spectra_path = os.path.join(os.path.dirname(os.path.
@@ -807,6 +983,9 @@ class giGUI(F.BoxLayout):
         self._popup.open()
 
     def _spectra_fbrowser_success(self, instance):
+        """
+        On spectrum file path selection, store and close FileBrowser.
+        """
         self.spectrum_file_path = instance.selection[0]
         logger.debug("Spectrum filepath is: {}"
                      .format(self.spectrum_file_path))
@@ -818,7 +997,14 @@ class giGUI(F.BoxLayout):
 
     def show_input_load(self):
         """
-        Upon call, open popup with file browser to load input file location.
+        Open popup with file browser to load input file location.
+
+        Notes
+        #####
+
+        Default path:               ./data/
+        Available file extentions:  [*.txt']
+
         """
         # Define browser
         input_path = os.path.join(os.path.dirname(os.path.
@@ -837,6 +1023,9 @@ class giGUI(F.BoxLayout):
         self._popup.open()
 
     def _input_load_fbrowser_success(self, instance):
+        """
+        On input file path selection, store and close FileBrowser.
+        """
         self.load_input_file_paths = instance.selection
         logger.debug("{0} input files loaded."
                      .format(len(self.load_input_file_paths)))
@@ -847,12 +1036,19 @@ class giGUI(F.BoxLayout):
 
     def show_input_save(self):
         """
-        Upon call, open popup with file browser to save input file.
+        Open popup with file browser to save input file.
+
+        Notes
+        #####
+
+        Default path:               ./data/
+        Available file extentions:  [*.txt']
+
         """
         # Define browser
         input_path = os.path.join(os.path.dirname(os.path.
-                                                    realpath(__file__)),
-                                    'data')
+                                                  realpath(__file__)),
+                                  'data')
         browser = FileBrowser(select_string='Save',
                               path=input_path,  # Folder to open at start
                               filters=['*.txt'])
@@ -865,6 +1061,9 @@ class giGUI(F.BoxLayout):
         self._popup.open()
 
     def _input_save_fbrowser_success(self, instance):
+        """
+        On input file path selection, save to file and close FileBrowser.
+        """
         filename = instance.filename
         # Check extension
         if filename.split('.')[-1] == instance.filters[0].split('.')[-1]:
@@ -893,11 +1092,15 @@ class giGUI(F.BoxLayout):
     # Save results
 
     def save_results(self):
-         logger.info("Saving results.")
+         logger.info("Saving results...")
 
     # Set widgete values
     def _set_widgets(self, input_parameters, from_file):
         """
+        Update widget content (text) to values stored in parameters.
+
+        Notes
+        #####
 
         if from file:
 
@@ -913,6 +1116,7 @@ class giGUI(F.BoxLayout):
                                                                  var_help]
         """
         if from_file:
+            logger.info("Setting widget values from file...")
             for var_key, value_str in input_parameters.iteritems():
                 logger.debug("var_key is {0}".format(var_key))
                 logger.debug("value_str is {0}".format(value_str))
@@ -941,12 +1145,14 @@ class giGUI(F.BoxLayout):
                     logger.debug("Setting text of widget '{0}' to: {1}"
                                  .format(var_name, value_str[0]))
                     self.ids[var_name].text = value_str[0]
+            logger.info("...done.")
         else:
+            logger.info("Setting widget values from parameters...")
             for var_name, value in input_parameters.iteritems():
                 # Skip all the not-set parameters
                 if value is not None:
-                    logger.debug("var_name is {0}".format(var_name))
-                    logger.debug("value is {0}".format(value))
+                    logger.debug("var_name is: {0}".format(var_name))
+                    logger.debug("value is: {0}".format(value))
                     if var_name not in self.parser_info:
                         # Input variable not implemented in parser
                         logger.warning("Parameter '{0}' read from app, but not "
@@ -954,7 +1160,7 @@ class giGUI(F.BoxLayout):
                                        .format(var_name))
                         continue
                     var_key = self.parser_info[var_name][0]
-                    logger.debug("var_key is {0}".format(var_key))
+                    logger.debug("var_key is: {0}".format(var_key))
                     # Set input values to ids.texts
                     if var_name == 'spectrum_range':
                         self.ids['spectrum_range_min'].text = str(value[0])
@@ -966,6 +1172,7 @@ class giGUI(F.BoxLayout):
                         logger.debug("Setting text of widget '{0}' to: {1}"
                                      .format(var_name, value))
                         self.ids[var_name].text = str(value)
+            logger.info("...done.")
 
     # Utility functions
 

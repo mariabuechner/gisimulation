@@ -158,7 +158,7 @@
         Widget:
         MenuSpinner:
             size_hint_x: None
-            width: 100
+            width: 150
             background_color: dark_red_button
             id: help_spinner
             text: 'Help...'
@@ -181,383 +181,358 @@
             min_size: root.width*0.02
 
 
-            # Right side of splitter
-            TabbedPanel:
-                id: input_tabs
-                do_default_tab: False
-                tab_width: self.size[0]/len(self.tab_list)
-                default_tab: general_inputs
+            # Right side of splitter (splitters child widget)
+            BoxLayout:
+                orientation: 'vertical'
+                TabbedPanel:
+                    id: input_tabs
+                    do_default_tab: False
+                    tab_width: self.size[0]/len(self.tab_list)
+                    default_tab: general_inputs
 
-                # Content of 'general input window'
-                TabbedPanelItem:
-                    id: general_inputs
-                    text: 'General Parameters'
+                    # Content of 'general input window'
+                    TabbedPanelItem:
+                        id: general_inputs
+                        text: 'General Parameters'
 
-                    GridLayout:
-                        cols: 1
-
-                        # General input
-                        GridLayout:
-                            cols: 3
-
-                            # GI input
-                            StackLayout:
-                                NonFileBrowserLabel:
-                                    text: 'GI Design'
-                                    bold: True
-                                BoxLayout:
-                                    orientation: 'vertical'
-                                    size_hint_y: None
-                                    height: root.calc_boxlayout_height(line_height, self)
-                                    BoxLayout:
-                                        LabelHelp:
-                                            text: 'Geometry'
-                                            help_message: parser_info['geometry'][1]
-                                        Spinner:
-                                            id: geometry
-                                            text: 'free'
-                                            values: ['sym', 'conv', 'inv', 'free'] if beam_geometry.text == 'cone' else ['conv', 'free']
-                                            on_text: root.on_geometry()
-                                    BoxLayout:
-                                        LabelHelp:
-                                            text: 'Beam geometry'
-                                            help_message: parser_info['beam_geometry'][1]
-                                        Spinner:
-                                            id: beam_geometry
-                                            text: 'parallel'
-                                            values: ['cone', 'parallel']
-                                            on_text: root.on_beam_geometry()
-                                    BoxLayout:
-                                        LabelHelp:
-                                            text: 'Design Energy [keV]'
-                                            help_message: parser_info['design_energy'][1]
-                                        FloatInput:
-                                            id: design_energy
-                                    BoxLayout:
-                                        disabled: geometry.text == 'free'
-                                        LabelHelp:
-                                            text: 'Talbot order'
-                                            help_message: parser_info['talbot_order'][1]
-                                        FloatInput:
-                                            id: talbot_order
-                                    BoxLayout:
-                                        LabelHelp:
-                                            text: 'Sampling voxel size [um]'
-                                            help_message: parser_info['sampling_rate'][1]
-                                        FloatInput:
-                                            id: sampling_rate
-
-                            # Source
-                            StackLayout:
-                                NonFileBrowserLabel:
-                                    text: 'Source'
-                                    bold: True
-                                BoxLayout:
-                                    orientation: 'vertical'
-                                    size_hint_y: None
-                                    height: root.calc_boxlayout_height(line_height, self)
-                                    BoxLayout:
-                                        disabled: beam_geometry.text == 'parallel'
-                                        LabelHelp:
-                                            text: 'Source size [um]'
-                                            help_message: parser_info['focal_spot_size'][1]
-                                        FloatInput:
-                                            id: focal_spot_size
-                                    BoxLayout:
-                                        LabelHelp:
-                                            size_hint_x: 0.4
-                                            text: 'Choose spectrum file'
-                                            help_message: "Location of spectrum file (.csv).\nFile format:\nenergy,photons\ne1,p1\ne2,p2\n.,.\n.,.\n.,."
-                                        Button:
-                                            size_hint_x: 0.1
-                                            text: 'Load'
-                                            on_press: root.show_spectrum_load()
-                                        Button:
-                                            size_hint_x: 0.15
-                                            text: 'Remove'
-                                            on_press: root.spectrum_file_path = ''
-                                        TextInput:
-                                            text: ntpath.basename(root.spectrum_file_path)
-                                            background_disabled_normal: self.background_normal
-                                            disabled_foreground_color: self.foreground_color
-                                            disabled: True
-                                    BoxLayout:
-                                        LabelHelp:
-                                            text: 'Spectrum range [keV]'
-                                            help_message: parser_info['spectrum_range'][1]
-                                        CheckBox:
-                                            id: spectrum_range_set
-                                    BoxLayout:
-                                        BoxLayout:
-                                            size_hint_x: 0.5
-                                            NonFileBrowserLabel:
-                                                text: 'Min'
-                                            FloatInput:
-                                                id: spectrum_range_min
-                                                size_hint_x: 1
-                                                disabled: not spectrum_range_set.active
-                                        BoxLayout:
-                                            size_hint_x: 0.5
-                                            NonFileBrowserLabel:
-                                                text: 'Max'
-                                            FloatInput:
-                                                id: spectrum_range_max
-                                                size_hint_x: 1
-                                                disabled: not spectrum_range_set.active
-                                    BoxLayout:
-                                        LabelHelp:
-                                            text: 'Spectrum step size [keV]'
-                                            help_message: parser_info['spectrum_step'][1]
-                                        FloatInput:
-                                            id: spectrum_step
-                                            text: '1.0'
-                                            disabled: not spectrum_range_set.active or root.spectrum_file_loaded
-                                    BoxLayout:
-                                        LabelHelp:
-                                            text: 'Filter material'
-                                            help_message: parser_info['material_filter'][1]
-                                        TextInput:
-                                            id: material_filter
-                                    BoxLayout:
-                                        LabelHelp:
-                                            text: 'Filter thickness [um]'
-                                            help_message: parser_info['thickness_filter'][1]
-                                        FloatInput:
-                                            id: thickness_filter
-
-                            # Detector
-                            StackLayout:
-                                NonFileBrowserLabel:
-                                    text: 'Detector'
-                                BoxLayout:
-                                    orientation: 'vertical'
-                                    size_hint_y: None
-                                    height: root.calc_boxlayout_height(line_height, self)
-                                    BoxLayout:
-                                        LabelHelp:
-                                            text: 'Detector type'
-                                            help_message: parser_info['detector_type'][1]
-                                        Spinner:
-                                            id: detector_type
-                                            text: 'photon'
-                                            values: ['photon', 'conv']
-                                    BoxLayout:
-                                        disabled: detector_type.text == 'photon'
-                                        LabelHelp:
-                                            text: 'PSF [um]'
-                                            help_message: parser_info['point_spread_function'][1]
-                                        FloatInput:
-                                            id: point_spread_function
-                                    BoxLayout:
-                                        LabelHelp:
-                                            text: 'Pixel size [um]'
-                                            help_message: parser_info['pixel_size'][1]
-                                        FloatInput:
-                                            id: pixel_size
-                                    BoxLayout:
-                                        LabelHelp:
-                                            text: 'Field of view [no. pixels] (x, y)'
-                                            help_message: parser_info['field_of_view'][1]
-                                        IntInput:
-                                            id: field_of_view_x
-                                            size_hint_x: 0.25
-                                        IntInput:
-                                            id: field_of_view_y
-                                            size_hint_x: 0.25
-                                    BoxLayout:
-                                        LabelHelp:
-                                            text: 'Detector threshold [keV]'
-                                            help_message: parser_info['detector_threshold'][1]
-                                        FloatInput:
-                                            id: detector_threshold
-                                    BoxLayout:
-                                        LabelHelp:
-                                            text: 'Detector material'
-                                            help_message: parser_info['material_detector'][1]
-                                        TextInput:
-                                            id: material_detector
-                                    BoxLayout:
-                                        LabelHelp:
-                                            text: 'Detector thickness [um]'
-                                            help_message: parser_info['thickness_detector'][1]
-                                        FloatInput:
-                                            id: thickness_detector
-
-                        # Grating input
                         #GridLayout:
                             #cols: 1
-                        StackLayout:
-                            BoxLayout:
-                                disabled: geometry.text == 'free'
-                                NonFileBrowserLabel:
-                                    text: 'Choose the fixed grating'
-                                Spinner:
-                                    id: fixed_grating
-                                    text: 'Choose fixed grating...'
-                                    values: root.available_gratings
-                            BoxLayout:
-                                orientation: 'vertical'
-                                size_hint_y: None
-                                height: root.calc_boxlayout_height(line_height, self)
-                                GridLayout:
-                                    cols: 3
+                        FloatLayout:
 
-                                    # G0
-                                    StackLayout:
+                            # General input
+                            GridLayout:
+                                cols: 3
+                                pos_hint: {'top': 1}
+
+
+                                # GI input
+                                StackLayout:
+                                    NonFileBrowserLabel:
+                                        text: 'GI Design'
+                                        bold: True
+                                    BoxLayout:
+                                        orientation: 'vertical'
+                                        size_hint_y: None
+                                        height: root.calc_boxlayout_height(line_height, self)
                                         BoxLayout:
-                                            NonFileBrowserLabel:
-                                                id: g0_set_name
-                                                text: 'G0'
-                                                bold: True
+                                            LabelHelp:
+                                                text: 'Geometry'
+                                                help_message: parser_info['geometry'][1]
+                                            Spinner:
+                                                id: geometry
+                                                text: 'free'
+                                                values: ['sym', 'conv', 'inv', 'free'] if beam_geometry.text == 'cone' else ['conv', 'free']
+                                                on_text: root.on_geometry()
+                                        BoxLayout:
+                                            LabelHelp:
+                                                text: 'Beam geometry'
+                                                help_message: parser_info['beam_geometry'][1]
+                                            Spinner:
+                                                id: beam_geometry
+                                                text: 'parallel'
+                                                values: ['cone', 'parallel']
+                                                on_text: root.on_beam_geometry()
+                                        BoxLayout:
+                                            LabelHelp:
+                                                text: 'Design Energy [keV]'
+                                                help_message: parser_info['design_energy'][1]
+                                            FloatInput:
+                                                id: design_energy
+                                        BoxLayout:
+                                            disabled: geometry.text == 'free'
+                                            LabelHelp:
+                                                text: 'Talbot order'
+                                                help_message: parser_info['talbot_order'][1]
+                                            FloatInput:
+                                                id: talbot_order
+                                        BoxLayout:
+                                            LabelHelp:
+                                                text: 'Sampling voxel size [um]'
+                                                help_message: parser_info['sampling_rate'][1]
+                                            FloatInput:
+                                                id: sampling_rate
+
+                                # Source
+                                StackLayout:
+                                    NonFileBrowserLabel:
+                                        text: 'Source'
+                                        bold: True
+                                    BoxLayout:
+                                        orientation: 'vertical'
+                                        size_hint_y: None
+                                        height: root.calc_boxlayout_height(line_height, self)
+                                        BoxLayout:
+                                            disabled: beam_geometry.text == 'parallel'
+                                            LabelHelp:
+                                                text: 'Source size [um]'
+                                                help_message: parser_info['focal_spot_size'][1]
+                                            FloatInput:
+                                                id: focal_spot_size
+                                        BoxLayout:
+                                            LabelHelp:
+                                                size_hint_x: 0.4
+                                                text: 'Choose spectrum file'
+                                                help_message: "Location of spectrum file (.csv).\nFile format:\nenergy,photons\ne1,p1\ne2,p2\n.,.\n.,.\n.,."
+                                            Button:
+                                                size_hint_x: 0.1
+                                                text: 'Load'
+                                                on_press: root.show_spectrum_load()
+                                            Button:
+                                                size_hint_x: 0.15
+                                                text: 'Remove'
+                                                on_press: root.spectrum_file_path = ''
+                                            TextInput:
+                                                text: ntpath.basename(root.spectrum_file_path)
+                                                background_disabled_normal: self.background_normal
+                                                disabled_foreground_color: self.foreground_color
+                                                disabled: True
+                                        BoxLayout:
+                                            LabelHelp:
+                                                text: 'Spectrum range [keV]'
+                                                help_message: parser_info['spectrum_range'][1]
                                             CheckBox:
-                                                id: g0_set
-                                                disabled: beam_geometry.text == 'parallel'
-                                                on_active: root.on_grating_checkbox_active(self.active, g0_set_name.text)
+                                                id: spectrum_range_set
                                         BoxLayout:
-                                            orientation: 'vertical'
-                                            size_hint_y: None
-                                            height: root.calc_boxlayout_height(line_height, self)
-                                            disabled: not g0_set.active  or (fixed_grating.text != 'G0' and geometry.text != 'free')
                                             BoxLayout:
-                                                LabelHelp:
-                                                    text: 'Design Energy [keV]'
-                                                    help_message: parser_info['design_energy'][1]
+                                                size_hint_x: 0.5
+                                                NonFileBrowserLabel:
+                                                    text: 'Min'
                                                 FloatInput:
+                                                    id: spectrum_range_min
+                                                    size_hint_x: 1
+                                                    disabled: not spectrum_range_set.active
                                             BoxLayout:
-                                                LabelHelp:
-                                                    size_hint_x: 0.4
-                                                    text: 'Choose spectrum file'
-                                                    help_message: "Location of spectrum file (.csv).\nFile format:\nenergy,photons\ne1,p1\ne2,p2\n.,.\n.,.\n.,."
-                                                Button:
-                                                    size_hint_x: 0.1
-                                                    text: 'Load'
-                                                    on_press: root.show_spectrum_load()
-                                                Button:
-                                                    size_hint_x: 0.15
-                                                    text: 'Remove'
-                                                    on_press: root.spectrum_file_path = ''
-                                                TextInput:
-                                                    text: ntpath.basename(root.spectrum_file_path)
-                                            BoxLayout:
-                                                LabelHelp:
-                                                    text: 'Spectrum range [keV]'
-                                                    help_message: parser_info['spectrum_range'][1]
-                                                CheckBox:
-                                            BoxLayout:
-                                                BoxLayout:
-                                                    size_hint_x: 0.5
-                                                    NonFileBrowserLabel:
-                                                        text: 'Min'
-                                                    FloatInput:
-                                                        size_hint_x: 1
-                                                        disabled: not spectrum_range_set.active
-                                                BoxLayout:
-                                                    size_hint_x: 0.5
-                                                    NonFileBrowserLabel:
-                                                        text: 'Max'
-                                                    FloatInput:
-                                                        size_hint_x: 1
-                                                        disabled: not spectrum_range_set.active
-                                            BoxLayout:
-                                                LabelHelp:
-                                                    text: 'Spectrum step size [keV]'
-                                                    help_message: parser_info['spectrum_step'][1]
+                                                size_hint_x: 0.5
+                                                NonFileBrowserLabel:
+                                                    text: 'Max'
                                                 FloatInput:
-                                                    text: '1.0'
-                                                    disabled: not spectrum_range_set.active or root.spectrum_file_loaded
-
-
-                                    # G1
-                                    StackLayout:
+                                                    id: spectrum_range_max
+                                                    size_hint_x: 1
+                                                    disabled: not spectrum_range_set.active
                                         BoxLayout:
-                                            NonFileBrowserLabel:
-                                                id: g1_set_name
-                                                text: 'G1'
-                                                bold: True
-                                            CheckBox:
-                                                id: g1_set
-                                                disabled: geometry.text != 'free'
-                                                background_checkbox_disabled_down: self.background_checkbox_down
-                                                on_active: root.on_grating_checkbox_active(self.active, g1_set_name.text)
+                                            LabelHelp:
+                                                text: 'Spectrum step size [keV]'
+                                                help_message: parser_info['spectrum_step'][1]
+                                            FloatInput:
+                                                id: spectrum_step
+                                                text: '1.0'
+                                                disabled: not spectrum_range_set.active or root.spectrum_file_loaded
                                         BoxLayout:
-                                            orientation: 'vertical'
-                                            size_hint_y: None
-                                            height: root.calc_boxlayout_height(line_height, self)
-                                            disabled: not g1_set.active or (fixed_grating.text != 'G1' and geometry.text != 'free')
-                                            BoxLayout:
-                                                LabelHelp:
-                                                    text: 'Geometry'
-                                                    help_message: parser_info['geometry'][1]
-                                                Spinner:
-                                                    text: 'sym'
-                                                    values: ['sym', 'conv', 'inv', 'free']
-
-                                    # G2
-                                    StackLayout:
+                                            LabelHelp:
+                                                text: 'Filter material'
+                                                help_message: parser_info['material_filter'][1]
+                                            TextInput:
+                                                id: material_filter
                                         BoxLayout:
-                                            NonFileBrowserLabel:
-                                                id: g2_set_name
-                                                text: 'G2'
-                                                bold: True
-                                            CheckBox:
-                                                id: g2_set
-                                                disabled: geometry.text != 'free'
-                                                background_checkbox_disabled_down: self.background_checkbox_down
-                                                on_active: root.on_grating_checkbox_active(self.active, g2_set_name.text)
+                                            LabelHelp:
+                                                text: 'Filter thickness [um]'
+                                                help_message: parser_info['thickness_filter'][1]
+                                            FloatInput:
+                                                id: thickness_filter
+
+                                # Detector
+                                StackLayout:
+                                    NonFileBrowserLabel:
+                                        text: 'Detector'
+                                    BoxLayout:
+                                        orientation: 'vertical'
+                                        size_hint_y: None
+                                        height: root.calc_boxlayout_height(line_height, self)
                                         BoxLayout:
-                                            orientation: 'vertical'
-                                            size_hint_y: None
-                                            height: root.calc_boxlayout_height(line_height, self)
-                                            disabled: not g2_set.active or (fixed_grating.text != 'G2' and geometry.text != 'free')
-                                            Button:
-                                            Button:
-                                            Button:
+                                            LabelHelp:
+                                                text: 'Detector type'
+                                                help_message: parser_info['detector_type'][1]
+                                            Spinner:
+                                                id: detector_type
+                                                text: 'photon'
+                                                values: ['photon', 'conv']
+                                        BoxLayout:
+                                            disabled: detector_type.text == 'photon'
+                                            LabelHelp:
+                                                text: 'PSF [um]'
+                                                help_message: parser_info['point_spread_function'][1]
+                                            FloatInput:
+                                                id: point_spread_function
+                                        BoxLayout:
+                                            LabelHelp:
+                                                text: 'Pixel size [um]'
+                                                help_message: parser_info['pixel_size'][1]
+                                            FloatInput:
+                                                id: pixel_size
+                                        BoxLayout:
+                                            LabelHelp:
+                                                text: 'Field of view [no. pixels] (x, y)'
+                                                help_message: parser_info['field_of_view'][1]
+                                            IntInput:
+                                                id: field_of_view_x
+                                                size_hint_x: 0.25
+                                            IntInput:
+                                                id: field_of_view_y
+                                                size_hint_x: 0.25
+                                        BoxLayout:
+                                            LabelHelp:
+                                                text: 'Detector threshold [keV]'
+                                                help_message: parser_info['detector_threshold'][1]
+                                            FloatInput:
+                                                id: detector_threshold
+                                        BoxLayout:
+                                            LabelHelp:
+                                                text: 'Detector material'
+                                                help_message: parser_info['material_detector'][1]
+                                            TextInput:
+                                                id: material_detector
+                                        BoxLayout:
+                                            LabelHelp:
+                                                text: 'Detector thickness [um]'
+                                                help_message: parser_info['thickness_detector'][1]
+                                            FloatInput:
+                                                id: thickness_detector
 
 
-                        Widget:
-                        Widget:
 
-                        Button:
-                            text: 'Check input'
-                            on_press: root.check_general_input()
+                            # Grating input
+                            GridLayout:
+                                cols: 1
+                                pos_hint: {'top': 0.65}
 
-                # Sample
-                TabbedPanelItem:
-                    text: 'Sample'
-                    BoxLayout:
-                        orientation: 'vertical'
-                        size_hint_y: None
-                        height: root.calc_boxlayout_height(line_height, self)
-                        BoxLayout:
-                            NonFileBrowserLabel:
-                                text: 'Add sample'
-                            Spinner:
-                                id: sample_relative_position
-                                text: 'after'
-                                values: ['after']
-                            Spinner:
-                                id: sample_relative_to
-                                text: 'Source'
-                                on_text: root.on_sample_relative_to()
-                                values: root.setup_components
-                            CheckBox:
-                                id: add_sample
-                                on_active: root.on_sample_checkbox_active(self.active)
+
+                                StackLayout:
+                                    BoxLayout:
+                                        disabled: geometry.text == 'free'
+                                        size_hint_y: None
+                                        height: root.calc_boxlayout_height(line_height, self)
+                                        NonFileBrowserLabel:
+                                            text: 'Choose the fixed grating'
+                                        Spinner:
+                                            id: fixed_grating
+                                            text: 'Choose fixed grating...'
+                                            values: root.available_gratings
+                                    BoxLayout:
+                                        orientation: 'vertical'
+                                        size_hint_y: None
+                                        height: root.calc_boxlayout_height(line_height, self)
+                                        GridLayout:
+                                            cols: 3
+
+
+                                            # G0
+                                            StackLayout:
+                                                BoxLayout:
+                                                    NonFileBrowserLabel:
+                                                        id: g0_set_name
+                                                        text: 'G0'
+                                                        bold: True
+                                                    CheckBox:
+                                                        id: g0_set
+                                                        disabled: beam_geometry.text == 'parallel'
+                                                        on_active: root.on_grating_checkbox_active(self.active, g0_set_name.text)
+                                                BoxLayout:
+                                                    orientation: 'vertical'
+                                                    size_hint_y: None
+                                                    height: root.calc_boxlayout_height(line_height, self)
+                                                    disabled: not g0_set.active  or (fixed_grating.text != 'G0' and geometry.text != 'free')
+                                                    BoxLayout:
+                                                        LabelHelp:
+                                                            text: 'Design Energy [keV]'
+                                                            help_message: parser_info['design_energy'][1]
+                                                        FloatInput:
+
+
+                                            # G1
+                                            StackLayout:
+                                                BoxLayout:
+                                                    NonFileBrowserLabel:
+                                                        id: g1_set_name
+                                                        text: 'G1'
+                                                        bold: True
+                                                    CheckBox:
+                                                        id: g1_set
+                                                        disabled: geometry.text != 'free'
+                                                        background_checkbox_disabled_down: self.background_checkbox_down
+                                                        on_active: root.on_grating_checkbox_active(self.active, g1_set_name.text)
+
+
+                                            # G2
+                                            StackLayout:
+                                                BoxLayout:
+                                                    NonFileBrowserLabel:
+                                                        id: g2_set_name
+                                                        text: 'G2'
+                                                        bold: True
+                                                    CheckBox:
+                                                        id: g2_set
+                                                        disabled: geometry.text != 'free'
+                                                        background_checkbox_disabled_down: self.background_checkbox_down
+                                                        on_active: root.on_grating_checkbox_active(self.active, g2_set_name.text)
+                                                BoxLayout:
+                                                    orientation: 'vertical'
+                                                    size_hint_y: None
+                                                    height: root.calc_boxlayout_height(line_height, self)
+                                                    disabled: not g2_set.active or (fixed_grating.text != 'G2' and geometry.text != 'free')
+                                                    Button:
+
+
+
+                            # Distances
+                            GridLayout:
+                                cols: 1
+                                pos_hint: {'top': 0.25}
+
+                                Distances:
+                                    id: distances
+
+
+
+
+                            Button:
+                                pos_hint: {'top': 0.04}
+                                text: 'Check input'
+                                on_press: root.check_general_input()
+
+                    # Sample
+                    TabbedPanelItem:
+                        text: 'Sample'
                         BoxLayout:
                             orientation: 'vertical'
                             size_hint_y: None
                             height: root.calc_boxlayout_height(line_height, self)
-                            disabled: not add_sample.active
-                            NonFileBrowserLabel:
-                                text: 'Define sample here'
+                            BoxLayout:
+                                NonFileBrowserLabel:
+                                    text: 'Add sample'
+                                Spinner:
+                                    id: sample_relative_position
+                                    text: 'after'
+                                    values: ['after']
+                                    on_text: root.on_sample_relative_position()
+                                Spinner:
+                                    id: sample_relative_to
+                                    text: 'Source'
+                                    on_text: root.on_sample_relative_to()
+                                    values: root.setup_components
+                                CheckBox:
+                                    id: add_sample
+                                    on_active: root.on_sample_checkbox_active(self.active)
+                            BoxLayout:
+                                orientation: 'vertical'
+                                size_hint_y: None
+                                height: root.calc_boxlayout_height(line_height, self)
+                                disabled: not add_sample.active
+                                NonFileBrowserLabel:
+                                    text: 'Define sample here'
 
-                        #Widget:
-                        #Widget:
-                        #Widget:
+                            Widget:
+                            Widget:
+                            Widget:
 
-                        Button:
-                            text: 'Calculate geometry'
-                            on_press: root.calculate_geometry()
+                Button:
+                    size_hint_y: None
+                    # tempFix for issue #9 (start)
+                    height: line_height * 1.1
+                    size_hint_x: 1.01
+                    pos_hint: {'right': 0.999}
+                    # tempFix for issue #9 (end)
+                    text: 'Calculate geometry'
+                    on_press: root.calculate_geometry()
 
 
         # Left side of splitter
