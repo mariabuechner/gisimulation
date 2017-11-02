@@ -901,9 +901,9 @@ class giGUI(F.BoxLayout):
         elif self.ids.geometry.text == 'free':
             self.ids.sample_relative_position.values = ['after', 'before']
         # If sample is selected, Update component list and distances
-        if self.ids.add_sample:
-            self.ids.add_sample = False
-            self.ids.add_sample = True
+        if self.sample_added:
+            self.on_sample_checkbox_active(False)
+            self.on_sample_checkbox_active(True)
 
     def on_sample_relative_position(self):
         """
@@ -911,7 +911,7 @@ class giGUI(F.BoxLayout):
         sample_relative_position, update sample in components and distances.
         """
         # If sample is selected, Update component list and distances
-        if self.ids.add_sample:
+        if self.sample_added:
             self.on_sample_checkbox_active(False)
             self.on_sample_checkbox_active(True)
 
