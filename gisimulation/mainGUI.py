@@ -468,6 +468,8 @@ class giGUI(F.BoxLayout):
                                                   # = [var_key, var_help]
     parser_link = F.DictProperty()  # Will be params[var_key] = var_name
 
+    previous_results = F.DictProperty()
+
     spectrum_file_path = F.StringProperty()
     spectrum_file_loaded = F.BooleanProperty(defaultvalue=False)
     load_input_file_paths = F.ListProperty()
@@ -484,14 +486,18 @@ class giGUI(F.BoxLayout):
             parser_def.get_arguments_info(parser_def.input_parser())
         for var_name, value in self.parser_info.iteritems():
             self.parser_link[value[0]] = var_name
-        # Init self.parameters
+        # parameters
         self.parameters = _collect_input(self.parameters, self.ids)
         self.parameters['spectrum_file'] = None
         for var_name, value in self.parameters.iteritems():
             logger.debug(var_name)
-        # Init components trackers
+        # Components trackers
         self.setup_components = ['Source', 'Detector']
-        self.available_gratings = ['G0', 'G1', 'G2']
+        # Avail fixed gratings
+        if self.ids.beam_geometry.text == 'parallel':
+            self.available_gratings = ['G1', 'G2']
+        else:
+            self.available_gratings = ['G0', 'G1', 'G2']
 
     # General simulation functions
 
@@ -697,8 +703,6 @@ class giGUI(F.BoxLayout):
             self.ids.sample_relative_position.text = 'after'
             self.ids.sample_relative_position.values = ['after', 'before']
 
-
-
     def on_beam_geometry(self):
         """
         Set and deactivate required gratings.
@@ -715,18 +719,19 @@ class giGUI(F.BoxLayout):
             # Set available and deactive gratings
             self.ids.g0_set.active = False
             self.available_gratings = ['G1', 'G2']
-            if self.ids.fixed_grating.text == 'G0':
-                self.ids.fixed_grating.text = 'G1'
+#            if self.ids.fixed_grating.text == 'G0':
+#                self.ids.fixed_grating.text = 'G1'
         else:
             # Update geometry conditions for cone beam
             self.on_geometry()
             self.available_gratings = ['G0', 'G1', 'G2']
-
+        self.ids.fixed_grating.text = 'Choose fixed grating...'
 
     def on_setup_components(self, instance, value):
         # On change in component list, update sample_relative_to spinner text
         if not self.sample_added:
             self.ids.sample_relative_to.text = self.setup_components[0]
+
 
     def on_grating_checkbox_active(self, state, checkbox_name):
         if state:
@@ -740,7 +745,7 @@ class giGUI(F.BoxLayout):
             # Also uncheck sample_added
             self.ids.add_sample.active = False
             self.ids.sample_relative_to.text = self.setup_components[0]
-        logger.debug("Current setup consists of:\n{0}"
+        logger.debug("Current setup consists of: {0}"
                      .format(self.setup_components))
 
     def on_sample_relative_to(self):

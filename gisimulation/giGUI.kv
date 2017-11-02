@@ -12,6 +12,7 @@
 #:set dark_grey np.divide([88, 88, 88, 50],[255., 255., 255., 100.])
 #:set dark_red_button np.divide([255, 50, 50, 100],[255., 255., 255., 100.])
 #:set dark_red_menu np.divide([154, 31, 31, 100],[255., 255., 255., 100.])
+#:set darker_red_menu np.divide([128, 0, 0, 100],[255., 255., 255., 100.])
 
 
 # All buttons
@@ -103,7 +104,8 @@
                 pos: self.pos
                 size: self.size
         NonFileBrowserLabel:
-            size_hint_x: 0.1
+            size_hint_x: None
+            width: 180
             bold: True
             text: 'GI Simulation'
             canvas.before:
@@ -113,21 +115,50 @@
                     pos: self.pos
                     size: self.size
         Button:
-            size_hint_x: 0.15
+            size_hint_x: None
+            width: 160
             background_color: dark_red_button
             text: 'Load input file...'
             on_release: root.show_input_load()
         MenuSpinner:
-            size_hint_x: 0.1
+            size_hint_x: None
+            width: 100
             background_color: dark_red_button
             id: save_spinner
             text: 'Save...'
             values: ['Input file...', 'Results...']
             on_text: root.on_save_spinner(self)
+        BoxLayout:
+            size_hint_x: None
+            width: 250
+            NonFileBrowserLabel:
+                text: 'Show previous results'
+                canvas.before:
+                    Color:
+                        rgba: darker_red_menu
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+            CheckBox:
+                disabled: not root.previous_results
+                id: show_previous_results
+                canvas:
+                    Clear:
+                    Color:
+                        rgba: darker_red_menu
+                    Rectangle:
+                        size: self.size
+                        pos: self.pos
+                    Color:
+                        rgba: 1, 1, 1, 1
+                    Rectangle:
+                        source: 'atlas://data/images/defaulttheme/checkbox%s_%s' % (('_radio' if self.group else ''), ('on' if self.active else 'off'))
+                        size: self.size
+                        pos: self.pos
         Widget:
-
         MenuSpinner:
-            size_hint_x: 0.1
+            size_hint_x: None
+            width: 100
             background_color: dark_red_button
             id: help_spinner
             text: 'Help...'
@@ -135,7 +166,8 @@
             on_text: root.on_help_spinner(self)
         Button:
             background_color: dark_red_button
-            size_hint_x: 0.05
+            size_hint_x: None
+            width: 50
             text: 'Exit'
             on_release: app.stop()
 
@@ -280,7 +312,18 @@
                                             id: spectrum_step
                                             text: '1.0'
                                             disabled: not spectrum_range_set.active or root.spectrum_file_loaded
-
+                                    BoxLayout:
+                                        LabelHelp:
+                                            text: 'Filter material'
+                                            help_message: parser_info['material_filter'][1]
+                                        TextInput:
+                                            id: material_filter
+                                    BoxLayout:
+                                        LabelHelp:
+                                            text: 'Filter thickness [um]'
+                                            help_message: parser_info['thickness_filter'][1]
+                                        FloatInput:
+                                            id: thickness_filter
 
                             # Detector
                             StackLayout:
@@ -345,6 +388,7 @@
                             #cols: 1
                         StackLayout:
                             BoxLayout:
+                                disabled: geometry.text == 'free'
                                 NonFileBrowserLabel:
                                     text: 'Choose the fixed grating'
                                 Spinner:
@@ -373,7 +417,7 @@
                                             orientation: 'vertical'
                                             size_hint_y: None
                                             height: root.calc_boxlayout_height(line_height, self)
-                                            disabled: not g0_set.active
+                                            disabled: not g0_set.active  or (fixed_grating.text != 'G0' and geometry.text != 'free')
                                             BoxLayout:
                                                 LabelHelp:
                                                     text: 'Design Energy [keV]'
@@ -439,7 +483,7 @@
                                             orientation: 'vertical'
                                             size_hint_y: None
                                             height: root.calc_boxlayout_height(line_height, self)
-                                            disabled: not g1_set.active
+                                            disabled: not g1_set.active or (fixed_grating.text != 'G1' and geometry.text != 'free')
                                             BoxLayout:
                                                 LabelHelp:
                                                     text: 'Geometry'
@@ -464,7 +508,7 @@
                                             orientation: 'vertical'
                                             size_hint_y: None
                                             height: root.calc_boxlayout_height(line_height, self)
-                                            disabled: not g2_set.active
+                                            disabled: not g2_set.active or (fixed_grating.text != 'G2' and geometry.text != 'free')
                                             Button:
                                             Button:
                                             Button:
