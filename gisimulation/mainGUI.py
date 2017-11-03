@@ -674,6 +674,8 @@ class giGUI(F.BoxLayout):
             self.available_gratings = ['G1', 'G2']
         else:
             self.available_gratings = ['G0', 'G1', 'G2']
+        # Sample distance label
+        self.update_sample_distance_label()
 
     # General simulation functions
 
@@ -937,6 +939,8 @@ class giGUI(F.BoxLayout):
         else:
             logger.debug("Current setup consists of: {0}"
                          .format(self.setup_components))
+        # Reset fixed grating input
+        self.ids.fixed_grating.text = 'Choose fixed grating...'
         if self.ids.beam_geometry.text == 'parallel':
             # Change GI geometry text
             if self.ids.geometry.text == 'sym' or \
@@ -946,16 +950,15 @@ class giGUI(F.BoxLayout):
             # Set available and deactive gratings
             self.ids.g0_set.active = False
             self.available_gratings = ['G1', 'G2']
+            # Update distances options
+            self.ids.distances.update(self.setup_components,
+                                      self.ids.beam_geometry.text,
+                                      self.ids.geometry.text)
         else:
             # Update geometry conditions for cone beam
-            self.on_geometry()
+            self.on_geometry()  # Includes update distances
             self.available_gratings = ['G0', 'G1', 'G2']
-        # Reset fixed grating input
-        self.ids.fixed_grating.text = 'Choose fixed grating...'
-        # Update distances options
-        self.ids.distances.update(self.setup_components,
-                                  self.ids.beam_geometry.text,
-                                  self.ids.geometry.text)
+
 
     def on_setup_components(self, instance, value):
         """
@@ -983,16 +986,16 @@ class giGUI(F.BoxLayout):
             self.ids.sample_relative_to.text = self.setup_components[0]
         logger.debug("Current setup consists of: {0}"
                      .format(self.setup_components))
-        # Update distances options
-        self.ids.distances.update(self.setup_components,
-                                  self.ids.beam_geometry.text,
-                                  self.ids.geometry.text)
+        # Update sample_relative_to and sample_relative_position
+        self.on_geometry()
+        self.on_beam_geometry()  # Includes update distances
 
     def on_sample_relative_to(self):
         """
         Update sample_relative_position values and text accoring to selected
         sample_relative_to, update sample in components.
         """
+        self.update_sample_distance_label()
         if self.ids.sample_relative_to.text == 'Source':
             self.ids.sample_relative_position.values = ['after']
             self.ids.sample_relative_position.text = 'after'
@@ -1011,6 +1014,7 @@ class giGUI(F.BoxLayout):
         Update sample_relative_position values and text accoring to selected
         sample_relative_position, update sample in components.
         """
+        self.update_sample_distance_label()
         # If sample is selected, Update component list and distances
         if self.sample_added:
             self.on_sample_checkbox_active(False)
@@ -1038,6 +1042,16 @@ class giGUI(F.BoxLayout):
         logger.debug("Current setup consists of: {0}"
                      .format(self.setup_components))
 
+    def update_sample_distance_label(self):
+        """
+        """
+        if self.ids.sample_relative_position.text == 'after':
+            label = ("Distance from {0} to Sample [mm]"
+                     .format(self.ids.sample_relative_to.text))
+        else:
+            label = ("Distance from Sample to {0} [mm]"
+                     .format(self.ids.sample_relative_to.text))
+        self.ids.sample_distance_label.text = label
 
     # Loading and saving files
 

@@ -517,8 +517,11 @@
                                 size_hint_y: None
                                 height: root.calc_boxlayout_height(line_height, self)
                                 disabled: not add_sample.active
-                                NonFileBrowserLabel:
-                                    text: 'Define sample here'
+                                BoxLayout:
+                                    NonFileBrowserLabel:
+                                        id: sample_distance_label
+                                    FloatInput:
+                                        id: sample_distance
 
                             Widget:
                             Widget:
