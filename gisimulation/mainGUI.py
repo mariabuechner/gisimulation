@@ -135,18 +135,56 @@ class IntInput(F.TextInput):  # Inherit and just change teyt input???
 
 class Distances(F.GridLayout):
     def __init__(self, **kwargs):
+        """
+        Init for free and parallel beam, minimum required is Source to Detector
+        distance.
+        """
         super(Distances, self).__init__(**kwargs)
         self.cols = 1
         self.update(['Source', 'Detector'])
 
 
-    def update(self, component_list):
+    def update(self, component_list, beam_geometry='parallel',
+               geometry='free'):
+        """
+        Update the distance widgets according to the component list or any
+        special geometry/beam geometry.
+
+        Parameters
+        ##########
+
+        component_list [list]
+        beam_geometry [str]
+        geometry [str]
+
+        Notes
+        #####
+
+        required:               not disabled and check for it
+        optional:               not disabled, no problem if not set
+        display:                disabled
+
+        'free':                 have to set all distances manually, based
+                                on component list
+
+        'parallel'&'conv':      none needs to be set, display only G1-G2
+
+        'cone'& not 'free':     required:   S/G0_G1 OR S/G0_G2
+                                            if G0, than S_G0
+                                optional:   G2_Dectector
+                                display:    all based on component list
+
+        """
+        # Remove sample from list (if necessary)
+        if 'Sample' in component_list:
+            component_list.remove('Sample')
+        # Set relevant components
+        if beam_geometry == 'parallel' and geometry != 'free':
+            component_list = ['G1', 'G2']
         # Remove all old widgets
         self.clear_widgets()
-        #
-        self.size_hint_y=None
-        self.height=(len(component_list)-1) * LINE_HEIGHT
         # Add new ones for all comonents
+        height = (len(component_list)-1) * LINE_HEIGHT  # Height of self
         for index, component in enumerate(component_list[:-1]):
             logger.debug("component: {}".format(component))
             distance_container = F.BoxLayout()
@@ -159,12 +197,62 @@ class Distances(F.GridLayout):
             distance_id = "{0}_{1}".format(component, component_list[index+1])
             distance_value.id = distance_id
 
+            # Just displays
+            if beam_geometry == 'parallel' and geometry != 'free':
+                distance_value.disabled = True
+            elif beam_geometry == 'cone' and geometry != 'free':
+                if distance_id == 'G1_G2':
+                    distance_value.disabled = True
+
             distance_container.add_widget(distance_label)
             distance_container.add_widget(distance_value)
             self.add_widget(distance_container)
-            #self.add_widget(distance_container)
             logger.debug("Added label '{0}' with input ID '{1}'"
                          .format(distance_text, distance_id))
+
+            # Add option to set S/G0 to G2 distance
+            if (distance_id == 'Source_G1' or distance_id == 'G0_G1') and \
+            geometry != 'free':
+                # Add extra line for total length option
+                height = (len(component_list)) * LINE_HEIGHT
+
+                if distance_id == 'Source_G1':
+                    extra_distance_text = "Distance from Source to G2 [mm]"
+                    extra_distance_id = "Source_G2"
+                else:
+                    extra_distance_text = "Distance from G0 to G2 [mm]"
+                    extra_distance_id = "G0_G2"
+                # Add extra distance
+                extra_distance_container = F.BoxLayout()
+
+                extra_distance_label = \
+                    NonFileBrowserLabel(text=extra_distance_text)
+
+                extra_distance_value = FloatInput(sixe_hint_x=0.2)
+                extra_distance_value.id = extra_distance_id
+                # Connect to only set one (if other is not empty, disabled)
+
+                distance_value.bind(text=partial(self.on_text,
+                                                 extra_distance_value))
+                extra_distance_value.bind(text=partial(self.on_text,
+                                                       distance_value))
+
+                # Add wisgets
+                extra_distance_container.add_widget(extra_distance_label)
+                extra_distance_container.add_widget(extra_distance_value)
+                self.add_widget(extra_distance_container)
+                logger.debug("Added label '{0}' with input ID '{1}'"
+                             .format(extra_distance_text, extra_distance_id))
+
+        # Fill with new widgets
+        self.size_hint_y = None
+        self.height = height
+
+    def on_text(self, linked_instance, instance, value):
+        if value != '':
+            linked_instance.disabled = True
+        else:
+            linked_instance.disabled = False
 
 # Error popup
 
@@ -802,6 +890,9 @@ class giGUI(F.BoxLayout):
         # Remove sample if it was set before (to start fresh)
         if 'Sample' in self.setup_components:
                 self.ids.add_sample.active = False
+        else:
+            logger.debug("Current setup consists of: {0}"
+                         .format(self.setup_components))
         # Required gratings
         if self.ids.geometry.text != 'free':
             # G1 and G2 required
@@ -816,11 +907,7 @@ class giGUI(F.BoxLayout):
             self.ids.sample_relative_position.text = 'after'
             self.ids.sample_relative_position.values = ['after']
             self.ids.sample_relative_to.text = 'Source'
-            if 'Sample' not in self.setup_components:
-                self.ids.sample_relative_to.values = self.setup_components
-            else:
-                self.ids.sample_relative_to.values = \
-                    list(self.setup_components).remove('Sample')
+            self.ids.sample_relative_to.values = self.setup_components
         # GI cases
         if self.ids.geometry.text == 'conv':
             self.ids.sample_relative_position.text = 'before'
@@ -830,10 +917,14 @@ class giGUI(F.BoxLayout):
         elif self.ids.geometry.text == 'inv':
             self.ids.sample_relative_position.text = 'after'
             self.ids.sample_relative_position.values = ['after']
-        else:
+        elif self.ids.geometry.text == 'sym':
             # Symmetrical case
             self.ids.sample_relative_position.text = 'after'
             self.ids.sample_relative_position.values = ['after', 'before']
+        # Update distances options
+        self.ids.distances.update(self.setup_components,
+                                  self.ids.beam_geometry.text,
+                                  self.ids.geometry.text)
 
     def on_beam_geometry(self):
         """
@@ -843,6 +934,9 @@ class giGUI(F.BoxLayout):
         # Remove sample if it was set
         if 'Sample' in self.setup_components:
                 self.ids.add_sample.active = False
+        else:
+            logger.debug("Current setup consists of: {0}"
+                         .format(self.setup_components))
         if self.ids.beam_geometry.text == 'parallel':
             # Change GI geometry text
             if self.ids.geometry.text == 'sym' or \
@@ -856,7 +950,12 @@ class giGUI(F.BoxLayout):
             # Update geometry conditions for cone beam
             self.on_geometry()
             self.available_gratings = ['G0', 'G1', 'G2']
+        # Reset fixed grating input
         self.ids.fixed_grating.text = 'Choose fixed grating...'
+        # Update distances options
+        self.ids.distances.update(self.setup_components,
+                                  self.ids.beam_geometry.text,
+                                  self.ids.geometry.text)
 
     def on_setup_components(self, instance, value):
         """
@@ -885,12 +984,14 @@ class giGUI(F.BoxLayout):
         logger.debug("Current setup consists of: {0}"
                      .format(self.setup_components))
         # Update distances options
-        self.ids.distances.update(self.setup_components)
+        self.ids.distances.update(self.setup_components,
+                                  self.ids.beam_geometry.text,
+                                  self.ids.geometry.text)
 
     def on_sample_relative_to(self):
         """
-        Update sample_relative_position valeus and text accoring to selected
-        sample_relative_to, update sample in components and distances.
+        Update sample_relative_position values and text accoring to selected
+        sample_relative_to, update sample in components.
         """
         if self.ids.sample_relative_to.text == 'Source':
             self.ids.sample_relative_position.values = ['after']
@@ -907,8 +1008,8 @@ class giGUI(F.BoxLayout):
 
     def on_sample_relative_position(self):
         """
-        Update sample_relative_position valeus and text accoring to selected
-        sample_relative_position, update sample in components and distances.
+        Update sample_relative_position values and text accoring to selected
+        sample_relative_position, update sample in components.
         """
         # If sample is selected, Update component list and distances
         if self.sample_added:
@@ -934,10 +1035,9 @@ class giGUI(F.BoxLayout):
             self.setup_components.remove('Sample')
             self.sample_added = False
 
-        logger.debug("Current setup consists of:\n{0}"
+        logger.debug("Current setup consists of: {0}"
                      .format(self.setup_components))
-        # Add sample to distances
-        self.ids.distances.update(self.setup_components)
+
 
     # Loading and saving files
 

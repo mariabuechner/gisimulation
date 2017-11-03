@@ -476,7 +476,7 @@
                             # Distances
                             GridLayout:
                                 cols: 1
-                                pos_hint: {'top': 0.25}
+                                pos_hint: {'top': 0.3}
 
                                 Distances:
                                     id: distances
@@ -508,7 +508,7 @@
                                     id: sample_relative_to
                                     text: 'Source'
                                     on_text: root.on_sample_relative_to()
-                                    values: root.setup_components
+                                    values: root.setup_components if 'Sample' not in root.setup_components else list(root.setup_components).remove('Sample')
                                 CheckBox:
                                     id: add_sample
                                     on_active: root.on_sample_checkbox_active(self.active)
