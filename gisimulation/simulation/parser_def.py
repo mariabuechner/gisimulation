@@ -259,14 +259,6 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
 
 
     # Distances ???
-#    parser.add_argument('-sp', dest='sample_position', default='after',
-#                        type=str,
-#                        choices=['after', 'before'],
-#                        metavar='SAMPLE_POSITION',
-#                        help="Relative sample position with respect to G1. "
-#                        "Choices are\n"
-#                        "'after': upstream of G1, "
-#                        "'before': downstream of G1.")
     parser.add_argument('-s2g', dest='distance_source2grating',
                         type=numerical_type,
                         help="Distance from source to first grating [mm].")
@@ -278,6 +270,12 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
 
 
     # Grating parameters
+    parser.add_argument('-fg', dest='fixed_grating',
+                        type=str,
+                        choices=['G0', 'G1', 'G2'], metavar='FIXED_GRATING',
+                        help="Choose on which grating the calculations will "
+                        "based on. Note that G0 cannot be chosen for "
+                        "parallel beam geometries.")
     # G0
     parser.add_argument('-g0', dest='type_g0', default='mix',
                         type=str,
@@ -386,7 +384,20 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         type=numerical_type,
                         help="Depth of G2 filling [um].")
 
-
+    # Sample
+    parser.add_argument('-sp', dest='sample_position',
+                        type=str,
+                        choices=['as',
+                                 'bg0', 'ag0',
+                                 'bg1', 'ag1',
+                                 'bg2', 'ag2',
+                                 'bd'],
+                        metavar='SAMPLE_POSITION',
+                        help="Choose where the sample will be positioned. "
+                        "Choices are: 'as': after source, 'bg0': before G0, "
+                        "'ag0': after G0, 'bg1': before G1, 'ag1': after G1, "
+                        "'bg2': before G2, 'ag2': after G2, 'bd': before "
+                        "detector.")
 
 
     # Return

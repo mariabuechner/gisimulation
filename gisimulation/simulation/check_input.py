@@ -100,17 +100,28 @@ def general_input(parameters):
                           parameters['spectrum_range'],
                           parameters['spectrum_step'],
                           parameters['design_energy'])
+        # material filter
+        if parameters['thickness_filter'] and \
+                not parameters['material_filter']:
+            error_message = "Filter material must be specified."
+            logger.error(error_message)
+            raise InputError(error_message)
+        if parameters['material_filter'] and \
+                not parameters['thickness_filter']:
+            error_message = "Filter thickness must be specified."
+            logger.error(error_message)
+            raise InputError(error_message)
 
         # Detector:
         # PSF right size?
         if parameters['detector_type'] == 'conv':
-            if not parameters['point_spread_function'] :
+            if not parameters['point_spread_function']:
                 error_message = "Input argument missing: " \
                                 "'point_spread_function' ('-psf')."
                 logger.error(error_message)
                 raise InputError(error_message)
             if parameters['point_spread_function'] <= \
-            parameters['pixel_size']:
+                    parameters['pixel_size']:
                 # PSF too small, but be larger
                 error_message = "PSF must be at larger than the  pixel "
                 "size."
@@ -126,28 +137,232 @@ def general_input(parameters):
             logger.warning("Detector threshold is smaller than the minimal "
                            "energy.")
 
-        # material thickness (if defined, material must be defined)
+        # material thickness
         if parameters['thickness_detector'] and \
-        not parameters['material_detector']:
-            error_message = "Detector material not specified."
+                not parameters['material_detector']:
+            error_message = "Detector material must be specified."
+            logger.error(error_message)
+            raise InputError(error_message)
+        if parameters['material_detector'] and \
+                not parameters['thickness_detector']:
+            error_message = "Detector thickness must be specified."
             logger.error(error_message)
             raise InputError(error_message)
 
-
-
-
-
-
         # Special scenarios
+        parameters['component_list'] = ['Source', 'Detector']
+        # Add sample to component list
+        if parameters['sample_position']:
+            parameters['component_list'].append('Sample')
+
         if parameters['beam_geometry'] == 'parallel':
-            # =================================================================
-            # Conditions:
-            #     focal_spot_size = 0
-            #     no G0
-            # Requirements:
-            #     no gratings, G1 or G1+G2
-            # =================================================================
-            pass
+            # Parallel beam
+            # Common checks for both 'free' and 'conv' geometry
+            # Warn, that G0 will be ignored if it is defined
+            if parameters['type_g0']:
+                logger.warning("G0 is defined, but will be ignored.")
+
+            # Individual checks
+            if parameters['geometry'] == 'conv':
+                # =============================================================
+                # Conventional and parallel beam
+                #
+                # Conditions:
+                #     no G0
+                #     sample before or after G1 (bg1 or ag1)
+                # Requirements:
+                #     G1 and G2, one of them fixed
+                # =============================================================
+                # Sample position (if defined)
+                if parameters['sample_position']:
+                    if parameters['sample_position'] not in ['bg1', 'ag1']:
+                        error_message = "Sample must be before or after G1."
+                        logger.error(error_message)
+                        raise InputError(error_message)
+                # Fixed grating
+                if parameters['fixed_grating'] == 'G0':
+                    error_message = "The fixed grating must be either G1 or "
+                    "G2."
+                    logger.error(error_message)
+                    raise InputError(error_message)
+                # Add G1 and G2
+                parameters['component_list'].append('G1')
+                parameters['component_list'].append('G2')
+            else:
+                # =============================================================
+                # Free and parallel beam
+                #
+                # Conditions:
+                #     no G0
+                # Requirements:
+                #     all distances between components must be given
+                # =============================================================
+                # Add all other components
+                if parameters['type_g1']:
+                    parameters['component_list'].append('G1')
+                if parameters['type_g2']:
+                    parameters['component_list'].append('G2')
+        else:
+            # Cone beam
+            if parameters['geometry'] != 'free':
+                # Common checks for not 'free' geometry
+                # Add G1 and G2
+                parameters['component_list'].append('G1')
+                parameters['component_list'].append('G2')
+                # Fixed grating if G0 is not defined
+                if not parameters['g0_type']:
+                    # No G0
+                    if parameters['fixed_grating'] == 'G0':
+                        error_message = "G0 is not defined, choose G1 or G2 "
+                        "as fixed grating."
+                        logger.error(error_message)
+                        raise InputError(error_message)
+                    # Fixed distance
+                    if not parameters['distance_Source_G1'] and \
+                            not parameters['distance_Source_G2']:
+                        error_message = ("Either distance from Source to G1 "
+                                         "OR Source to G2 must be defined.")
+                        logger.error(error_message)
+                        raise InputError(error_message)
+                    elif parameters['distance_Source_G1'] and \
+                            parameters['distance_Source_G2']:
+                        logger.warning("Both distance from Source to G1 AND "
+                                       "Source to G2 are defined, choosing "
+                                       "distance from Source to G2 (total GI "
+                                       "length).")
+                        parameters['distance_Source_G1'] = None
+                        fixed_distance = 'distance_Source_G2'
+                    elif parameters['distance_Source_G1']:
+                        fixed_distance = 'distance_Source_G1'
+                    elif parameters['distance_Source_G2']:
+                        fixed_distance = 'distance_Source_G2'
+                else:
+                    # With G0
+                    # Fixed distance
+                    if not parameters['distance_G0_G1'] and \
+                            not parameters['distance_G0_G2']:
+                        error_message = ("Either distance from G0 to G1 OR G0 "
+                                         "to G2 must be defined.")
+                        logger.error(error_message)
+                        raise InputError(error_message)
+                    elif parameters['distance_G0_G1'] and \
+                            parameters['distance_G0_G2']:
+                        logger.warning("Both distance from G0 to G1 AND G0 "
+                                       "to G2 are defined, choosing distance "
+                                       "from G0 to G2 (total GI length).")
+                        parameters['distance_G0_G1'] = None
+                        fixed_distance = 'distance_G0_G2'
+                    elif parameters['distance_G0_G1']:
+                        fixed_distance = 'distance_G0_G1'
+                    elif parameters['distance_G0_G2']:
+                        fixed_distance = 'distance_G0_G2'
+
+                # Individaul checks
+                if parameters['geometry'] == 'conv':
+                    # =========================================================
+                    # Conventional and cone beam
+                    #
+                    # Conditions:
+                    #     G0 optional
+                    #     sample before G1 (bg1)
+                    #     distance G2 to detector optional
+                    #     distance from source (or G0) to G1
+                    #       OR
+                    #     distance from source (or G0) to G1
+                    # Requirements:
+                    #     G1 and G2
+                    #     1 fixed grating
+                    #
+                    # =========================================================
+                    if parameters['sample_position']:
+                        if parameters['sample_position'] != 'bg1':
+                            error_message = "Sample must be before G1."
+                            logger.error(error_message)
+                            raise InputError(error_message)
+                elif parameters['geometry'] == 'sym':
+                    # =========================================================
+                    # Symmetrical and cone beam
+                    #
+                    # Conditions:
+                    #     G0 optional
+                    #     sample before or after G1 (bg1 or ag1)
+                    #     distance G2 to detector optional
+                    #     distance from source (or G0) to G1
+                    #       OR
+                    #     distance from source (or G0) to G1
+                    # Requirements:
+                    #     G1 and G2
+                    #     1 fixed grating
+                    #
+                    # =========================================================
+                    if parameters['sample_position']:
+                        if parameters['sample_position'] not in ['bg1', 'ag1']:
+                            error_message = ("Sample must be before or after "
+                                             "G1.")
+                            logger.error(error_message)
+                            raise InputError(error_message)
+                elif parameters['geometry'] == 'inv':
+                    # =========================================================
+                    # Inverse and cone beam
+                    #
+                    # Conditions:
+                    #     G0 optional
+                    #     sample after G1 (ag1)
+                    #     distance G2 to detector optional
+                    #     distance from source (or G0) to G1
+                    #       OR
+                    #     distance from source (or G0) to G1
+                    # Requirements:
+                    #     G1 and G2
+                    #     1 fixed grating
+                    #
+                    # =========================================================
+                    if parameters['sample_position']:
+                        if parameters['sample_position'] != 'ag1':
+                            error_message = ("Sample must be after G1.")
+                            logger.error(error_message)
+                            raise InputError(error_message)
+            else:
+                # =============================================================
+                # Free and cone beam
+                #
+                # Conditions:
+                #
+                # Requirements:
+                #     all distances between components must be given
+                # =============================================================
+                # Add all other components
+                if parameters['type_g0']:
+                    parameters['component_list'].append('G0')
+                if parameters['type_g1']:
+                    parameters['component_list'].append('G1')
+                if parameters['type_g2']:
+                    parameters['component_list'].append('G2')
+
+        # Sort updated component list
+        parameters['component_list'].sort()
+        # After sort, switch Source and Detector
+        parameters['component_list'][0],  parameters['component_list'][-1] = \
+            parameters['component_list'][-1], parameters['component_list'][0]
+
+        # Check remaining components (source and detector already done)
+        # sample distance, shape, amterial etc.
+        # Gratings...
+
+        # if 'free', check distances are all tehre
+
+        # Info
+        logger.info("Beam geometry is '{0}' and setup geometry is '{1}'."
+                    .format(parameters['beam_geometry'],
+                            parameters['geometry']))
+        logger.info("Setup consists of: {0}."
+                    .format(parameters['component_list']))
+        if parameters['geometry'] != 'free':
+            logger.info("Fixed grating is: '{0}'."
+                        .format(parameters['fixed_grating']))
+            if parameters['beam_geometry'] == 'cone':
+                logger.info("Fixed distance is: {0}."
+                            .format(fixed_distance))
 
         return parameters
 
@@ -160,12 +375,10 @@ def general_input(parameters):
 # %% Public utility functions
 
 
-
 # %% Private checking functions
 
 
 # %% Private utility functions
-
 
 def _get_spectrum(spectrum_file, range_, spectrum_step, design_energy):
     """
