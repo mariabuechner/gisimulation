@@ -76,8 +76,10 @@ def general_input(parameters):
     """
     try:
         # % Minimal required input for 'free', 'parallel', no gatings
+        logger.debug("Checking general input...")
 
-        # General and GI Design
+        # General and GI Design:
+        logger.debug("Checking GI input...")
         if not parameters['sampling_rate']:
             logger.debug("Sampling rate is not specified, "
                          "set to pixel size * 1e-3.")
@@ -86,7 +88,10 @@ def general_input(parameters):
             logger.debug("Sampling rate is {0} um, with pixel size {1} "
                          "um..".format(parameters['sampling_rate'],
                                        parameters['pixel_size']))
+        logger.debug("... done.")
+
         # Source:
+        logger.debug("Checking Source input...")
         if parameters['beam_geometry'] == 'cone':
             if not parameters['focal_spot_size']:
                 error_message = "Input argument missing: 'focal_spot_size' " \
@@ -111,8 +116,10 @@ def general_input(parameters):
             error_message = "Filter thickness must be specified."
             logger.error(error_message)
             raise InputError(error_message)
+        logger.debug("... done.")
 
         # Detector:
+        logger.debug("Checking detector input...")
         # PSF right size?
         if parameters['detector_type'] == 'conv':
             if not parameters['point_spread_function']:
@@ -148,15 +155,16 @@ def general_input(parameters):
             error_message = "Detector thickness must be specified."
             logger.error(error_message)
             raise InputError(error_message)
+        logger.debug("... done.")
 
-        # Special scenarios
+        # Special scenarios:
+        logger.debug("Checking geometry scenarios...")
+
         parameters['component_list'] = ['Source', 'Detector']
-        # Add sample to component list
-        if parameters['sample_position']:
-            parameters['component_list'].append('Sample')
 
         if parameters['beam_geometry'] == 'parallel':
             # Parallel beam
+            logger.debug("Checking parallel beam geometry...")
             # Common checks for both 'free' and 'conv' geometry
             # Warn, that G0 will be ignored if it is defined
             if parameters['type_g0']:
@@ -173,21 +181,39 @@ def general_input(parameters):
                 # Requirements:
                 #     G1 and G2, one of them fixed
                 # =============================================================
-                # Sample position (if defined)
-                if parameters['sample_position']:
-                    if parameters['sample_position'] not in ['bg1', 'ag1']:
-                        error_message = "Sample must be before or after G1."
-                        logger.error(error_message)
-                        raise InputError(error_message)
+                logger.debug("Checking 'conv' geometry...")
+                # Add G1 and G2
+                parameters['component_list'].append('G1')
+                parameters['component_list'].append('G2')
+                # Sort updated component list
+                parameters['component_list'].sort()
+                # After sort, switch Source and Detector
+                parameters['component_list'][0], \
+                    parameters['component_list'][-1] = \
+                    parameters['component_list'][-1], \
+                    parameters['component_list'][0]
+
                 # Fixed grating
                 if parameters['fixed_grating'] == 'G0':
                     error_message = "The fixed grating must be either G1 or "
                     "G2."
                     logger.error(error_message)
                     raise InputError(error_message)
-                # Add G1 and G2
-                parameters['component_list'].append('G1')
-                parameters['component_list'].append('G2')
+
+                # Sample position (if defined)
+                if parameters['sample_position']:
+                    g1_index = parameters['component_list'].index('G1')
+                    if parameters['sample_position'] == 'bg1':
+                        parameters['component_list'].insert(g1_index,
+                                                            'Sample')
+                    elif parameters['sample_position'] == 'ag1':
+                        parameters['component_list'].insert(g1_index+1,
+                                                            'Sample')
+                    else:
+                        error_message = "Sample must be before or after G1."
+                        logger.error(error_message)
+                        raise InputError(error_message)
+                logger.debug("... done.")
             else:
                 # =============================================================
                 # Free and parallel beam
@@ -197,18 +223,66 @@ def general_input(parameters):
                 # Requirements:
                 #     all distances between components must be given
                 # =============================================================
+                logger.debug("Checking 'free' geometry...")
                 # Add all other components
                 if parameters['type_g1']:
                     parameters['component_list'].append('G1')
                 if parameters['type_g2']:
                     parameters['component_list'].append('G2')
+                # Sort updated component list
+                parameters['component_list'].sort()
+                # After sort, switch Source and Detector
+                parameters['component_list'][0], \
+                    parameters['component_list'][-1] = \
+                    parameters['component_list'][-1], \
+                    parameters['component_list'][0]
+                # Add sample
+                if parameters['sample_position']:
+                    if parameters['sample_position'] == 'as':
+                        parameters['component_list'].insert(1, 'Sample')
+                    elif parameters['sample_position'] == 'bg1':
+                        reference_index = \
+                            parameters['component_list'].index('G1')
+                        parameters['component_list'].insert(reference_index,
+                                                            'Sample')
+                    elif parameters['sample_position'] == 'ag1':
+                        reference_index = \
+                            parameters['component_list'].index('G1')
+                        parameters['component_list'].insert(reference_index+1,
+                                                            'Sample')
+                    elif parameters['sample_position'] == 'bg2':
+                        reference_index = \
+                            parameters['component_list'].index('G2')
+                        parameters['component_list'].insert(reference_index,
+                                                            'Sample')
+                    elif parameters['sample_position'] == 'ag2':
+                        reference_index = \
+                            parameters['component_list'].index('G2')
+                        parameters['component_list'].insert(reference_index+1,
+                                                            'Sample')
+                    else:
+                        # 'bd'
+                        parameters['component_list'].insert(-1, 'Sample')
+                logger.debug("... done.")
+
+            logger.debug("... done.")
         else:
             # Cone beam
+            logger.debug("Checking 'cone' beam geometry...")
             if parameters['geometry'] != 'free':
+                logger.debug("Checking GI geometries...")
                 # Common checks for not 'free' geometry
                 # Add G1 and G2
                 parameters['component_list'].append('G1')
                 parameters['component_list'].append('G2')
+                # Sort updated component list
+                parameters['component_list'].sort()
+                # After sort, switch Source and Detector
+                parameters['component_list'][0], \
+                    parameters['component_list'][-1] = \
+                    parameters['component_list'][-1], \
+                    parameters['component_list'][0]
+
                 # Fixed grating if G0 is not defined
                 if not parameters['g0_type']:
                     # No G0
@@ -274,11 +348,18 @@ def general_input(parameters):
                     #     1 fixed grating
                     #
                     # =========================================================
+                    logger.debug("Checking 'conv' geometry...")
+                    # Sample position (if defined)
                     if parameters['sample_position']:
-                        if parameters['sample_position'] != 'bg1':
+                        g1_index = parameters['component_list'].index('G1')
+                        if parameters['sample_position'] == 'bg1':
+                            parameters['component_list'].insert(g1_index,
+                                                                'Sample')
+                        else:
                             error_message = "Sample must be before G1."
                             logger.error(error_message)
                             raise InputError(error_message)
+                    logger.debug("... done.")
                 elif parameters['geometry'] == 'sym':
                     # =========================================================
                     # Symmetrical and cone beam
@@ -295,12 +376,22 @@ def general_input(parameters):
                     #     1 fixed grating
                     #
                     # =========================================================
+                    logger.debug("Checking 'sym' geometry...")
+                    # Sample position (if defined)
                     if parameters['sample_position']:
-                        if parameters['sample_position'] not in ['bg1', 'ag1']:
+                        g1_index = parameters['component_list'].index('G1')
+                        if parameters['sample_position'] == 'bg1':
+                            parameters['component_list'].insert(g1_index,
+                                                                'Sample')
+                        elif parameters['sample_position'] == 'ag1':
+                            parameters['component_list'].insert(g1_index+1,
+                                                                'Sample')
+                        else:
                             error_message = ("Sample must be before or after "
                                              "G1.")
                             logger.error(error_message)
                             raise InputError(error_message)
+                    logger.debug("... done.")
                 elif parameters['geometry'] == 'inv':
                     # =========================================================
                     # Inverse and cone beam
@@ -317,11 +408,20 @@ def general_input(parameters):
                     #     1 fixed grating
                     #
                     # =========================================================
+                    logger.debug("Checking 'inv' geometry...")
+                    # Sample position (if defined)
                     if parameters['sample_position']:
-                        if parameters['sample_position'] != 'ag1':
-                            error_message = ("Sample must be after G1.")
+                        g1_index = parameters['component_list'].index('G1')
+                        if parameters['sample_position'] == 'ag1':
+                            parameters['component_list'].insert(g1_index+1,
+                                                                'Sample')
+                        else:
+                            error_message = ("Sample must be before or after "
+                                             "G1.")
                             logger.error(error_message)
                             raise InputError(error_message)
+                    logger.debug("... done.")
+                logger.debug("... done.")
             else:
                 # =============================================================
                 # Free and cone beam
@@ -331,6 +431,7 @@ def general_input(parameters):
                 # Requirements:
                 #     all distances between components must be given
                 # =============================================================
+                logger.debug("Checking 'free' geometry...")
                 # Add all other components
                 if parameters['type_g0']:
                     parameters['component_list'].append('G0')
@@ -338,18 +439,88 @@ def general_input(parameters):
                     parameters['component_list'].append('G1')
                 if parameters['type_g2']:
                     parameters['component_list'].append('G2')
+                # Sort updated component list
+                parameters['component_list'].sort()
+                # After sort, switch Source and Detector
+                parameters['component_list'][0], \
+                    parameters['component_list'][-1] = \
+                    parameters['component_list'][-1], \
+                    parameters['component_list'][0]
+                # Add sample
+                if parameters['sample_position']:
+                    if parameters['sample_position'] == 'as':
+                        parameters['component_list'].insert(1, 'Sample')
+                    elif parameters['sample_position'] == 'bg0':
+                        reference_index = \
+                            parameters['component_list'].index('G0')
+                        parameters['component_list'].insert(reference_index,
+                                                            'Sample')
+                    elif parameters['sample_position'] == 'ag0':
+                        reference_index = \
+                            parameters['component_list'].index('G0')
+                        parameters['component_list'].insert(reference_index+1,
+                                                            'Sample')
+                    elif parameters['sample_position'] == 'bg1':
+                        reference_index = \
+                            parameters['component_list'].index('G1')
+                        parameters['component_list'].insert(reference_index,
+                                                            'Sample')
+                    elif parameters['sample_position'] == 'ag1':
+                        reference_index = \
+                            parameters['component_list'].index('G1')
+                        parameters['component_list'].insert(reference_index+1,
+                                                            'Sample')
+                    elif parameters['sample_position'] == 'bg2':
+                        reference_index = \
+                            parameters['component_list'].index('G2')
+                        parameters['component_list'].insert(reference_index,
+                                                            'Sample')
+                    elif parameters['sample_position'] == 'ag2':
+                        reference_index = \
+                            parameters['component_list'].index('G2')
+                        parameters['component_list'].insert(reference_index+1,
+                                                            'Sample')
+                    else:
+                        # 'bd'
+                        parameters['component_list'].insert(-1, 'Sample')
+                logger.debug("... done.")
 
-        # Sort updated component list
-        parameters['component_list'].sort()
-        # After sort, switch Source and Detector
-        parameters['component_list'][0],  parameters['component_list'][-1] = \
-            parameters['component_list'][-1], parameters['component_list'][0]
+            logger.debug("... done.")
 
         # Check remaining components (source and detector already done)
-        # sample distance, shape, amterial etc.
-        # Gratings...
+        # Sample distance, shape, amterial etc.
+        logger.debug("Checking remaining components...")
+        if 'Sample' in parameters['component_list']:
+            logger.debug("Checking sample input... TODO...")
+        # Gratings
+        if 'G0' in parameters['component_list']:
+            logger.debug("Checking G0...")
 
-        # if 'free', check distances are all tehre
+            logger.debug("... done.")
+        if 'G1' in parameters['component_list']:
+            logger.debug("Checking G1...")
+
+            logger.debug("... done.")
+        if 'G2' in parameters['component_list']:
+            logger.debug("Checking G2...")
+
+            logger.debug("... done.")
+        logger.debug("... done.")
+
+        # if 'free', check distances are all there
+        if parameters['geometry'] == 'free':
+            logger.debug("Checking distances for 'free' input...")
+            for component, index in \
+                    enumerate(parameters['component_list'][:-1]):
+                current_distance = ('distance_' + component + '_' +
+                                    parameters['component_list'][index])
+                if not parameters[current_distance]:
+                    error_message = "{0} not defined.".format(current_distance)
+                    logger.error(error_message)
+                    raise InputError(error_message)
+            logger.debug("... done.")
+
+        logger.debug("... done.")
 
         # Info
         logger.info("Beam geometry is '{0}' and setup geometry is '{1}'."
@@ -364,6 +535,7 @@ def general_input(parameters):
                 logger.info("Fixed distance is: {0}."
                             .format(fixed_distance))
 
+        logger.debug("... done.")
         return parameters
 
     except AttributeError as e:
