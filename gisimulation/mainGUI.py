@@ -30,7 +30,6 @@ from kivy.base import ExceptionHandler, ExceptionManager
 from kivy.logger import Logger
 from kivy.app import App
 from kivy.garden.filebrowser import FileBrowser
-from kivy.utils import platform
 from kivy.core.window import Window
 # UIX
 from kivy.factory import Factory as F
@@ -51,7 +50,6 @@ import simulation.check_input as check_input
 
 # Set App Window configuration
 Window.maximize()  # NOTE: On desktop platforms only
-#Window.set_icon('path\to\icon')
 
 # %% Constants
 
@@ -70,6 +68,7 @@ class MenuSpinnerButton(F.Button):
     """
     pass
 
+
 class MenuSpinner(F.Spinner):
     """
     Custom Spinner, uses MenuSpinnerButton.
@@ -87,6 +86,7 @@ class NonFileBrowserLabel(F.Label):
     pass
 
 # Inputs
+
 
 class FloatInput(F.TextInput):
     """
@@ -142,7 +142,6 @@ class Distances(F.GridLayout):
         super(Distances, self).__init__(**kwargs)
         self.cols = 1
         self.update(['Source', 'Detector'])
-
 
     def update(self, component_list, beam_geometry='parallel',
                geometry='free'):
@@ -212,7 +211,7 @@ class Distances(F.GridLayout):
 
             # Add option to set S/G0 to G2 distance
             if (distance_id == 'Source_G1' or distance_id == 'G0_G1') and \
-            geometry != 'free':
+                    geometry != 'free':
                 # Add extra line for total length option
                 height = (len(component_list)) * LINE_HEIGHT
 
@@ -276,6 +275,7 @@ class ErrorDisplay():
         error_popup = _OKPopupWindow(error_title, error_message)
         error_popup.popup.open()
 
+
 class WarningDisplay():
     """
     Popup window in case an exception is caught and user can choose to
@@ -304,8 +304,6 @@ class WarningDisplay():
                                                         overwrite_finish,
                                                         cancel_finish)
         self.warning_popup.popup.open()
-
-
 
 # Help popup
 
@@ -380,7 +378,6 @@ class _OKPopupWindow():
                              content=popup_content,
                              size_hint=(None, None),
                              size=ERROR_MESSAGE_SIZE)
-                             #size=(_scale_popup_window(message)))
         close_popup_button.bind(on_press=self.popup.dismiss)
 
 
@@ -534,6 +531,7 @@ def _save_input_file(input_file_path, input_parameters):
             else:
                 f.writelines(str(value)+'\n')
 
+
 def _collect_input(parameters, ids):
     """
     Converts self.ids from widget to dict and then to struct.
@@ -557,7 +555,6 @@ def _collect_input(parameters, ids):
     """
     logger.debug("Converting all label inputs...")
     for var_name, value in ids.iteritems():
-#        logger.debug("Key is: {0}.\nValue is: {1}.".format(var_name, value))
         if 'CheckBox' in str(value):
             continue
         elif 'TabbedPanel' in str(value):
@@ -607,6 +604,7 @@ def _collect_input(parameters, ids):
 
 # Handle exceptions in popup window
 
+
 class _IgnoreExceptions(ExceptionHandler):
     """
     Kivy Exception Handler to either display the exception or exit the
@@ -626,9 +624,6 @@ if not DEBUGGING:  # FUTURE: Remove if and DEBUGGING; and always subpress
     ExceptionManager.add_handler(_IgnoreExceptions())
 
 # %% Main GUI
-
-
-
 
 
 class giGUI(F.BoxLayout):
@@ -959,14 +954,12 @@ class giGUI(F.BoxLayout):
             self.on_geometry()  # Includes update distances
             self.available_gratings = ['G0', 'G1', 'G2']
 
-
     def on_setup_components(self, instance, value):
         """
         On change in component list, update sample_relative_to spinner text.
         """
         if not self.sample_added:
             self.ids.sample_relative_to.text = self.setup_components[0]
-
 
     def on_grating_checkbox_active(self, state, checkbox_name):
         """
@@ -978,7 +971,7 @@ class giGUI(F.BoxLayout):
             self.setup_components.sort()
             # After sort, switch Source and Detector
             self.setup_components[0], self.setup_components[-1] = \
-              self.setup_components[-1], self.setup_components[0]
+                self.setup_components[-1], self.setup_components[0]
         else:
             self.setup_components.remove(checkbox_name)
             # Also uncheck sample_added
@@ -1019,7 +1012,6 @@ class giGUI(F.BoxLayout):
         if self.sample_added:
             self.on_sample_checkbox_active(False)
             self.on_sample_checkbox_active(True)
-
 
     def on_sample_checkbox_active(self, state):
         """
@@ -1087,7 +1079,7 @@ class giGUI(F.BoxLayout):
                                     'data', 'spectra')
         browser = FileBrowser(select_string='Select',
                               path=spectra_path,  # Folder to open at start
-                              filters=['*.csv','*.txt'])
+                              filters=['*.csv', '*.txt'])
         browser.bind(on_success=self._spectra_fbrowser_success,
                      on_canceled=self._fbrowser_canceled)
 
@@ -1116,14 +1108,14 @@ class giGUI(F.BoxLayout):
         Notes
         #####
 
-        Default path:               ./data/
+        Default path:               ./data/inputs/
         Available file extentions:  [*.txt']
 
         """
         # Define browser
         input_path = os.path.join(os.path.dirname(os.path.
-                                                    realpath(__file__)),
-                                    'data')
+                                                  realpath(__file__)),
+                                  'data', 'inputs')
         browser = FileBrowser(select_string='Select',
                               multiselect=True,
                               path=input_path,  # Folder to open at start
@@ -1144,7 +1136,6 @@ class giGUI(F.BoxLayout):
         logger.debug("{0} input files loaded."
                      .format(len(self.load_input_file_paths)))
         self.dismiss_popup()
-
 
     # Save input file
 
@@ -1206,7 +1197,7 @@ class giGUI(F.BoxLayout):
     # Save results
 
     def save_results(self):
-         logger.info("Saving results...")
+        logger.info("Saving results...")
 
     # Set widgete values
     def _set_widgets(self, input_parameters, from_file):
@@ -1269,8 +1260,8 @@ class giGUI(F.BoxLayout):
                     logger.debug("value is: {0}".format(value))
                     if var_name not in self.parser_info:
                         # Input variable not implemented in parser
-                        logger.warning("Parameter '{0}' read from app, but not "
-                                       "defined in parser. Skipping..."
+                        logger.warning("Parameter '{0}' read from app, but "
+                                       "not defined in parser. Skipping..."
                                        .format(var_name))
                         continue
                     var_key = self.parser_info[var_name][0]
@@ -1307,13 +1298,10 @@ class giGUI(F.BoxLayout):
         boxlayout_height [pxls]
 
         """
-        boxlayout_height = (childen_height + boxlayout.spacing \
-                            + boxlayout.padding[1] + boxlayout.padding[3]) \
-                            * len(boxlayout.children)
+        boxlayout_height = ((childen_height + boxlayout.spacing +
+                             boxlayout.padding[1] + boxlayout.padding[3]) *
+                            len(boxlayout.children))
         return boxlayout_height
-
-
-
 
 # %% Main App
 
@@ -1323,10 +1311,7 @@ class giGUIApp(App):
         self.title = 'GI Simumlation'
         return giGUI()  # Main widget, root
 
-
-
 # %% Main
-
 
 if __name__ == '__main__':
     giGUIApp().run()
