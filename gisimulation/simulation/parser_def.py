@@ -258,16 +258,51 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
 
 
 
-    # Distances ???
-    parser.add_argument('-s2g', dest='distance_source2grating',
+    # Distances
+    # From source
+    parser.add_argument('-sg0', dest='distance_source_g0',
+                        action=_PositiveNumber,
                         type=numerical_type,
-                        help="Distance from source to first grating [mm].")
-    parser.add_argument('-g2d', dest='distance_G2_detector',
+                        help="Distance from source to G0 [mm].")
+    parser.add_argument('-sg1', dest='distance_source_g1',
+                        action=_PositiveNumber,
+                        type=numerical_type,
+                        help="Distance from source to G1 [mm].")
+    parser.add_argument('-sg2', dest='distance_source_g2',
+                        action=_PositiveNumber,
+                        type=numerical_type,
+                        help="Distance from source to G2 [mm].")
+    parser.add_argument('-s2d', dest='distance_source_detector',
+                        action=_PositiveNumber,
+                        type=numerical_type,
+                        help="Distance from source to detector [mm].")
+    # From G0
+    parser.add_argument('-g0g1', dest='distance_g0_g1',
+                        action=_PositiveNumber,
+                        type=numerical_type,
+                        help="Distance from G0 to G1 [mm].")
+    parser.add_argument('-g0g2', dest='distance_g0_g2',
+                        action=_PositiveNumber,
+                        type=numerical_type,
+                        help="Distance from G0 to G2 [mm].")
+    parser.add_argument('-g0d', dest='distance_g0_detector',
+                        action=_PositiveNumber,
+                        type=numerical_type,
+                        help="Distance from G0 to detector [mm].")
+    # From G1
+    parser.add_argument('-g1g2', dest='distance_g1_g2',
+                        action=_PositiveNumber,
+                        type=numerical_type,
+                        help="Distance from G1 to G2 [mm].")
+    parser.add_argument('-g1d', dest='distance_g1_detector',
+                        action=_PositiveNumber,
+                        type=numerical_type,
+                        help="Distance from G1 to detector [mm].")
+    # From G2
+    parser.add_argument('-g2d', dest='distance_g2_detector',
+                        action=_PositiveNumber,
                         type=numerical_type,
                         help="Distance from G2 to detector [mm].")
-
-
-
 
     # Grating parameters
     parser.add_argument('-fg', dest='fixed_grating',
@@ -398,6 +433,11 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         "'ag0': after G0, 'bg1': before G1, 'ag1': after G1, "
                         "'bg2': before G2, 'ag2': after G2, 'bd': before "
                         "detector.")
+    parser.add_argument('-sd', dest='sample_distance',
+                        action=_PositiveNumber,
+                        type=numerical_type,
+                        help="Distance from sample to reference component "
+                        "[mm].")
 
 
     # Return

@@ -491,36 +491,49 @@ def general_input(parameters):
         # Sample distance, shape, amterial etc.
         logger.debug("Checking remaining components...")
         if 'Sample' in parameters['component_list']:
-            logger.debug("Checking sample input... TODO...")
-        # Gratings
-        if 'G0' in parameters['component_list']:
-            logger.debug("Checking G0...")
-
+            logger.debug("Checking sample input...")
+            if not parameters['sample_distance']:
+                error_message = ("Distance from sample to reference component "
+                                 "must be specified.")
+                logger.error(error_message)
+                raise InputError(error_message)
             logger.debug("... done.")
-        if 'G1' in parameters['component_list']:
-            logger.debug("Checking G1...")
-
-            logger.debug("... done.")
-        if 'G2' in parameters['component_list']:
-            logger.debug("Checking G2...")
-
-            logger.debug("... done.")
-        logger.debug("... done.")
-
-        # if 'free', check distances are all there
+        # Gratings (if free, all, else: fixed)
         if parameters['geometry'] == 'free':
+            # Check all selected gratings
+            if 'G0' in parameters['component_list']:
+                logger.debug("Checking G0...")
+                _check_grating_input('g0', parameters)
+                logger.debug("... done.")
+            if 'G1' in parameters['component_list']:
+                logger.debug("Checking G1...")
+                _check_grating_input('g1', parameters)
+                logger.debug("... done.")
+            if 'G2' in parameters['component_list']:
+                logger.debug("Checking G2...")
+                _check_grating_input('g2', parameters)
+                logger.debug("... done.")
+            # Chack all necessary distances
             logger.debug("Checking distances for 'free' input...")
             for component, index in \
                     enumerate(parameters['component_list'][:-1]):
-                current_distance = ('distance_' + component + '_' +
-                                    parameters['component_list'][index])
+                current_distance = ('distance_' + component.lower() + '_' +
+                                    parameters['component_list'][index]
+                                    .lower())
                 if not parameters[current_distance]:
                     error_message = "{0} not defined.".format(current_distance)
                     logger.error(error_message)
                     raise InputError(error_message)
             logger.debug("... done.")
+        else:
+            # Check fixed grating
+            logger.debug("Checking {0}..."
+                         .format(parameters['fixed_grating'].upper()))
+            _check_grating_input(parameters['fixed_grating'], parameters)
+            logger.debug("... done.")
+        logger.debug("... done.")  # Component checking done
 
-        logger.debug("... done.")
+        logger.debug("... done.")  # Scenarios done
 
         # Info
         logger.info("Beam geometry is '{0}' and setup geometry is '{1}'."
@@ -528,6 +541,8 @@ def general_input(parameters):
                             parameters['geometry']))
         logger.info("Setup consists of: {0}."
                     .format(parameters['component_list']))
+        if 'Sample' not in parameters['component_list']:
+            logger.info("NOTE: No sample included.")
         if parameters['geometry'] != 'free':
             logger.info("Fixed grating is: '{0}'."
                         .format(parameters['fixed_grating']))
@@ -535,7 +550,14 @@ def general_input(parameters):
                 logger.info("Fixed distance is: {0}."
                             .format(fixed_distance))
 
-        logger.debug("... done.")
+#        # FUTURE: NEEDED??? or conversion in sim functions?
+#        # Convert to standard units (e.g. mm to um)
+#        for key, value in parameters.iteritems():
+#            if 'distance' in key:
+#                # Convert all distances from mm to um
+#                parameters[key] = value * 1e3
+
+        logger.debug("... done.")  # General checking
         return parameters
 
     except AttributeError as e:
@@ -759,3 +781,96 @@ def _nearest_value(array, value):
     """
     nearest_index = (np.abs(array-value)).argmin()
     return array[nearest_index], nearest_index
+
+
+def _check_grating_input(grating, parameters):
+    """
+    Check grating input.
+
+    Parameters
+    ##########
+
+    grating [str]:      converts to lower case, 'g0', 'g1' or 'g2'
+    parameters [dict]
+
+    Notes
+    #####
+
+    Basic required input:
+        pitch
+        material
+        thickness OR phase shift
+            pure absorption: require always thickness
+            pure phase: if both, base on phase shift
+            mix: if both, base on thickness
+
+    """
+    grating = grating.lower()
+    # Is defined?
+    if not parameters['type_'+grating]:
+        error_message = "{0} not defined.".format(grating.upper())
+        logger.error(error_message)
+        raise InputError(error_message)
+
+    # Basic required input
+    if not parameters['pitch_'+grating]:
+        error_message = "Pitch of {0} must be defined.".format(grating.upper())
+        logger.error(error_message)
+        raise InputError(error_message)
+    if not parameters['material_'+grating]:
+        error_message = ("Material of {0} must be defined."
+                         .format(grating.upper()))
+        logger.error(error_message)
+        raise InputError(error_message)
+    if parameters['type_'+grating] == 'abs':
+        if not parameters['thickness_'+grating]:
+            error_message = ("Thickness of {0} must be defined."
+                             .format(grating.upper()))
+            logger.error(error_message)
+            raise InputError(error_message)
+    else:
+        if not parameters['thickness_'+grating] and \
+                not parameters['phase_shift_'+grating]:
+            error_message = ("Thickness OR phase shift of {0} must be defined."
+                             .format(grating.upper()))
+            logger.error(error_message)
+            raise InputError(error_message)
+        if parameters['thickness_'+grating] and \
+                parameters['phase_shift_'+grating]:
+            if parameters['type_'+grating] == 'mix':
+                warning_message = ("Thickness AND phase shift of {0} are defined. "
+                                   "Basing calculations on thickness."
+                                   .format(grating.upper()))
+                logger.warn(warning_message)
+                parameters['phase_shift_'+grating] = None
+            else:
+                # pure phase grating
+                warning_message = ("Thickness AND phase shift of {0} are defined. "
+                                   "Basing calculations on phase shift."
+                                   .format(grating.upper()))
+                logger.warn(warning_message)
+                parameters['thickness_'+grating] = None
+
+    # Optional input
+    # Wafer
+    if parameters['wafer_thickness_'+grating] and \
+            not parameters['wafer_material_'+grating]:
+        error_message = "Wafer material must be specified."
+        logger.error(error_message)
+        raise InputError(error_message)
+    if parameters['wafer_material_'+grating] and \
+            not parameters['wafer_thickness_'+grating]:
+        error_message = "Wafer thickness must be specified."
+        logger.error(error_message)
+        raise InputError(error_message)
+    # Grating fill
+    if parameters['fill_thickness_'+grating] and \
+            not parameters['fill_material_'+grating]:
+        error_message = "Fill material must be specified."
+        logger.error(error_message)
+        raise InputError(error_message)
+    if parameters['fill_material_'+grating] and \
+            not parameters['fill_thickness_'+grating]:
+        error_message = "Fill thickness must be specified."
+        logger.error(error_message)
+        raise InputError(error_message)

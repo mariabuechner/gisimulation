@@ -669,8 +669,9 @@ class giGUI(F.BoxLayout):
             self.available_gratings = ['G1', 'G2']
         else:
             self.available_gratings = ['G0', 'G1', 'G2']
-        # Sample distance label
+        # Sample
         self.update_sample_distance_label()
+        self.parameters['sample_position'] = None
 
     # General simulation functions
 
@@ -1026,10 +1027,23 @@ class giGUI(F.BoxLayout):
                 self.setup_components.insert(reference_index+1, 'Sample')
             else:
                 self.setup_components.insert(reference_index, 'Sample')
+            # Set sample_position in parameters (after G1: ag1, before
+            # Detector: bd)
+            if self.ids.sample_relative_to.text in ['Source', 'Detector']:
+                # Only first letter of component
+                self.parameters['sample_position'] = \
+                    self.ids.sample_relative_position.text[0] + \
+                    self.ids.sample_relative_to.text[0].lower()
+            else:
+                # All component name
+                self.parameters['sample_position'] = \
+                    self.ids.sample_relative_position.text[0] + \
+                    self.ids.sample_relative_to.text.lower()
         else:
             # Remove sample, in case that geometry is changing
             self.setup_components.remove('Sample')
             self.sample_added = False
+            self.parameters['sample_position'] = None
 
         logger.debug("Current setup consists of: {0}"
                      .format(self.setup_components))
