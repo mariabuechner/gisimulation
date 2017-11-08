@@ -167,6 +167,11 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
     parser.add_argument('-t', dest='talbot_order',
                         type=numerical_type,
                         help="Talbot order.")
+    parser.add_argument('--dual_phase', #metavar='DUAL_PHASE',
+                        action='store_true',
+                        help="Option for dual phase setup (True or False). "
+                        "Only valid for conventional setup (geometry='conv') "
+                        "and without G0.")
     parser.add_argument('-bg', dest='beam_geometry', default='parallel',
                         type=str,
                         choices=['cone', 'parallel'], metavar='BEAM_GEOMETRY',
@@ -321,6 +326,10 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
     parser.add_argument('-p0', dest='pitch_g0',
                         action=_TruePositiveNumber,
                         help="Pitch of G0 [um].")
+    parser.add_argument('-dc0', dest='duty_cycle_g0',
+                        default=0.5,
+                        action=_TruePositiveNumber,
+                        help="Duty cycle of G0 ]0...1[.")
     parser.add_argument('-m0', dest='material_g0',
                         type=str,
                         help="G0 grating line material.")
@@ -357,6 +366,10 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         action=_TruePositiveNumber,
                         type=numerical_type,
                         help="Pitch of G1 [um].")
+    parser.add_argument('-dc1', dest='duty_cycle_g1',
+                        default=0.5,
+                        action=_TruePositiveNumber,
+                        help="Duty cycle of G1 ]0...1[.")
     parser.add_argument('-m1', dest='material_g1',
                         type=str,
                         help="G1 grating line material.")
@@ -393,6 +406,10 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         action=_TruePositiveNumber,
                         type=numerical_type,
                         help="Pitch of G2 [um].")
+    parser.add_argument('-dc2', dest='duty_cycle_g2',
+                        default=0.5,
+                        action=_TruePositiveNumber,
+                        help="Duty cycle of G2 ]0...1[.")
     parser.add_argument('-m2', dest='material_g2',
                         type=str,
                         help="G2 grating line material.")
@@ -490,9 +507,21 @@ def get_arguments_info(parser):
     help_messages = help_messages.split('-')[7:]
     arguments_info = dict()
     for help_message in help_messages:
-        # "optional_key METAVAR(S)       help_message\n"
+        # Flags (--flag)
+        # A) generate an empty help_message
+        if not help_message:
+            continue
+
+        # "optional_key METAVAR(S)       variable_help\n"
+        # Words in message
         words = re.split(' ', help_message)
         variable_key = '-' + words[0]
+        # B) do not accept a metavar (if store_true): words[1] is ''
+        # C) have 2 dashes (--) in their variable key
+        if not words[1]:
+            words[1] = words[0]
+            variable_key = '--' + words[0]
+
         variable_name = words[1].lower().rstrip()  # Make lower case and
                                                    # remove trailing \n
         # Remove potential [] (for e.g. file types)
@@ -504,8 +533,8 @@ def get_arguments_info(parser):
         else:
             variable_help = filter(None, words[2:])  # Remove ''
         variable_help = ' '.join(variable_help)
-        variable_help= re.sub('\n', '', variable_help)  # remove print_help-format
-                                                # induces \n
+        variable_help = re.sub('\n', '', variable_help)  # remove print_help
+                                                         # format (induces \n)
         arguments_info[variable_name] = [variable_key, variable_help]
 
     return arguments_info

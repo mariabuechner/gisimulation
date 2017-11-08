@@ -88,6 +88,21 @@ def general_input(parameters):
             logger.debug("Sampling rate is {0} um, with pixel size {1} "
                          "um..".format(parameters['sampling_rate'],
                                        parameters['pixel_size']))
+        if parameters['geometry'] != 'free':
+            # If GI, talbot order necessary
+            if not parameters['talbot_order']:
+                error_message = "Input argument missing: 'talbot_order' " \
+                                "('-t')."
+                logger.error(error_message)
+                raise InputError(error_message)
+        if parameters['dual_phase'] and parameters['geometry'] != 'conv':
+            warning_message = ("Dual phase setup can only be calculated for "
+                               "conventional geometry. Geometry is '{0}', "
+                               "dual phase option will be ignored."
+                               .format(parameters['geometry']))
+            parameters['dual_phase'] = False
+            logger.warn(warning_message)
+
         logger.debug("... done.")
 
         # Source:
@@ -275,15 +290,7 @@ def general_input(parameters):
                 # Add G1 and G2
                 parameters['component_list'].append('G1')
                 parameters['component_list'].append('G2')
-                # Sort updated component list
-                parameters['component_list'].sort()
-                # After sort, switch Source and Detector
-                parameters['component_list'][0], \
-                    parameters['component_list'][-1] = \
-                    parameters['component_list'][-1], \
-                    parameters['component_list'][0]
-
-                # Fixed grating if G0 is not defined
+                # G0
                 if not parameters['g0_type']:
                     # No G0
                     if parameters['fixed_grating'] == 'G0':
@@ -312,6 +319,9 @@ def general_input(parameters):
                         fixed_distance = 'distance_Source_G2'
                 else:
                     # With G0
+                    # Add to component list (unless dual_phase)
+                    if not parameters['dual_phase']:
+                        parameters['component_list'].append('G0')
                     # Fixed distance
                     if not parameters['distance_G0_G1'] and \
                             not parameters['distance_G0_G2']:
@@ -330,6 +340,14 @@ def general_input(parameters):
                         fixed_distance = 'distance_G0_G1'
                     elif parameters['distance_G0_G2']:
                         fixed_distance = 'distance_G0_G2'
+
+                # Sort updated component list
+                parameters['component_list'].sort()
+                # After sort, switch Source and Detector
+                parameters['component_list'][0], \
+                    parameters['component_list'][-1] = \
+                    parameters['component_list'][-1], \
+                    parameters['component_list'][0]
 
                 # Individaul checks
                 if parameters['geometry'] == 'conv':
@@ -798,6 +816,7 @@ def _check_grating_input(grating, parameters):
 
     Basic required input:
         pitch
+        duty cycle
         material
         thickness OR phase shift
             pure absorption: require always thickness
@@ -808,13 +827,19 @@ def _check_grating_input(grating, parameters):
     grating = grating.lower()
     # Is defined?
     if not parameters['type_'+grating]:
-        error_message = "{0} not defined.".format(grating.upper())
+        error_message = "Type of {0} not defined.".format(grating.upper())
         logger.error(error_message)
         raise InputError(error_message)
 
     # Basic required input
     if not parameters['pitch_'+grating]:
         error_message = "Pitch of {0} must be defined.".format(grating.upper())
+        logger.error(error_message)
+        raise InputError(error_message)
+    if parameters['duty_cycle_'+grating] <= 0 or \
+            parameters['duty_cycle_'+grating] >= 1:
+        error_message = ("Duty cycle of {0} must be within ]0...1[."
+                         .format(grating.upper()))
         logger.error(error_message)
         raise InputError(error_message)
     if not parameters['material_'+grating]:

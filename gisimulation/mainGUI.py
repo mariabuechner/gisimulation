@@ -55,7 +55,7 @@ Window.maximize()  # NOTE: On desktop platforms only
 
 ERROR_MESSAGE_SIZE = (600, 450)  # absolute
 FILE_BROWSER_SIZE = (0.9, 0.9)  # relative
-LINE_HEIGHT = 40
+LINE_HEIGHT = 35
 
 # %% Custom Widgets
 
@@ -665,6 +665,7 @@ class giGUI(F.BoxLayout):
         # Components trackers
         self.setup_components = ['Source', 'Detector']
         # Avail fixed gratings
+        self.ids.g0_set.disabled = True
         if self.ids.beam_geometry.text == 'parallel':
             self.available_gratings = ['G1', 'G2']
         else:
@@ -699,11 +700,6 @@ class giGUI(F.BoxLayout):
                                 "('-fov')."
                 logger.error(error_message)
                 raise check_input.InputError(error_message)
-            else:
-                if not all(self.parameters['field_of_view'] > 0):
-                    error_message = "FOV must be at least (1, 1)."
-                    logger.error(error_message)
-                    raise check_input.InputError(error_message)
             if not self.parameters['design_energy']:
                 error_message = "Input argument missing: 'design_energy' " \
                                 "('-e')."
@@ -759,7 +755,10 @@ class giGUI(F.BoxLayout):
             logger.info("Loading input from file at: {0}".format(input_file))
             input_parameters = _load_input_file(input_file)
         # Set widget content
-        self._set_widgets(input_parameters, from_file=True)
+        try:
+            self._set_widgets(input_parameters, from_file=True)
+        except check_input.InputError as e:
+            ErrorDisplay('Input Error', str(e))
 
     def on_save_input_file_path(self, instance, value):
         """
@@ -881,10 +880,50 @@ class giGUI(F.BoxLayout):
 
     # Conditional input rules
 
+    def on_dual_phase_checkbox_active(self):
+        """
+        """
+        if self.ids.dual_phase.disabled:
+            self.ids.dual_phase.active = False
+        if self.ids.dual_phase.active:
+            self.ids.fixed_grating.values = ['G1', 'G2']  # Disable G0
+            self.ids.g0_set.active = False
+            self.ids.g0_set.disabled = True
+            if self.ids.geometry.text != 'free':
+                if self.ids.type_g2.text == 'abs':
+                    self.ids.type_g2.text = 'phase'
+                self.ids.type_g2.values = ['mix', 'phase']
+        else:
+            if self.ids.beam_geometry.text == 'Cone':
+                self.ids.fixed_grating.values = ['G0', 'G1', 'G2']
+            self.ids.g0_set.disabled = False
+            if self.ids.geometry.text != 'free':
+                if self.ids.type_g2.text == 'phase':
+                    self.ids.type_g2.text = 'abs'
+                self.ids.type_g2.values = ['mix', 'abs']
+
+    def on_fixed_grating_spinner(self, text):
+        """
+        """
+        if text == 'G0':
+            self.ids.duty_cycle_g1 = self.ids.duty_cycle_g0
+            self.ids.duty_cycle_g2 = self.ids.duty_cycle_g0
+        elif text == 'G1':
+            self.ids.duty_cycle_g0 = self.ids.duty_cycle_g1
+            self.ids.duty_cycle_g2 = self.ids.duty_cycle_g1
+        elif text == 'G2':
+            self.ids.duty_cycle_g0 = self.ids.duty_cycle_g2
+            self.ids.duty_cycle_g1 = self.ids.duty_cycle_g2
+
     def on_geometry(self):
         """
         Set sample position options and activate required gratings.
         """
+        #======================================================================
+        #   Dirty fix for issue #12
+        self.ids.fixed_grating.text = 'G0'
+        self.ids.fixed_grating.text = 'Choose fixed grating...'
+        #======================================================================
         # Remove sample if it was set before (to start fresh)
         if 'Sample' in self.setup_components:
                 self.ids.add_sample.active = False
@@ -899,13 +938,34 @@ class giGUI(F.BoxLayout):
             # Sample relative to G1
             self.ids.sample_relative_to.text = 'G1'
             self.ids.sample_relative_to.values = ['G1']
-        # Sample position
+            # Grating types
+            if self.ids.type_g0.text == 'phase':
+                self.ids.type_g0.text = ''
+            self.ids.type_g0.values = ['mix', 'abs']
+            if self.ids.type_g1.text == 'abs':
+                self.ids.type_g1.text = ''
+            self.ids.type_g1.values = ['mix', 'phase']
+            if self.ids.dual_phase.active:
+                if self.ids.type_g2.text == 'abs':
+                    self.ids.type_g2.text = ''
+                self.ids.type_g2.values = ['mix', 'phase']
+            else:
+                if self.ids.type_g2.text == 'phase':
+                    self.ids.type_g2.text = ''
+                self.ids.type_g2.values = ['mix', 'abs']
         else:
             # Reset to 'free' (same as start)
             self.ids.sample_relative_position.text = 'after'
             self.ids.sample_relative_position.values = ['after']
             self.ids.sample_relative_to.text = 'Source'
             self.ids.sample_relative_to.values = self.setup_components
+            # Grating types
+            self.ids.type_g0.text = ''
+            self.ids.type_g0.values = ['mix', 'phase', 'abs']
+            self.ids.type_g1.text = ''
+            self.ids.type_g1.values = ['mix', 'phase', 'abs']
+            self.ids.type_g2.text = ''
+            self.ids.type_g2.values = ['mix', 'phase', 'abs']
         # GI cases
         if self.ids.geometry.text == 'conv':
             self.ids.sample_relative_position.text = 'before'
@@ -923,6 +983,10 @@ class giGUI(F.BoxLayout):
         self.ids.distances.update(self.setup_components,
                                   self.ids.beam_geometry.text,
                                   self.ids.geometry.text)
+        # Reset fixed grating input
+        self.ids.fixed_grating.text = 'Choose fixed grating...'
+        # Update dual_phase options
+        self.on_dual_phase_checkbox_active()
 
     def on_beam_geometry(self):
         """
@@ -937,6 +1001,7 @@ class giGUI(F.BoxLayout):
                          .format(self.setup_components))
         # Reset fixed grating input
         self.ids.fixed_grating.text = 'Choose fixed grating...'
+
         if self.ids.beam_geometry.text == 'parallel':
             # Change GI geometry text
             if self.ids.geometry.text == 'sym' or \
@@ -945,6 +1010,7 @@ class giGUI(F.BoxLayout):
                 self.ids.geometry.text = 'free'
             # Set available and deactive gratings
             self.ids.g0_set.active = False
+            self.ids.g0_set.disabled = True
             self.available_gratings = ['G1', 'G2']
             # Update distances options
             self.ids.distances.update(self.setup_components,
@@ -953,7 +1019,10 @@ class giGUI(F.BoxLayout):
         else:
             # Update geometry conditions for cone beam
             self.on_geometry()  # Includes update distances
+            self.ids.g0_set.disabled = False
             self.available_gratings = ['G0', 'G1', 'G2']
+        # Update dual_phase options
+        self.on_dual_phase_checkbox_active()
 
     def on_setup_components(self, instance, value):
         """
@@ -1258,6 +1327,11 @@ class giGUI(F.BoxLayout):
                     self.ids['spectrum_range_min'].text = value_str[0]
                     self.ids['spectrum_range_max'].text = value_str[1]
                 elif var_name == 'field_of_view':
+                    # Check if it is integer
+                    if '.' in value_str[0] or '.' in value_str[1]:
+                        error_message = "FOV must be integer, not float."
+                        logger.error(error_message)
+                        raise check_input.InputError(error_message)
                     self.ids['field_of_view_x'].text = value_str[0]
                     self.ids['field_of_view_y'].text = value_str[1]
                 else:
@@ -1285,8 +1359,8 @@ class giGUI(F.BoxLayout):
                         self.ids['spectrum_range_min'].text = str(value[0])
                         self.ids['spectrum_range_max'].text = str(value[1])
                     elif var_name == 'field_of_view':
-                        self.ids['field_of_view_x'].text = str(value[0])
-                        self.ids['field_of_view_y'].text = str(value[1])
+                        self.ids['field_of_view_x'].text = str(int(value[0]))
+                        self.ids['field_of_view_y'].text = str(int(value[1]))
                     else:
                         logger.debug("Setting text of widget '{0}' to: {1}"
                                      .format(var_name, value))

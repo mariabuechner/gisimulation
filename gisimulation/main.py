@@ -150,13 +150,13 @@ if __name__ == '__main__':
                         '- %(levelname)s - '
                         '%(message)s', disable_existing_loggers=False)
 
-    # Check input
-    logger.debug("Checking parsed arguments...")
-    try:
-        parameters = check_input.check_parser(parameters)
-    except check_input.InputError:
-        logger.info("Command line error, exiting...")
-        sys.exit(2)  # 2: command line syntax errors
-#    finally:
-#        # close all open files!?
-#        logger.debug("...done.")
+    parser_info = parser_def.get_arguments_info(parser)
+
+#    # Check input
+#    logger.debug("Checking parsed arguments...")
+#    try:
+#        parameters = check_input.check_parser(parameters)
+#    except check_input.InputError:
+#        logger.info("Command line error, exiting...")
+#        sys.exit(2)  # 2: command line syntax errors
+
