@@ -205,6 +205,7 @@
                                 size_hint_y: None
                                 height: 1024
 
+
                                 # General input
                                 GridLayout:
                                     cols: 3
@@ -421,7 +422,6 @@
                                                 id: fixed_grating
                                                 text: 'Choose fixed grating...'
                                                 values: root.available_gratings
-                                                on_text: root.on_fixed_grating_spinner(self.text)
                                         BoxLayout:
                                             orientation: 'vertical'
                                             size_hint_y: None
@@ -466,7 +466,6 @@
                                                             FloatInput:
                                                                 id: duty_cycle_g0
                                                                 disabled: fixed_grating.text != 'G0' and geometry.text != 'free'
-                                                                text: '0.5'
                                                         BoxLayout:
                                                             LabelHelp:
                                                                 text: 'Grating material'
@@ -551,7 +550,6 @@
                                                             FloatInput:
                                                                 id: duty_cycle_g1
                                                                 disabled: fixed_grating.text != 'G1' and geometry.text != 'free'
-                                                                text: '0.5'
                                                         BoxLayout:
                                                             LabelHelp:
                                                                 text: 'Grating material'
@@ -636,7 +634,6 @@
                                                             FloatInput:
                                                                 id: duty_cycle_g2
                                                                 disabled: fixed_grating.text != 'G2' and geometry.text != 'free'
-                                                                text: '0.5'
                                                         BoxLayout:
                                                             LabelHelp:
                                                                 text: 'Grating material'

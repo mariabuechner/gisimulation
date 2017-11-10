@@ -516,21 +516,21 @@ def general_input(parameters):
                 logger.error(error_message)
                 raise InputError(error_message)
             logger.debug("... done.")
-        # Gratings (if free, all, else: fixed)
+        # Gratings
+        # Check all selected gratings
+        if 'G0' in parameters['component_list']:
+            logger.debug("Checking G0...")
+            _check_grating_input('g0', parameters)
+            logger.debug("... done.")
+        if 'G1' in parameters['component_list']:
+            logger.debug("Checking G1...")
+            _check_grating_input('g1', parameters)
+            logger.debug("... done.")
+        if 'G2' in parameters['component_list']:
+            logger.debug("Checking G2...")
+            _check_grating_input('g2', parameters)
+            logger.debug("... done.")
         if parameters['geometry'] == 'free':
-            # Check all selected gratings
-            if 'G0' in parameters['component_list']:
-                logger.debug("Checking G0...")
-                _check_grating_input('g0', parameters)
-                logger.debug("... done.")
-            if 'G1' in parameters['component_list']:
-                logger.debug("Checking G1...")
-                _check_grating_input('g1', parameters)
-                logger.debug("... done.")
-            if 'G2' in parameters['component_list']:
-                logger.debug("Checking G2...")
-                _check_grating_input('g2', parameters)
-                logger.debug("... done.")
             # Chack all necessary distances
             logger.debug("Checking distances for 'free' input...")
             for component, index in \
@@ -542,12 +542,6 @@ def general_input(parameters):
                     error_message = "{0} not defined.".format(current_distance)
                     logger.error(error_message)
                     raise InputError(error_message)
-            logger.debug("... done.")
-        else:
-            # Check fixed grating
-            logger.debug("Checking {0}..."
-                         .format(parameters['fixed_grating'].upper()))
-            _check_grating_input(parameters['fixed_grating'], parameters)
             logger.debug("... done.")
         logger.debug("... done.")  # Component checking done
 
@@ -815,8 +809,8 @@ def _check_grating_input(grating, parameters):
     #####
 
     Basic required input:
-        pitch
-        duty cycle
+        pitch (if fixed grating)
+        duty cycle (if fixed grating)
         material
         thickness OR phase shift
             pure absorption: require always thickness
@@ -831,17 +825,45 @@ def _check_grating_input(grating, parameters):
         logger.error(error_message)
         raise InputError(error_message)
 
+    # Check grating types for GI setups
+    if parameters['geometry'] != 'free':
+        # G0 (abs or mix)
+        if grating == 'g0' and parameters['type_'+grating] == 'phase':
+            error_message = "Type of G0 must be 'mix' or 'abs'."
+            logger.error(error_message)
+            raise InputError(error_message)
+        # G1 (phase or mix)
+        if grating == 'g1' and parameters['type_'+grating] == 'abs':
+            error_message = "Type of G1 must be 'mix' or 'phase'."
+            logger.error(error_message)
+            raise InputError(error_message)
+        # G2 (abs or mix for classic GI, phase or mix for dual phase)
+        if grating == 'g2' and not parameters['dual_phase'] and \
+                parameters['type_'+grating] == 'phase':
+            error_message = "Type of G2 must be 'mix' or 'abs'."
+            logger.error(error_message)
+            raise InputError(error_message)
+        elif grating == 'g2' and parameters['dual_phase'] and \
+                parameters['type_'+grating] == 'abs':
+            error_message = "Type of G2 must be 'mix' or 'phase'."
+            logger.error(error_message)
+            raise InputError(error_message)
+
     # Basic required input
-    if not parameters['pitch_'+grating]:
-        error_message = "Pitch of {0} must be defined.".format(grating.upper())
-        logger.error(error_message)
-        raise InputError(error_message)
-    if parameters['duty_cycle_'+grating] <= 0 or \
-            parameters['duty_cycle_'+grating] >= 1:
-        error_message = ("Duty cycle of {0} must be within ]0...1[."
-                         .format(grating.upper()))
-        logger.error(error_message)
-        raise InputError(error_message)
+    # If fixed grating
+    if grating == parameters['fixed_grating'].lower():
+        if not parameters['pitch_'+grating]:
+            error_message = ("Pitch of {0} must be defined."
+                             .format(grating.upper()))
+            logger.error(error_message)
+            raise InputError(error_message)
+        if parameters['duty_cycle_'+grating] <= 0 or \
+                parameters['duty_cycle_'+grating] >= 1:
+            error_message = ("Duty cycle of {0} must be within ]0...1[."
+                             .format(grating.upper()))
+            logger.error(error_message)
+            raise InputError(error_message)
+    # Always required
     if not parameters['material_'+grating]:
         error_message = ("Material of {0} must be defined."
                          .format(grating.upper()))
@@ -863,16 +885,16 @@ def _check_grating_input(grating, parameters):
         if parameters['thickness_'+grating] and \
                 parameters['phase_shift_'+grating]:
             if parameters['type_'+grating] == 'mix':
-                warning_message = ("Thickness AND phase shift of {0} are defined. "
-                                   "Basing calculations on thickness."
-                                   .format(grating.upper()))
+                warning_message = ("Thickness AND phase shift of {0} are "
+                                   "defined. \Basing calculations on "
+                                   "thickness.".format(grating.upper()))
                 logger.warn(warning_message)
                 parameters['phase_shift_'+grating] = None
             else:
                 # pure phase grating
-                warning_message = ("Thickness AND phase shift of {0} are defined. "
-                                   "Basing calculations on phase shift."
-                                   .format(grating.upper()))
+                warning_message = ("Thickness AND phase shift of {0} are "
+                                   "defined. Basing calculations on phase "
+                                   "shift.".format(grating.upper()))
                 logger.warn(warning_message)
                 parameters['thickness_'+grating] = None
 

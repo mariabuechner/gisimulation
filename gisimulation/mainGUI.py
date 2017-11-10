@@ -9,7 +9,6 @@ python maingui.py [Option...]::
 
 @author: buechner_m  <maria.buechner@gmail.com>
 """
-DEBUGGING = True
 import numpy as np
 import sys
 import re
@@ -619,8 +618,8 @@ class _IgnoreExceptions(ExceptionHandler):
         """
         return ExceptionManager.PASS
 
-
-if not DEBUGGING:  # FUTURE: Remove if and DEBUGGING; and always subpress
+# If kivy NOT set to debug, disable kivy error handling
+if Logger.level > 10:
     ExceptionManager.add_handler(_IgnoreExceptions())
 
 # %% Main GUI
@@ -901,19 +900,6 @@ class giGUI(F.BoxLayout):
                 if self.ids.type_g2.text == 'phase':
                     self.ids.type_g2.text = 'abs'
                 self.ids.type_g2.values = ['mix', 'abs']
-
-    def on_fixed_grating_spinner(self, text):
-        """
-        """
-        if text == 'G0':
-            self.ids.duty_cycle_g1 = self.ids.duty_cycle_g0
-            self.ids.duty_cycle_g2 = self.ids.duty_cycle_g0
-        elif text == 'G1':
-            self.ids.duty_cycle_g0 = self.ids.duty_cycle_g1
-            self.ids.duty_cycle_g2 = self.ids.duty_cycle_g1
-        elif text == 'G2':
-            self.ids.duty_cycle_g0 = self.ids.duty_cycle_g2
-            self.ids.duty_cycle_g1 = self.ids.duty_cycle_g2
 
     def on_geometry(self):
         """
