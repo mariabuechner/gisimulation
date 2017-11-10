@@ -103,12 +103,11 @@ def general_input(parameters, parser_info):
                 logger.error(error_message)
                 raise InputError(error_message)
         if parameters['dual_phase'] and parameters['geometry'] != 'conv':
-            warning_message = ("Dual phase setup can only be calculated for "
-                               "conventional geometry. Geometry is '{0}', "
-                               "dual phase option will be ignored."
-                               .format(parameters['geometry']))
-            parameters['dual_phase'] = False
-            logger.warn(warning_message)
+            error_message = ("Dual phase setup can only be calculated for "
+                             "conventional geometry. Geometry is '{0}'."
+                             .format(parameters['geometry']))
+            logger.error(error_message)
+            raise InputError(error_message)
 
         logger.debug("... done.")
 
@@ -194,15 +193,20 @@ def general_input(parameters, parser_info):
         # Special scenarios:
         logger.debug("Checking geometry scenarios...")
 
+        if (parameters['beam_geometry'] == 'parallel' and
+                parameters['geometry'] == 'sym') or \
+                (parameters['beam_geometry'] == 'parallel' and
+                 parameters['geometry'] == 'inv'):
+            error_message = ("Only '{0}' geometry valid for '{1}' beam "
+                             "geometry."
+                             .format(parameters['geometry'],
+                                     parameters['beam_geometry']))
+            logger.error(error_message)
+            raise InputError(error_message)
+
         parameters['component_list'] = ['Source', 'Detector']
 
         if parameters['beam_geometry'] == 'parallel':
-            # Parallel beam
-            logger.debug("Checking parallel beam geometry...")
-            # Common checks for both 'free' and 'conv' geometry
-            # Warn, that G0 will be ignored if it is defined
-            if parameters['type_g0']:
-                logger.warning("G0 is defined, but will be ignored.")
 
             # Individual checks
             if parameters['geometry'] == 'conv':
@@ -231,6 +235,11 @@ def general_input(parameters, parser_info):
                 if parameters['fixed_grating'] == 'G0':
                     error_message = "The fixed grating must be either G1 or "
                     "G2."
+                    logger.error(error_message)
+                    raise InputError(error_message)
+                elif not parameters['fixed_grating']:
+                    error_message = ("Choose G1 or G2 as fixed grating ({0})."
+                                     .format(parser_info['fixed_grating'][0]))
                     logger.error(error_message)
                     raise InputError(error_message)
 
@@ -310,49 +319,82 @@ def general_input(parameters, parser_info):
                 parameters['component_list'].append('G1')
                 parameters['component_list'].append('G2')
                 # G0
-                if not parameters['g0_type']:
+                if not parameters['type_g0']:
                     # No G0
                     if parameters['fixed_grating'] == 'G0':
                         error_message = "G0 is not defined, choose G1 or G2 "
                         "as fixed grating."
                         logger.error(error_message)
                         raise InputError(error_message)
-                    # Fixed distance
-                    if not parameters['distance_Source_G1'] and \
-                            not parameters['distance_Source_G2']:
-                        error_message = ("Either distance from Source to G1 "
-                                         "OR Source to G2 must be defined.")
+                    elif not parameters['fixed_grating']:
+                        error_message = ("Choose G1 or G2 as fixed grating "
+                                         "({0})."
+                                         .format(parser_info['fixed_grating']
+                                                 [0]))
                         logger.error(error_message)
                         raise InputError(error_message)
-                    elif parameters['distance_Source_G1'] and \
-                            parameters['distance_Source_G2']:
-                        logger.warning("Both distance from Source to G1 AND "
-                                       "Source to G2 are defined, choosing "
-                                       "distance from Source to G2 (total GI "
-                                       "length).")
-                        parameters['distance_Source_G1'] = None
-                        fixed_distance = 'distance_Source_G2'
-                    elif parameters['distance_Source_G1']:
-                        fixed_distance = 'distance_Source_G1'
+                    # Fixed distance
+                    if not parameters['distance_source_g1'] and \
+                            not parameters['distance_source_g2']:
+                        error_message = ("Either distance from Source to G1 "
+                                         "({0}) OR Source to G2 ({1}) must be "
+                                         "defined [mm]."
+                                         .format(parser_info
+                                                 ['distance_source_g1'][0],
+                                                 parser_info
+                                                 ['distance_source_g2'][0]))
+                        logger.error(error_message)
+                        raise InputError(error_message)
+                    elif parameters['distance_source_g1'] and \
+                            parameters['distance_source_g2']:
+                        logger.warning("Both distance from Source to G1 ({0}) "
+                                       "AND Source to G2 ({1}) are defined, "
+                                       "choosing  distance from Source to G2 "
+                                       "(total GI length)."
+                                       .format(parser_info
+                                               ['distance_source_g1'][0],
+                                               parser_info
+                                               ['distance_source_g2'][0]))
+                        parameters['distance_source_g1'] = None
+                        fixed_distance = 'distance_source_g2'
+                    elif parameters['distance_source_g1']:
+                        fixed_distance = 'distance_source_g1'
                     elif parameters['distance_Source_G2']:
-                        fixed_distance = 'distance_Source_G2'
+                        fixed_distance = 'distance_source_g2'
                 else:
                     # With G0
                     # Add to component list (unless dual_phase)
                     if not parameters['dual_phase']:
                         parameters['component_list'].append('G0')
+                    if not parameters['fixed_grating']:
+                        error_message = ("Choose G0, G1 or G2 as fixed "
+                                         "grating ({0})."
+                                         .format(parser_info['fixed_grating']
+                                                 [0]))
+                        logger.error(error_message)
+                        raise InputError(error_message)
                     # Fixed distance
                     if not parameters['distance_G0_G1'] and \
                             not parameters['distance_G0_G2']:
-                        error_message = ("Either distance from G0 to G1 OR G0 "
-                                         "to G2 must be defined.")
+                        error_message = ("Either distance from G0 to G1 ({0}) "
+                                         "OR G0 to G2 ({1}) must be defined "
+                                         "[mm]."
+                                         .format(parser_info['distance_G0_G1']
+                                                 [0],
+                                                 parser_info['distance_G0_G2']
+                                                 [0]))
                         logger.error(error_message)
                         raise InputError(error_message)
                     elif parameters['distance_G0_G1'] and \
                             parameters['distance_G0_G2']:
-                        logger.warning("Both distance from G0 to G1 AND G0 "
-                                       "to G2 are defined, choosing distance "
-                                       "from G0 to G2 (total GI length).")
+                        logger.warning("Both distance from G0 to G1 ({0}) AND "
+                                       "G0 to G2 ({1}) are defined, choosing "
+                                       "distance from G0 to G2 (total GI "
+                                       "length)."
+                                       .format(parser_info['distance_G0_G1']
+                                               [0],
+                                               parser_info['distance_G0_G2']
+                                               [0]))
                         parameters['distance_G0_G1'] = None
                         fixed_distance = 'distance_G0_G2'
                     elif parameters['distance_G0_G1']:
@@ -524,6 +566,21 @@ def general_input(parameters, parser_info):
 
             logger.debug("... done.")
 
+        # Info
+        logger.info("Beam geometry is '{0}' and setup geometry is '{1}'."
+                    .format(parameters['beam_geometry'],
+                            parameters['geometry']))
+        logger.info("Setup consists of: {0}."
+                    .format(parameters['component_list']))
+        if 'Sample' not in parameters['component_list']:
+            logger.info("NOTE: No sample included.")
+        if parameters['geometry'] != 'free':
+            logger.info("Fixed grating is: '{0}'."
+                        .format(parameters['fixed_grating']))
+            if parameters['beam_geometry'] == 'cone':
+                logger.info("Fixed distance is: {0}."
+                            .format(fixed_distance))
+
         # Check remaining components (source and detector already done)
         # Sample distance, shape, amterial etc.
         logger.debug("Checking remaining components...")
@@ -558,7 +615,6 @@ def general_input(parameters, parser_info):
                                     parameters['component_list'][index+1]
                                     .lower())
                 if not parameters[current_distance]:
-                    logger.info(parser_info[current_distance])
                     error_message = ("{0} ({1}) not defined."
                                      .format(parser_info[current_distance][1]
                                              .split('.')[0],
@@ -570,20 +626,7 @@ def general_input(parameters, parser_info):
 
         logger.debug("... done.")  # Scenarios done
 
-        # Info
-        logger.info("Beam geometry is '{0}' and setup geometry is '{1}'."
-                    .format(parameters['beam_geometry'],
-                            parameters['geometry']))
-        logger.info("Setup consists of: {0}."
-                    .format(parameters['component_list']))
-        if 'Sample' not in parameters['component_list']:
-            logger.info("NOTE: No sample included.")
-        if parameters['geometry'] != 'free':
-            logger.info("Fixed grating is: '{0}'."
-                        .format(parameters['fixed_grating']))
-            if parameters['beam_geometry'] == 'cone':
-                logger.info("Fixed distance is: {0}."
-                            .format(fixed_distance))
+
 
 #        # FUTURE: NEEDED??? or conversion in sim functions?
 #        # Convert to standard units (e.g. mm to um)
@@ -855,41 +898,48 @@ def _check_grating_input(grating, parameters, parser_info):
     if parameters['geometry'] != 'free':
         # G0 (abs or mix)
         if grating == 'g0' and parameters['type_'+grating] == 'phase':
-            error_message = ("Type of G0 ({1}) must be 'mix' or 'abs'."
+            error_message = ("Type of G0 ({0}) must be 'mix' or 'abs'."
                              .format(parser_info['type_'+grating][0]))
             logger.error(error_message)
             raise InputError(error_message)
         # G1 (phase or mix)
         if grating == 'g1' and parameters['type_'+grating] == 'abs':
-            error_message = ("Type of G1 ({1}) must be 'mix' or 'phase'."
+            error_message = ("Type of G1 ({0}) must be 'mix' or 'phase'."
                              .format(parser_info['type_'+grating][0]))
             logger.error(error_message)
             raise InputError(error_message)
         # G2 (abs or mix for classic GI, phase or mix for dual phase)
         if grating == 'g2' and not parameters['dual_phase'] and \
                 parameters['type_'+grating] == 'phase':
-            error_message = ("Type of G2 ({1}) must be 'mix' or 'abs'."
+            error_message = ("Type of G2 ({0}) must be 'mix' or 'abs'."
                              .format(parser_info['type_'+grating][0]))
             logger.error(error_message)
             raise InputError(error_message)
         elif grating == 'g2' and parameters['dual_phase'] and \
                 parameters['type_'+grating] == 'abs':
-            error_message = ("Type of G2 ({1}) must be 'mix' or 'phase'."
+            error_message = ("Type of G2 ({0}) must be 'mix' or 'phase'."
                              .format(parser_info['type_'+grating][0]))
             logger.error(error_message)
             raise InputError(error_message)
 
     # Basic required input
-    # If fixed grating (for none-free input)
-    if parameters['geometry'] != 'free' and \
-            grating == parameters['fixed_grating'].lower():
+    # If fixed grating (for none-free input) or free input
+    if (parameters['geometry'] != 'free' and
+            grating == parameters['fixed_grating'].lower()) or \
+            parameters['geometry'] == 'free':
         if not parameters['pitch_'+grating]:
             error_message = ("Pitch of {0} ({1}) must be defined."
                              .format(grating.upper(),
                                      parser_info['pitch_'+grating][0]))
             logger.error(error_message)
             raise InputError(error_message)
-        if parameters['duty_cycle_'+grating] <= 0 or \
+        if not parameters['duty_cycle_'+grating]:
+            error_message = ("Duty cycle of {0} ({1}) must be defined."
+                             .format(grating.upper(),
+                                     parser_info['duty_cycle_'+grating][0]))
+            logger.error(error_message)
+            raise InputError(error_message)
+        elif parameters['duty_cycle_'+grating] <= 0 or \
                 parameters['duty_cycle_'+grating] >= 1:
             error_message = ("Duty cycle of {0} ({1}) must be within ]0...1[."
                              .format(grating.upper(),
@@ -910,6 +960,13 @@ def _check_grating_input(grating, parameters, parser_info):
                                      parser_info['thickness_'+grating][0]))
             logger.error(error_message)
             raise InputError(error_message)
+        if parameters['thickness_'+grating] and \
+                parameters['phase_shift_'+grating]:
+            warning_message = ("Thickness AND phase shift of {0} are "
+                               "defined. Basing calculations on "
+                               "thickness.".format(grating.upper()))
+            logger.warn(warning_message)
+            parameters['phase_shift_'+grating] = None
     else:
         if not parameters['thickness_'+grating] and \
                 not parameters['phase_shift_'+grating]:
@@ -923,7 +980,7 @@ def _check_grating_input(grating, parameters, parser_info):
         if parameters['thickness_'+grating] and \
                 parameters['phase_shift_'+grating]:
             if parameters['type_'+grating] == 'mix':
-                warning_message = ("Thickness AND phase shift of {2} are "
+                warning_message = ("Thickness AND phase shift of {0} are "
                                    "defined. Basing calculations on "
                                    "thickness.".format(grating.upper()))
                 logger.warn(warning_message)

@@ -142,6 +142,9 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                                      "Example:\n"
                                      "\t-sr 100\n"
                                      "\t-p0 2.4\n",
+                                     usage="Parameters that are defined but "
+                                     "not applicable in current setup will "
+                                     "be ignored without warning.",
                                      fromfile_prefix_chars='@',
                                      formatter_class=_CustomFormatter)
     # USE SUBPARSERS FOR SIMULATION/GEOMETRY DEPENDENT ARGUMENTS...???
@@ -167,7 +170,7 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
     parser.add_argument('-t', dest='talbot_order',
                         type=numerical_type,
                         help="Talbot order.")
-    parser.add_argument('--dual_phase', #metavar='DUAL_PHASE',
+    parser.add_argument('--dual_phase',
                         action='store_true',
                         help="Option for dual phase setup (True or False). "
                         "Only valid for conventional setup (geometry='conv') "
@@ -322,9 +325,11 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         "absoprtion.")
     parser.add_argument('-p0', dest='pitch_g0',
                         action=_TruePositiveNumber,
+                        type=numerical_type,
                         help="Pitch of G0 [um].")
     parser.add_argument('-dc0', dest='duty_cycle_g0',
                         action=_TruePositiveNumber,
+                        type=numerical_type,
                         help="Duty cycle of G0 ]0...1[.")
     parser.add_argument('-m0', dest='material_g0',
                         type=str,
@@ -363,8 +368,8 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         type=numerical_type,
                         help="Pitch of G1 [um].")
     parser.add_argument('-dc1', dest='duty_cycle_g1',
-                        default=0.5,
                         action=_TruePositiveNumber,
+                        type=numerical_type,
                         help="Duty cycle of G1 ]0...1[.")
     parser.add_argument('-m1', dest='material_g1',
                         type=str,
@@ -403,8 +408,8 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         type=numerical_type,
                         help="Pitch of G2 [um].")
     parser.add_argument('-dc2', dest='duty_cycle_g2',
-                        default=0.5,
                         action=_TruePositiveNumber,
+                        type=numerical_type,
                         help="Duty cycle of G2 ]0...1[.")
     parser.add_argument('-m2', dest='material_g2',
                         type=str,

@@ -152,7 +152,7 @@ if __name__ == '__main__':
 
 
     # Check input
-    for key, value in parameters.iteritems():
+    for key, value in sorted(parameters.iteritems()):
         print key, value
     try:
         logger.info("Checking parsed arguments...")
