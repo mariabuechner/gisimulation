@@ -18,6 +18,7 @@ check_input:    Checks the input parameters, logs errors and raises an
 """
 import numpy as np
 import simulation.utilities as utilities
+import simulation.parser_def as parser_def
 import logging
 logger = logging.getLogger(__name__)
 
@@ -48,9 +49,12 @@ def check_parser(parameters):
     parameters [dict]:
 
     """
+    # Get parameter infos from parser, to link var_names and var_keys
+    parser_info = parser_def.get_arguments_info(parser_def.input_parser())
+
     logger.info("Checking general input...")
     # % Minimal required input for all scenarios
-    parameters = general_input(parameters)
+    parameters = general_input(parameters, parser_info)
     logger.info("... done.")
 
     # % Scenario specific requirements
@@ -59,7 +63,7 @@ def check_parser(parameters):
     return parameters
 
 
-def general_input(parameters):
+def general_input(parameters, parser_info):
     """
     checking general input (everything to calculate the geometries)
 
@@ -67,6 +71,7 @@ def general_input(parameters):
     ##########
 
     parameters [dict]
+    parser_info [dict]:         parser_info[var_name] = [var_key, var_help]
 
     Notes
     #####
@@ -81,8 +86,9 @@ def general_input(parameters):
         # General and GI Design:
         logger.debug("Checking GI input...")
         if not parameters['sampling_rate']:
-            logger.debug("Sampling rate is not specified, "
-                         "set to pixel size * 1e-3.")
+            logger.debug("Sampling rate ({0}) is not specified, "
+                         "set to pixel size * 1e-3."
+                         .format(parser_info['sampling_rate'][0]))
             # Default to pixel_size *1e-3
             parameters['sampling_rate'] = parameters['pixel_size'] * 1e-3
             logger.debug("Sampling rate is {0} um, with pixel size {1} "
@@ -91,8 +97,9 @@ def general_input(parameters):
         if parameters['geometry'] != 'free':
             # If GI, talbot order necessary
             if not parameters['talbot_order']:
-                error_message = "Input argument missing: 'talbot_order' " \
-                                "('-t')."
+                error_message = ("Input argument missing: 'talbot_order' "
+                                 "({0})."
+                                 .format(parser_info['talbot_order'][0]))
                 logger.error(error_message)
                 raise InputError(error_message)
         if parameters['dual_phase'] and parameters['geometry'] != 'conv':
@@ -109,8 +116,9 @@ def general_input(parameters):
         logger.debug("Checking Source input...")
         if parameters['beam_geometry'] == 'cone':
             if not parameters['focal_spot_size']:
-                error_message = "Input argument missing: 'focal_spot_size' " \
-                                "('-fs')."
+                error_message = ("Input argument missing: 'focal_spot_size' "
+                                 "({0})."
+                                 .format(parser_info['focal_spot_size'][0]))
                 logger.error(error_message)
                 raise InputError(error_message)
 
@@ -123,12 +131,14 @@ def general_input(parameters):
         # material filter
         if parameters['thickness_filter'] and \
                 not parameters['material_filter']:
-            error_message = "Filter material must be specified."
+            error_message = ("Filter material ({0}) must be specified."
+                             .format(parser_info['material_filter'][0]))
             logger.error(error_message)
             raise InputError(error_message)
         if parameters['material_filter'] and \
                 not parameters['thickness_filter']:
-            error_message = "Filter thickness must be specified."
+            error_message = ("Filter thickness ({0}) must be specified."
+                             .format(parser_info['thickness_filter'][0]))
             logger.error(error_message)
             raise InputError(error_message)
         logger.debug("... done.")
@@ -138,36 +148,45 @@ def general_input(parameters):
         # PSF right size?
         if parameters['detector_type'] == 'conv':
             if not parameters['point_spread_function']:
-                error_message = "Input argument missing: " \
-                                "'point_spread_function' ('-psf')."
+                error_message = ("Input argument missing: "
+                                 "'point_spread_function' ({0})."
+                                 .format(parser_info['point_spread_function']
+                                         [0]))
                 logger.error(error_message)
                 raise InputError(error_message)
             if parameters['point_spread_function'] <= \
                     parameters['pixel_size']:
                 # PSF too small, but be larger
-                error_message = "PSF must be at larger than the  pixel "
-                "size."
+                error_message = "PSF must be at larger than the pixel size."
                 logger.error(error_message)
                 raise InputError(error_message)
 
         # Threshold (error if > max energy and warninglog if < min)
-        if parameters['detector_threshold'] > max_energy:
-            error_message = "Detector threshold must be <= the maximal energy."
-            logger.error(error_message)
-            raise InputError(error_message)
-        elif parameters['detector_threshold'] < min_energy:
-            logger.warning("Detector threshold is smaller than the minimal "
-                           "energy.")
+        if parameters['detector_threshold']:
+            if parameters['detector_threshold'] > max_energy:
+                error_message = ("Detector threshold ({0}) must be <= the "
+                                 "maximal energy ({1} keV)."
+                                 .format(parser_info['detector_threshold'][0],
+                                         max_energy))
+                logger.error(error_message)
+                raise InputError(error_message)
+            elif parameters['detector_threshold'] < min_energy:
+                logger.warning("Detector threshold ({0}) is smaller than the "
+                               "minimal energy ){1} keV)."
+                               .format(parser_info['detector_threshold'][0],
+                                       min_energy))
 
         # material thickness
         if parameters['thickness_detector'] and \
                 not parameters['material_detector']:
-            error_message = "Detector material must be specified."
+            error_message = ("Detector material ({0}) must be specified."
+                             .format(parser_info['material_detector'][0]))
             logger.error(error_message)
             raise InputError(error_message)
         if parameters['material_detector'] and \
                 not parameters['thickness_detector']:
-            error_message = "Detector thickness must be specified."
+            error_message = ("Detector thickness ({0}) must be specified."
+                             .format(parser_info['thickness_detector'][0]))
             logger.error(error_message)
             raise InputError(error_message)
         logger.debug("... done.")
@@ -520,26 +539,30 @@ def general_input(parameters):
         # Check all selected gratings
         if 'G0' in parameters['component_list']:
             logger.debug("Checking G0...")
-            _check_grating_input('g0', parameters)
+            _check_grating_input('g0', parameters, parser_info)
             logger.debug("... done.")
         if 'G1' in parameters['component_list']:
             logger.debug("Checking G1...")
-            _check_grating_input('g1', parameters)
+            _check_grating_input('g1', parameters, parser_info)
             logger.debug("... done.")
         if 'G2' in parameters['component_list']:
             logger.debug("Checking G2...")
-            _check_grating_input('g2', parameters)
+            _check_grating_input('g2', parameters, parser_info)
             logger.debug("... done.")
         if parameters['geometry'] == 'free':
             # Chack all necessary distances
             logger.debug("Checking distances for 'free' input...")
-            for component, index in \
+            for index, component in \
                     enumerate(parameters['component_list'][:-1]):
                 current_distance = ('distance_' + component.lower() + '_' +
-                                    parameters['component_list'][index]
+                                    parameters['component_list'][index+1]
                                     .lower())
                 if not parameters[current_distance]:
-                    error_message = "{0} not defined.".format(current_distance)
+                    logger.info(parser_info[current_distance])
+                    error_message = ("{0} ({1}) not defined."
+                                     .format(parser_info[current_distance][1]
+                                             .split('.')[0],
+                                             parser_info[current_distance][0]))
                     logger.error(error_message)
                     raise InputError(error_message)
             logger.debug("... done.")
@@ -708,8 +731,8 @@ def _get_spectrum(spectrum_file, range_, spectrum_step, design_energy):
        design_energy > max_energy:
         error_message = ("Design energy ({0} keV) must be within "
                          "spectrum range (min: {1} kev, max: {2} keV).") \
-                         .format(design_energy, min_energy,
-                                 max_energy)
+                         .format(design_energy,
+                                 min_energy, max_energy)
         logger.error(error_message)
         raise InputError(error_message)
     logger.debug("Design energy within spectrum.")
@@ -795,15 +818,16 @@ def _nearest_value(array, value):
     return array[nearest_index], nearest_index
 
 
-def _check_grating_input(grating, parameters):
+def _check_grating_input(grating, parameters, parser_info):
     """
     Check grating input.
 
     Parameters
     ##########
 
-    grating [str]:      converts to lower case, 'g0', 'g1' or 'g2'
+    grating [str]:          converts to lower case, 'g0', 'g1' or 'g2'
     parameters [dict]
+    parser_info [dict]:     parser_info[var_name] = [var_key, var_help]
 
     Notes
     #####
@@ -821,7 +845,9 @@ def _check_grating_input(grating, parameters):
     grating = grating.lower()
     # Is defined?
     if not parameters['type_'+grating]:
-        error_message = "Type of {0} not defined.".format(grating.upper())
+        error_message = ("Type of {0} ({1}) not defined."
+                         .format(grating.upper(),
+                                 parser_info['type_'+grating][0]))
         logger.error(error_message)
         raise InputError(error_message)
 
@@ -829,64 +855,76 @@ def _check_grating_input(grating, parameters):
     if parameters['geometry'] != 'free':
         # G0 (abs or mix)
         if grating == 'g0' and parameters['type_'+grating] == 'phase':
-            error_message = "Type of G0 must be 'mix' or 'abs'."
+            error_message = ("Type of G0 ({1}) must be 'mix' or 'abs'."
+                             .format(parser_info['type_'+grating][0]))
             logger.error(error_message)
             raise InputError(error_message)
         # G1 (phase or mix)
         if grating == 'g1' and parameters['type_'+grating] == 'abs':
-            error_message = "Type of G1 must be 'mix' or 'phase'."
+            error_message = ("Type of G1 ({1}) must be 'mix' or 'phase'."
+                             .format(parser_info['type_'+grating][0]))
             logger.error(error_message)
             raise InputError(error_message)
         # G2 (abs or mix for classic GI, phase or mix for dual phase)
         if grating == 'g2' and not parameters['dual_phase'] and \
                 parameters['type_'+grating] == 'phase':
-            error_message = "Type of G2 must be 'mix' or 'abs'."
+            error_message = ("Type of G2 ({1}) must be 'mix' or 'abs'."
+                             .format(parser_info['type_'+grating][0]))
             logger.error(error_message)
             raise InputError(error_message)
         elif grating == 'g2' and parameters['dual_phase'] and \
                 parameters['type_'+grating] == 'abs':
-            error_message = "Type of G2 must be 'mix' or 'phase'."
+            error_message = ("Type of G2 ({1}) must be 'mix' or 'phase'."
+                             .format(parser_info['type_'+grating][0]))
             logger.error(error_message)
             raise InputError(error_message)
 
     # Basic required input
-    # If fixed grating
-    if grating == parameters['fixed_grating'].lower():
+    # If fixed grating (for none-free input)
+    if parameters['geometry'] != 'free' and \
+            grating == parameters['fixed_grating'].lower():
         if not parameters['pitch_'+grating]:
-            error_message = ("Pitch of {0} must be defined."
-                             .format(grating.upper()))
+            error_message = ("Pitch of {0} ({1}) must be defined."
+                             .format(grating.upper(),
+                                     parser_info['pitch_'+grating][0]))
             logger.error(error_message)
             raise InputError(error_message)
         if parameters['duty_cycle_'+grating] <= 0 or \
                 parameters['duty_cycle_'+grating] >= 1:
-            error_message = ("Duty cycle of {0} must be within ]0...1[."
-                             .format(grating.upper()))
+            error_message = ("Duty cycle of {0} ({1}) must be within ]0...1[."
+                             .format(grating.upper(),
+                                     parser_info['duty_cycle_'+grating][0]))
             logger.error(error_message)
             raise InputError(error_message)
     # Always required
     if not parameters['material_'+grating]:
-        error_message = ("Material of {0} must be defined."
-                         .format(grating.upper()))
+        error_message = ("Material of {0} ({1}) must be defined."
+                         .format(grating.upper(),
+                                 parser_info['material_'+grating][0]))
         logger.error(error_message)
         raise InputError(error_message)
     if parameters['type_'+grating] == 'abs':
         if not parameters['thickness_'+grating]:
-            error_message = ("Thickness of {0} must be defined."
-                             .format(grating.upper()))
+            error_message = ("Thickness of {0} ({1}) must be defined."
+                             .format(grating.upper(),
+                                     parser_info['thickness_'+grating][0]))
             logger.error(error_message)
             raise InputError(error_message)
     else:
         if not parameters['thickness_'+grating] and \
                 not parameters['phase_shift_'+grating]:
-            error_message = ("Thickness OR phase shift of {0} must be defined."
-                             .format(grating.upper()))
+            error_message = ("Thickness ({0}) OR phase shift ({1}) of {2} "
+                             "must be defined."
+                             .format(parser_info['thickness_'+grating][0],
+                                     parser_info['phase_shift_'+grating][0],
+                                     grating.upper()))
             logger.error(error_message)
             raise InputError(error_message)
         if parameters['thickness_'+grating] and \
                 parameters['phase_shift_'+grating]:
             if parameters['type_'+grating] == 'mix':
-                warning_message = ("Thickness AND phase shift of {0} are "
-                                   "defined. \Basing calculations on "
+                warning_message = ("Thickness AND phase shift of {2} are "
+                                   "defined. Basing calculations on "
                                    "thickness.".format(grating.upper()))
                 logger.warn(warning_message)
                 parameters['phase_shift_'+grating] = None
@@ -902,22 +940,30 @@ def _check_grating_input(grating, parameters):
     # Wafer
     if parameters['wafer_thickness_'+grating] and \
             not parameters['wafer_material_'+grating]:
-        error_message = "Wafer material must be specified."
+        error_message = ("Wafer material of {0} ({1}) must be specified."
+                         .format(grating.upper(),
+                                 parser_info['wafer_material_'+grating][0]))
         logger.error(error_message)
         raise InputError(error_message)
     if parameters['wafer_material_'+grating] and \
             not parameters['wafer_thickness_'+grating]:
-        error_message = "Wafer thickness must be specified."
+        error_message = ("Wafer thickness of {0} ({1}) must be specified."
+                         .format(grating.upper(),
+                                 parser_info['wafer_thickness_'+grating][0]))
         logger.error(error_message)
         raise InputError(error_message)
     # Grating fill
     if parameters['fill_thickness_'+grating] and \
             not parameters['fill_material_'+grating]:
-        error_message = "Fill material must be specified."
+        error_message = ("Fill material of {0} ({1}) must be specified."
+                         .format(grating.upper(),
+                                 parser_info['fill_material_'+grating][0]))
         logger.error(error_message)
         raise InputError(error_message)
     if parameters['fill_material_'+grating] and \
             not parameters['fill_thickness_'+grating]:
-        error_message = "Fill thickness must be specified."
+        error_message = ("Fill thickness of {0} ({1}) must be specified."
+                         .format(grating.upper(),
+                                 parser_info['fill_thickness_'+grating][0]))
         logger.error(error_message)
         raise InputError(error_message)

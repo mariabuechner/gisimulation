@@ -154,7 +154,7 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
 
     # General and GI Design
     parser.add_argument('-gi', dest='geometry', default='sym',
-                        type=str,
+                        type=str, required=True,
                         choices=['sym', 'conv', 'inv', 'free'],
                         metavar='GEOMETRY',
                         help="GI geometry. Choices are\n"
@@ -173,7 +173,7 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         "Only valid for conventional setup (geometry='conv') "
                         "and without G0.")
     parser.add_argument('-bg', dest='beam_geometry', default='parallel',
-                        type=str,
+                        type=str, required=True,
                         choices=['cone', 'parallel'], metavar='BEAM_GEOMETRY',
                         help="Beam geometry. Choices are\n"
                         "'cone': cone/divergent beam, "
@@ -260,9 +260,6 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         action=_TruePositiveNumber,
                         type=numerical_type,
                         help="Depth of detector [um].")
-
-
-
     # Distances
     # From source
     parser.add_argument('-sg0', dest='distance_source_g0',
@@ -317,17 +314,16 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         "based on. Note that G0 cannot be chosen for "
                         "parallel beam geometries.")
     # G0
-    parser.add_argument('-g0', dest='type_g0', default='mix',
+    parser.add_argument('-g0', dest='type_g0',
                         type=str,
                         choices=['mix', 'phase', 'abs'], metavar='TYPE_G0',
                         help="Choose which interaction will be considered "
-                        "for G0. Default is 'mix', both phase shift and "
+                        "for G0. 'mix': both phase shift and "
                         "absoprtion.")
     parser.add_argument('-p0', dest='pitch_g0',
                         action=_TruePositiveNumber,
                         help="Pitch of G0 [um].")
     parser.add_argument('-dc0', dest='duty_cycle_g0',
-                        default=0.5,
                         action=_TruePositiveNumber,
                         help="Duty cycle of G0 ]0...1[.")
     parser.add_argument('-m0', dest='material_g0',
@@ -356,11 +352,11 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         type=numerical_type,
                         help="Depth of G0 filling [um].")
     # G1
-    parser.add_argument('-g1', dest='type_g1', default='mix',
+    parser.add_argument('-g1', dest='type_g1',
                         type=str,
                         choices=['mix', 'phase', 'abs'], metavar='TYPE_G1',
                         help="Choose which interaction will be considered "
-                        "for G1. Default is 'mix', both phase shift and "
+                        "for G1. 'mix': both phase shift and "
                         "absoprtion.")
     parser.add_argument('-p1', dest='pitch_g1',
                         action=_TruePositiveNumber,
@@ -396,11 +392,11 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         type=numerical_type,
                         help="Depth of G1 filling [um].")
     # G2
-    parser.add_argument('-g2', dest='type_g2', default='mix',
+    parser.add_argument('-g2', dest='type_g2',
                         type=str,
                         choices=['mix', 'phase', 'abs'], metavar='TYPE_G2',
                         help="Choose which interaction will be considered "
-                        "for G2. Default is 'mix', both phase shift and "
+                        "for G2. 'mix': both phase shift and "
                         "absoprtion.")
     parser.add_argument('-p2', dest='pitch_g2',
                         action=_TruePositiveNumber,
