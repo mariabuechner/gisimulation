@@ -192,14 +192,16 @@ class Distances(F.GridLayout):
             distance_label = NonFileBrowserLabel(text=distance_text)
 
             distance_value = FloatInput(sixe_hint_x=0.2)
-            distance_id = "{0}_{1}".format(component, component_list[index+1])
+            distance_id = "distance_{0}_{1}".format(component.lower(),
+                                                    component_list[index+1]
+                                                    .lower())
             distance_value.id = distance_id
 
             # Just displays
             if beam_geometry == 'parallel' and geometry != 'free':
                 distance_value.disabled = True
             elif beam_geometry == 'cone' and geometry != 'free':
-                if distance_id == 'G1_G2':
+                if distance_id == 'distance_g1_g2':
                     distance_value.disabled = True
 
             distance_container.add_widget(distance_label)
@@ -209,17 +211,18 @@ class Distances(F.GridLayout):
                          .format(distance_text, distance_id))
 
             # Add option to set S/G0 to G2 distance
-            if (distance_id == 'Source_G1' or distance_id == 'G0_G1') and \
+            if (distance_id == 'distance_source_g1' or
+                    distance_id == 'distance_g0_g1') and \
                     geometry != 'free':
                 # Add extra line for total length option
                 height = (len(component_list)) * LINE_HEIGHT
 
-                if distance_id == 'Source_G1':
+                if distance_id == 'distance_source_g1':
                     extra_distance_text = "Distance from Source to G2 [mm]"
-                    extra_distance_id = "Source_G2"
+                    extra_distance_id = "distance_source_g2"
                 else:
                     extra_distance_text = "Distance from G0 to G2 [mm]"
-                    extra_distance_id = "G0_G2"
+                    extra_distance_id = "distance_g0_g2"
                 # Add extra distance
                 extra_distance_container = F.BoxLayout()
 
@@ -229,7 +232,6 @@ class Distances(F.GridLayout):
                 extra_distance_value = FloatInput(sixe_hint_x=0.2)
                 extra_distance_value.id = extra_distance_id
                 # Connect to only set one (if other is not empty, disabled)
-
                 distance_value.bind(text=partial(self.on_text,
                                                  extra_distance_value))
                 extra_distance_value.bind(text=partial(self.on_text,
@@ -572,8 +574,32 @@ def _collect_input(parameters, ids):
             parameters[var_name] = value.text
         elif 'Spinner' in str(value):
             parameters[var_name] = value.text
-        logger.debug("var_name is: {0}".format(var_name))
-        logger.debug("value.text is: {0}".format(value.text))
+#        logger.debug("var_name is: {0}".format(var_name))
+#        logger.debug("value.text is: {0}".format(value.text))
+
+    # Handle distances (not accesible directly via ids)
+    #   ids.distances contains one boxlayout per distance,
+    #   which then contains one label and one FloatInput
+    for distance in ids.distances.children:
+        for widget in distance.children:
+            if 'FloatInput' in str(widget):
+                if widget.text == '':
+                    parameters[widget.id] = None
+                else:
+                    parameters[widget.id] = widget.text
+
+    # Handle fixed grating
+    if parameters['fixed_grating'] == 'Choose fixed grating...':
+        parameters['fixed_grating'] = None
+    else:
+        # Make lower case
+        parameters['fixed_grating'] = parameters['fixed_grating'].lower()
+
+    # Handle boolean
+    if ids.dual_phase.active:
+        parameters['dual_phase'] = True
+    else:
+        parameters['dual_phase'] =  False
 
     # Handel double numeric inputs
     # Spectrum range
@@ -686,6 +712,9 @@ class giGUI(F.BoxLayout):
         try:
             # Convert input
             self.parameters = _collect_input(self.parameters, self.ids)
+            for key, value in sorted(self.parameters.iteritems()):
+                logger.info(key)
+                logger.info(value)
 
             # Check values
             # Are required (in parser) defined?
@@ -705,7 +734,8 @@ class giGUI(F.BoxLayout):
                 logger.error(error_message)
                 raise check_input.InputError(error_message)
             # Check rest
-            self.parameters = check_input.general_input(self.parameters)
+            self.parameters = check_input.general_input(self.parameters,
+                                                        self.parser_info)
 
             # Update widget content
             self._set_widgets(self.parameters, from_file=False)
@@ -1006,7 +1036,6 @@ class giGUI(F.BoxLayout):
             # Update geometry conditions for cone beam
             self.on_geometry()  # Includes update distances
             self.ids.g0_set.disabled = False
-            self.available_gratings = ['G0', 'G1', 'G2']
         # Update dual_phase options
         self.on_dual_phase_checkbox_active()
 
@@ -1028,11 +1057,16 @@ class giGUI(F.BoxLayout):
             # After sort, switch Source and Detector
             self.setup_components[0], self.setup_components[-1] = \
                 self.setup_components[-1], self.setup_components[0]
+            if checkbox_name == 'G0':
+                self.available_gratings = ['G0', 'G1', 'G2']
         else:
             self.setup_components.remove(checkbox_name)
             # Also uncheck sample_added
             self.ids.add_sample.active = False
             self.ids.sample_relative_to.text = self.setup_components[0]
+            if checkbox_name == 'G0':
+                self.available_gratings = ['G1', 'G2']
+
         logger.debug("Current setup consists of: {0}"
                      .format(self.setup_components))
         # Update sample_relative_to and sample_relative_position
@@ -1289,6 +1323,10 @@ class giGUI(F.BoxLayout):
         self.parser_info [dict]:        parser_info[var_name] = [var_key,
                                                                  var_help]
         """
+        # distances ('distance_...)' need to be handled extra, since they are
+        # not stored in ids!
+        distances = dict()
+
         if from_file:
             logger.info("Setting widget values from file...")
             for var_key, value_str in input_parameters.iteritems():
@@ -1302,6 +1340,12 @@ class giGUI(F.BoxLayout):
                     continue
                 var_name = self.parser_link[var_key]
                 logger.debug("var_name is {0}".format(var_name))
+                # Skip all distances, except sample_distance
+                if 'distance_' in var_name:
+                    logger.debug("Storing away {0} = {1} to set later."
+                                 .format(var_name, value_str[0]))
+                    distances[var_name] = value_str[0]
+                    continue
                 if var_name not in self.parameters:
                     # Input key not implemented in GUI
                     logger.warning("Key '{0}' with name '{1}' read from input "
@@ -1312,46 +1356,98 @@ class giGUI(F.BoxLayout):
                 if var_name == 'spectrum_range':
                     self.ids['spectrum_range_min'].text = value_str[0]
                     self.ids['spectrum_range_max'].text = value_str[1]
+                    logger.debug("Setting text of widget '{0}' to: [{1}, {2}]"
+                                 .format(var_name, value_str[0], value_str[1]))
                 elif var_name == 'field_of_view':
                     # Check if it is integer
                     if '.' in value_str[0] or '.' in value_str[1]:
                         error_message = "FOV must be integer, not float."
                         logger.error(error_message)
                         raise check_input.InputError(error_message)
+                    logger.debug("Setting text of widget '{0}' to: [{1}, {2}]"
+                                 .format(var_name, value_str[0], value_str[1]))
                     self.ids['field_of_view_x'].text = value_str[0]
                     self.ids['field_of_view_y'].text = value_str[1]
+                elif var_name == 'fixed_grating':
+                    # Make upper case for GUI
+                    logger.debug("Setting text of widget '{0}' to: {1}"
+                                 .format(var_name, value_str.upper()))
+                    self.ids[var_name].text = value_str.upper()
+                elif var_name == 'dual_phase':
+                    logger.debug("Setting text of widget '{0}' to: {1}"
+                                 .format(var_name, True))
+                    self.ids[var_name].active = True
                 else:
                     logger.debug("Setting text of widget '{0}' to: {1}"
                                  .format(var_name, value_str[0]))
                     self.ids[var_name].text = value_str[0]
-            logger.info("...done.")
         else:
             logger.info("Setting widget values from parameters...")
             for var_name, value in input_parameters.iteritems():
-                # Skip all the not-set parameters
-                if value is not None:
+                # Skip all the not-set parameters and all distances,
+                # except sample_distance
+                if value is None:
+                    # Set empty string to overwrite falsy set values
+                    # booleans will always be not none
+                    value = ''
+                if 'distance_' not in var_name:
                     logger.debug("var_name is: {0}".format(var_name))
                     logger.debug("value is: {0}".format(value))
                     if var_name not in self.parser_info:
                         # Input variable not implemented in parser
-                        logger.warning("Parameter '{0}' read from app, but "
-                                       "not defined in parser. Skipping..."
-                                       .format(var_name))
+                        logger.warning("Parameter '{0}' read from app, "
+                                       "but not defined in parser. "
+                                       "Skipping...".format(var_name))
                         continue
                     var_key = self.parser_info[var_name][0]
                     logger.debug("var_key is: {0}".format(var_key))
                     # Set input values to ids.texts
                     if var_name == 'spectrum_range':
+                        logger.debug("Setting text of widget '{0}' to: "
+                                     "[{1}, {2}]".format(var_name,
+                                                         value[0],
+                                                         value[1]))
                         self.ids['spectrum_range_min'].text = str(value[0])
                         self.ids['spectrum_range_max'].text = str(value[1])
                     elif var_name == 'field_of_view':
-                        self.ids['field_of_view_x'].text = str(int(value[0]))
-                        self.ids['field_of_view_y'].text = str(int(value[1]))
+                        logger.debug("Setting text of widget '{0}' to: "
+                                     "[{1}, {2}]".format(var_name,
+                                                         value[0],
+                                                         value[1]))
+                        self.ids['field_of_view_x'].text = str(int(value
+                                                                   [0]))
+                        self.ids['field_of_view_y'].text = str(int(value
+                                                                   [1]))
+                    elif var_name == 'fixed_grating':
+                        # Make upper case for GUI
+                        logger.debug("Setting text of widget '{0}' to: {1}"
+                                     .format(var_name, str(value).upper()))
+                        self.ids[var_name].text = str(value).upper()
+                    elif var_name == 'dual_phase':
+                        logger.debug("Setting text of widget '{0}' to: {1}"
+                                     .format(var_name, value))
+                        self.ids[var_name].active = value
                     else:
                         logger.debug("Setting text of widget '{0}' to: {1}"
                                      .format(var_name, value))
                         self.ids[var_name].text = str(value)
-            logger.info("...done.")
+                else:
+                    logger.debug("Storing away {0} = {1} to set later."
+                                 .format(var_name, value))
+                    distances[var_name] = str(value)
+        # Setting distances (not accesible directly via ids)
+        #   ids.distances contains one boxlayout per distance,
+        #   which then contains one label and one FloatInput
+        if distances:
+            for distance_layout in self.ids.distances.children:
+                for widget in distance_layout.children:
+                    if 'FloatInput' in str(widget):
+                        if widget.id in distances:
+                            logger.debug("Setting text of widget '{0}' to: {1}"
+                                         .format(widget.id,
+                                                 distances[widget.id]))
+                            widget.text = distances[widget.id]
+        logger.info("...done.")
 
     # Utility functions
 
