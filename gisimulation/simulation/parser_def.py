@@ -157,12 +157,12 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
 
     # General and GI Design
     parser.add_argument('-gi', dest='geometry', default='sym',
-                        type=str, required=True,
+                        type=str.lower, required=True,
                         choices=['sym', 'conv', 'inv', 'free'],
                         metavar='GEOMETRY',
                         help="GI geometry. Choices are\n"
                         "'sym': symmetrical, 'conv': conventional, "
-                        "'inv': inverse, 'free': free input.\n")
+                        "'inv': inverse, 'free': free input.")
     parser.add_argument('-e', dest='design_energy', required=True,
                         action=_TruePositiveNumber,
                         type=numerical_type,
@@ -172,11 +172,10 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         help="Talbot order.")
     parser.add_argument('--dual_phase',
                         action='store_true',
-                        help="Option for dual phase setup (True or False). "
-                        "Only valid for conventional setup (geometry='conv') "
-                        "and without G0.")
+                        help="Option for dual phase setup [bool]. "
+                        "Only valid for conventional setup and without G0.")
     parser.add_argument('-bg', dest='beam_geometry', default='parallel',
-                        type=str, required=True,
+                        type=str.lower, required=True,
                         choices=['cone', 'parallel'], metavar='BEAM_GEOMETRY',
                         help="Beam geometry. Choices are\n"
                         "'cone': cone/divergent beam, "
@@ -186,6 +185,12 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         type=numerical_type,
                         help="Sampling voxel size (cube). "
                         "If not set, it is pixel_size * 1e-3.")
+    parser.add_argument('-lut', dest='look_up_table', default='NIST',
+                        type=str.lower,
+                        choices=['nist', 'x0h'],
+                        metavar='LOOK_UP_TABLE',
+                        help="Source of material properties LUT. Choices are\n"
+                        "'NIST', 'X0h'.")
 
     # Source
     parser.add_argument('-fs', dest='focal_spot_size',
@@ -230,7 +235,7 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
 
     # Detector
     parser.add_argument('-dt', dest='detector_type', default='photon',
-                        type=str,
+                        type=str.lower,
                         choices=['photon', 'conv'],
                         metavar='DETECTOR_TYPE',
                         help="Detector type. Choices are\n"
@@ -311,14 +316,14 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
 
     # Grating parameters
     parser.add_argument('-fg', dest='fixed_grating',
-                        type=str,
-                        choices=['G0', 'G1', 'G2'], metavar='FIXED_GRATING',
+                        type=str.lower,
+                        choices=['g0', 'g1', 'g2'], metavar='FIXED_GRATING',
                         help="Choose on which grating the calculations will "
                         "based on. Note that G0 cannot be chosen for "
                         "parallel beam geometries.")
     # G0
     parser.add_argument('-g0', dest='type_g0',
-                        type=str,
+                        type=str.lower,
                         choices=['mix', 'phase', 'abs'], metavar='TYPE_G0',
                         help="Choose which interaction will be considered "
                         "for G0. 'mix': both phase shift and "
@@ -358,7 +363,7 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         help="Depth of G0 filling [um].")
     # G1
     parser.add_argument('-g1', dest='type_g1',
-                        type=str,
+                        type=str.lower,
                         choices=['mix', 'phase', 'abs'], metavar='TYPE_G1',
                         help="Choose which interaction will be considered "
                         "for G1. 'mix': both phase shift and "
@@ -398,7 +403,7 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         help="Depth of G1 filling [um].")
     # G2
     parser.add_argument('-g2', dest='type_g2',
-                        type=str,
+                        type=str.lower,
                         choices=['mix', 'phase', 'abs'], metavar='TYPE_G2',
                         help="Choose which interaction will be considered "
                         "for G2. 'mix': both phase shift and "
@@ -439,7 +444,7 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
 
     # Sample
     parser.add_argument('-sp', dest='sample_position',
-                        type=str,
+                        type=str.lower,
                         choices=['as',
                                  'bg0', 'ag0',
                                  'bg1', 'ag1',
@@ -456,7 +461,6 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         type=numerical_type,
                         help="Distance from sample to reference component "
                         "[mm].")
-
 
     # Return
     return parser
@@ -536,6 +540,8 @@ def get_arguments_info(parser):
         variable_help = ' '.join(variable_help)
         variable_help = re.sub('\n', '', variable_help)  # remove print_help
                                                          # format (induces \n)
+        # Remove: (default..) without removing all '('
+        variable_help = '('.join(variable_help.split('(')[:-1])[:-1]# Remove: (default..)
         arguments_info[variable_name] = [variable_key, variable_help]
 
     return arguments_info

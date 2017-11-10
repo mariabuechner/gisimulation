@@ -19,6 +19,7 @@ check_input:    Checks the input parameters, logs errors and raises an
 import numpy as np
 import simulation.utilities as utilities
 import simulation.parser_def as parser_def
+import interferometer.materials as materials
 import logging
 logger = logging.getLogger(__name__)
 
@@ -232,7 +233,7 @@ def general_input(parameters, parser_info):
                     parameters['component_list'][0]
 
                 # Fixed grating
-                if parameters['fixed_grating'] == 'G0':
+                if parameters['fixed_grating'] == 'g0':
                     error_message = "The fixed grating must be either G1 or "
                     "G2."
                     logger.error(error_message)
@@ -321,7 +322,7 @@ def general_input(parameters, parser_info):
                 # G0
                 if not parameters['type_g0']:
                     # No G0
-                    if parameters['fixed_grating'] == 'G0':
+                    if parameters['fixed_grating'] == 'g0':
                         error_message = "G0 is not defined, choose G1 or G2 "
                         "as fixed grating."
                         logger.error(error_message)
@@ -626,6 +627,19 @@ def general_input(parameters, parser_info):
 
         logger.debug("... done.")  # Scenarios done
 
+        # Check all materials if exist
+        try:
+            for var_name, value in parameters.iteritems():
+                if 'material' in var_name and value:
+                    materials.test_material(value, parameters['design_energy'],
+                                            parameters['look_up_table'])
+        except materials.MaterialError as e:
+            error_message = ("Invalid material name in '{0}' ({1}): {2}"
+                             .format(var_name,
+                                     parser_info[var_name][0],
+                                     str(e)))
+            logger.error(error_message)
+            raise InputError(error_message)
 
 
 #        # FUTURE: NEEDED??? or conversion in sim functions?
@@ -925,7 +939,7 @@ def _check_grating_input(grating, parameters, parser_info):
     # Basic required input
     # If fixed grating (for none-free input) or free input
     if (parameters['geometry'] != 'free' and
-            grating == parameters['fixed_grating'].lower()) or \
+            grating == parameters['fixed_grating']) or \
             parameters['geometry'] == 'free':
         if not parameters['pitch_'+grating]:
             error_message = ("Pitch of {0} ({1}) must be defined."

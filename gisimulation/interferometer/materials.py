@@ -30,17 +30,19 @@ import urllib2
 import numpy as np
 import logging
 logger = logging.getLogger(__name__)
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - '
-                    '%(message)s')
-# This technically only needs to be done once, in highest hirachy function!!!
 
 # Constants
 H_C = 1.23984193  # [eV um]
 
 ###############################################################################
-# Material constants look ups
+# Material constant look ups
 ###############################################################################
 
+
+class MaterialError(Exception):
+    """
+    Error is raised, if material could not be looked up.
+    """
 
 def density(material):
     """
@@ -96,10 +98,10 @@ def density(material):
                      .format(url_material))
         raise
     except KeyError:
-        logger.error('Density of material "{}" not accessible at '
-                     '"http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe"'.
+        logger.error("Density of material '{0}' not accessible at "
+                     "'http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe'".
                      format(material))
-        raise ValueError('{} is not a valid material'.format(material))
+        raise MaterialError("'{0}' is not a valid material".format(material))
 
 
 def read_x0h(material, energy):
@@ -166,10 +168,10 @@ def read_x0h(material, energy):
                      .format(url_material))
         raise
     except IndexError:
-        logger.error('{} is not a valid material at '
-                     '"http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe"'.
+        logger.error("'{0}' is not a valid material at "
+                     "'http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe'".
                      format(material))
-        raise ValueError('{} is not a valid material'.format(material))
+        raise MaterialError("'{0}' is not a valid material".format(material))
 
 
 def delta_beta_nist(material, energy, rho=0, photo_only=False):
@@ -305,7 +307,7 @@ def delta_beta_x0h(material, energy):
 def delta_beta(material, energy, rho=0, photo_only=False, source='nist'):
     """
     Calculate delta and beta values for given material and energy, using the
-    'nist_loohup' package (source='nist') or from
+    'nist_lookup' package (source='nist') or from
     'http://x-server.gmca.aps.anl.gov/cgi/x0h_form.exe' (source='X0h').
 
     Parameters
@@ -347,15 +349,39 @@ def delta_beta(material, energy, rho=0, photo_only=False, source='nist'):
     (3.5477e-06, -1.8106e-07, 19.3)
 
     """
-    if source is 'nist':
-        logger.info('Looking up delta and beta from "nist_lookup"')
+    if source.lower() == 'nist':
+        logger.debug('Looking up delta and beta from "nist_lookup"')
         return delta_beta_nist(material, energy, rho, photo_only)
-    elif source is 'X0h':
-        logger.info('Looking up delta and beta from "X0h"')
+    elif source.lower() == 'x0h':
+        logger.debug('Looking up delta and beta from "X0h"')
         return delta_beta_x0h(material, energy)
     else:
-        raise ValueError('Wrong data source specified: {}. Source must be '
-                         '"nist" or "X0h"'.format(source))
+        raise ValueError("Wrong data source specified: {0}. Source must be "
+                         "'nist' or 'X0h'".format(source))
+
+
+def test_material(material, energy, lut='nist'):
+    """
+    Test, if material does exist. Disable logger to suppress logger errors and
+    warnings, since here only the existance matters.
+
+    Parameters
+    ==========
+
+    material [str]:     chemical formula  ('Fe2O3', 'CaMg(CO3)2',
+                        'La1.9Sr0.1CuO4')
+    energy [float]:     x-ray energy [keV]
+    lut [str]:          source of values, choices=['nist','X0h'],
+                        default='nist'
+
+    """
+    try:
+        logger_level = logger.level
+        logger.level = logging.CRITICAL
+        material = delta_beta(material, energy, source=lut)
+        logger.level = logger_level
+    finally:
+        logger.level = logger_level
 
 ###############################################################################
 # Conversions
@@ -723,35 +749,35 @@ if __name__ == '__main__':
     from scipy import interpolate
     import matplotlib.pyplot as plt
 
-    energy = np.array([range(1, 101)])
-
-    rho = 1
-
-    e_lut = np.array([4.00000E-03, 5.00000E-03, 6.00000E-03, 8.00000E-03,
-                      1.00000E-02, 1.50000E-02, 2.00000E-02, 3.00000E-02,
-                      4.00000E-02, 5.00000E-02, 6.00000E-02, 8.00000E-02,
-                      1.00000E-01])
-    e_lut = e_lut*1e3
-    mu_lut = np.array([7.788E+01, 4.027E+01, 2.341E+01, 9.921E+00, 5.120E+00,
-                       1.614E+00, 7.779E-01, 3.538E-01, 2.485E-01, 2.080E-01,
-                       1.875E-01, 1.662E-01, 1.541E-01])
-
-    mu_m = interpolate.spline(e_lut, mu_lut, energy)
-
-    plt.plot(energy, mu_m, 'ro')
-    plt.plot(e_lut, mu_lut, 'bo')
-    plt.show()
-
-    mu = rho * abs(mu_m)
-
-    [delta_Al, beta_Al, rho_Al] = delta_beta('Al', energy)
-
-    mu_Al = attenuation_coefficient(beta_Al, energy)
-
-    filtered_abso = np.exp(-mu_Al*0.3)
-
-    abso = np.exp(-mu*100)
-
-    plt.plot(energy, filtered_abso, 'ro')
-    plt.plot(energy, abso, 'bo')
-    plt.show()
+#    energy = np.array([range(1, 101)])
+#
+#    rho = 1
+#
+#    e_lut = np.array([4.00000E-03, 5.00000E-03, 6.00000E-03, 8.00000E-03,
+#                      1.00000E-02, 1.50000E-02, 2.00000E-02, 3.00000E-02,
+#                      4.00000E-02, 5.00000E-02, 6.00000E-02, 8.00000E-02,
+#                      1.00000E-01])
+#    e_lut = e_lut*1e3
+#    mu_lut = np.array([7.788E+01, 4.027E+01, 2.341E+01, 9.921E+00, 5.120E+00,
+#                       1.614E+00, 7.779E-01, 3.538E-01, 2.485E-01, 2.080E-01,
+#                       1.875E-01, 1.662E-01, 1.541E-01])
+#
+#    mu_m = interpolate.spline(e_lut, mu_lut, energy)
+#
+#    plt.plot(energy, mu_m, 'ro')
+#    plt.plot(e_lut, mu_lut, 'bo')
+#    plt.show()
+#
+#    mu = rho * abs(mu_m)
+#
+#    [delta_Al, beta_Al, rho_Al] = delta_beta('Al', energy)
+#
+#    mu_Al = attenuation_coefficient(beta_Al, energy)
+#
+#    filtered_abso = np.exp(-mu_Al*0.3)
+#
+#    abso = np.exp(-mu*100)
+#
+#    plt.plot(energy, filtered_abso, 'ro')
+#    plt.plot(energy, abso, 'bo')
+#    plt.show()

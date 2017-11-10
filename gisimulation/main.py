@@ -152,8 +152,8 @@ if __name__ == '__main__':
 
 
     # Check input
-    for key, value in sorted(parameters.iteritems()):
-        print key, value
+#    for key, value in sorted(parameters.iteritems()):
+#        print key, value
     try:
         logger.info("Checking parsed arguments...")
         parameters = check_input.check_parser(parameters)
