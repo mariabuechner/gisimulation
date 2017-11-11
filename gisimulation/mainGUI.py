@@ -762,6 +762,7 @@ class giGUI(F.BoxLayout):
         if value:
             self.spectrum_file_loaded = True
             self.parameters['spectrum_file'] = self.spectrum_file_path
+            # Reset load_input_file_paths to allow loading of same file
         else:
             self.spectrum_file_loaded = False
             self.parameters['spectrum_file'] = None
@@ -778,16 +779,21 @@ class giGUI(F.BoxLayout):
         input_parameters [dict]:    input_parameters[var_key] = str(value)
 
         """
-        # Do for all files in load_input_file_paths and merge results.
-        # Later fiels overwrite first files.
-        for input_file in value:
-            logger.info("Loading input from file at: {0}".format(input_file))
-            input_parameters = _load_input_file(input_file)
-        # Set widget content
-        try:
-            self._set_widgets(input_parameters, from_file=True)
-        except check_input.InputError as e:
-            ErrorDisplay('Input Error', str(e))
+        if value:
+            # Do for all files in load_input_file_paths and merge results.
+            # Later fiels overwrite first files.
+            for input_file in value:
+                logger.info("Loading input from file at: {0}".format(input_file))
+                input_parameters = _load_input_file(input_file)
+            # Set widget content
+            try:
+                self._set_widgets(input_parameters, from_file=True)
+            except check_input.InputError as e:
+                ErrorDisplay('Input Error', str(e))
+            finally:
+                # Reset load_input_file_paths to allow loading of same file
+                self.load_input_file_paths = ''
+
 
     def on_save_input_file_path(self, instance, value):
         """
