@@ -28,7 +28,7 @@ Si
 -s1
 3.14
 -g2
-mix
+abs
 -m2
 Si
 -d2
@@ -43,3 +43,4 @@ mix
 g1
 -spec
 C:\Users\mbuec\Documents\Code\gisimulation\gisimulation\data\spectra\Comet120kV.csv
+--dual_phase
