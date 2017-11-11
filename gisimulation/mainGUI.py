@@ -595,6 +595,11 @@ def _collect_input(parameters, ids):
         # Make lower case
         parameters['fixed_grating'] = parameters['fixed_grating'].lower()
 
+    # Reset grating type if not selected
+    for grating in ['g0', 'g1', 'g2']:
+        if not ids[grating+'_set'].active:
+            parameters['type_'+grating] = None
+
     # Handle boolean
     if ids.dual_phase.active:
         parameters['dual_phase'] = True
@@ -713,11 +718,9 @@ class giGUI(F.BoxLayout):
         try:
             # Convert input
             self.parameters = _collect_input(self.parameters, self.ids)
-            for key, value in sorted(self.parameters.iteritems()):
-                logger.info(key)
-                logger.info(value)
 
             # Check values
+            logger.info("Checking input parameters...")
             # Are required (in parser) defined?
             if not self.parameters['pixel_size']:
                 error_message = "Input arguments missing: 'pixel_size' " \
@@ -737,6 +740,7 @@ class giGUI(F.BoxLayout):
             # Check rest
             self.parameters = check_input.general_input(self.parameters,
                                                         self.parser_info)
+            logger.info("... done.")
 
             # Update widget content
             self._set_widgets(self.parameters, from_file=False)
@@ -1412,8 +1416,10 @@ class giGUI(F.BoxLayout):
             else:
                 logger.info("Setting widget values from parameters...")
                 for var_name, value in input_parameters.iteritems():
-                    # Skip all the not-set parameters and all distances,
-                    # except sample_distance
+                    # Skip all distances and do later (except sample_distance)
+                    if var_name == 'sample_position':
+                        # No widget
+                        continue
                     if value is None:
                         # Set empty string to overwrite falsy set values
                         # booleans will always be not none

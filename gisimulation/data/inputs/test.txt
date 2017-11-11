@@ -14,7 +14,7 @@
 -g1d
 300
 -gi
-free
+conv
 -bg
 cone
 -t
@@ -23,6 +23,10 @@ cone
 300
 -g1
 mix
+-p1
+5
+-dc1
+0.2
 -m1
 Si
 -s1
@@ -34,6 +38,7 @@ Si
 -d2
 300
 -s2
+2.5
 -g0
 mix
 -lut
@@ -44,4 +49,3 @@ x0h
 g1
 -spec
 C:\Users\mbuec\Documents\Code\gisimulation\gisimulation\data\spectra\Comet120kV.csv
---dual_phase
