@@ -565,7 +565,8 @@ def _collect_input(parameters, ids):
         elif 'Distances' in str(value):
             continue
         elif value.text == '':
-                parameters[var_name] = None
+#            logger.debug('Setting to None')
+            parameters[var_name] = None
         elif 'FloatInput' in str(value):
             parameters[var_name] = float(value.text)
         elif 'IntInput' in str(value):
@@ -576,7 +577,6 @@ def _collect_input(parameters, ids):
             parameters[var_name] = value.text
 #        logger.debug("var_name is: {0}".format(var_name))
 #        logger.debug("value.text is: {0}".format(value.text))
-
     # Handle distances (not accesible directly via ids)
     #   ids.distances contains one boxlayout per distance,
     #   which then contains one label and one FloatInput
@@ -599,7 +599,7 @@ def _collect_input(parameters, ids):
     if ids.dual_phase.active:
         parameters['dual_phase'] = True
     else:
-        parameters['dual_phase'] =  False
+        parameters['dual_phase'] = False
 
     # Handel double numeric inputs
     # Spectrum range
@@ -687,6 +687,12 @@ class giGUI(F.BoxLayout):
         # parameters
         self.parameters = _collect_input(self.parameters, self.ids)
         self.parameters['spectrum_file'] = None
+
+        for key, value in sorted(self.parameters.iteritems()):
+            logger.info(key)
+            logger.info(value)
+
+        self._set_widgets(self.parameters, from_file=False)
         # Components trackers
         self.setup_components = ['Source', 'Detector']
         # Avail fixed gratings
@@ -1377,12 +1383,14 @@ class giGUI(F.BoxLayout):
                 elif var_name == 'fixed_grating':
                     # Make upper case for GUI
                     logger.debug("Setting text of widget '{0}' to: {1}"
-                                 .format(var_name, value_str.upper()))
-                    self.ids[var_name].text = value_str.upper()
+                                 .format(var_name, value_str[0].upper()))
+                    self.ids[var_name].text = value_str[0].upper()
                 elif var_name == 'dual_phase':
                     logger.debug("Setting text of widget '{0}' to: {1}"
                                  .format(var_name, True))
                     self.ids[var_name].active = True
+                elif var_name == 'spectrum_file':
+                    self.spectrum_file_path = value_str[0]
                 else:
                     logger.debug("Setting text of widget '{0}' to: {1}"
                                  .format(var_name, value_str[0]))
@@ -1409,6 +1417,8 @@ class giGUI(F.BoxLayout):
                     logger.debug("var_key is: {0}".format(var_key))
                     # Set input values to ids.texts
                     if var_name == 'spectrum_range':
+                        if value == '':
+                            value = ['', '']
                         logger.debug("Setting text of widget '{0}' to: "
                                      "[{1}, {2}]".format(var_name,
                                                          value[0],
@@ -1416,14 +1426,21 @@ class giGUI(F.BoxLayout):
                         self.ids['spectrum_range_min'].text = str(value[0])
                         self.ids['spectrum_range_max'].text = str(value[1])
                     elif var_name == 'field_of_view':
-                        logger.debug("Setting text of widget '{0}' to: "
-                                     "[{1}, {2}]".format(var_name,
-                                                         value[0],
-                                                         value[1]))
-                        self.ids['field_of_view_x'].text = str(int(value
-                                                                   [0]))
-                        self.ids['field_of_view_y'].text = str(int(value
-                                                                   [1]))
+                        if value == '':
+                            logger.debug("Setting text of widget '{0}' to: "
+                                     "[{1}, {2}]".format(var_name, value,
+                                                         value))
+                            self.ids['field_of_view_x'].text = str(value)
+                            self.ids['field_of_view_y'].text = str(value)
+                        else:
+                            logger.debug("Setting text of widget '{0}' to: "
+                                         "[{1}, {2}]".format(var_name,
+                                                             value[0],
+                                                             value[1]))
+                            self.ids['field_of_view_x'].text = str(int(value
+                                                                       [0]))
+                            self.ids['field_of_view_y'].text = str(int(value
+                                                                       [1]))
                     elif var_name == 'fixed_grating':
                         # Make upper case for GUI
                         logger.debug("Setting text of widget '{0}' to: {1}"
@@ -1433,6 +1450,8 @@ class giGUI(F.BoxLayout):
                         logger.debug("Setting text of widget '{0}' to: {1}"
                                      .format(var_name, value))
                         self.ids[var_name].active = value
+                    elif var_name == 'spectrum_file':
+                        self.spectrum_file_path = value
                     else:
                         logger.debug("Setting text of widget '{0}' to: {1}"
                                      .format(var_name, value))

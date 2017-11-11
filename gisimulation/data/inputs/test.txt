@@ -35,3 +35,11 @@ Si
 300
 -s2
 3.4
+-g0
+mix
+-p0
+4
+-fg
+g1
+-spec
+C:\Users\mbuec\Documents\Code\gisimulation\gisimulation\data\spectra\Comet120kV.csv
