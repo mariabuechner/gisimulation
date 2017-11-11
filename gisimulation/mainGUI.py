@@ -944,6 +944,8 @@ class giGUI(F.BoxLayout):
         """
         Set sample position options and activate required gratings.
         """
+        if self.ids.geometry.text not in self.ids.geometry.values:
+            self.ids.geometry.text = 'free'
         #======================================================================
         #   Dirty fix for issue #12
         self.ids.fixed_grating.text = 'G0'
@@ -1018,6 +1020,8 @@ class giGUI(F.BoxLayout):
         Set availabel gratings, update geometry options and deactivate
         required gratings.
         """
+        if self.ids.beam_geometry.text not in self.ids.beam_geometry.values:
+            self.ids.beam_geometry.text = 'parallel'
         # Remove sample if it was set
         if 'Sample' in self.setup_components:
                 self.ids.add_sample.active = False
@@ -1054,6 +1058,7 @@ class giGUI(F.BoxLayout):
         """
         if not self.sample_added:
             self.ids.sample_relative_to.text = self.setup_components[0]
+
 
     def on_grating_checkbox_active(self, state, checkbox_name):
         """
@@ -1319,6 +1324,10 @@ class giGUI(F.BoxLayout):
         Notes
         #####
 
+        Make all strings lower case, except for materials, to remain compatible
+        with parser. If not from file, only necessary for material LUT
+        (look_up_table).
+
         if from file:
 
             input_parameters [dict]:    input_parameters[var_key] = value
@@ -1335,147 +1344,167 @@ class giGUI(F.BoxLayout):
         # distances ('distance_...)' need to be handled extra, since they are
         # not stored in ids!
         distances = dict()
-
-        if from_file:
-            logger.info("Setting widget values from file...")
-            for var_key, value_str in input_parameters.iteritems():
-                logger.debug("var_key is {0}".format(var_key))
-                logger.debug("value_str is {0}".format(value_str))
-                if var_key not in self.parser_link:
-                    # Input key not implemented in parser
-                    logger.warning("Key '{0}' read from input file, but not "
-                                   "defined in parser. Skipping..."
-                                   .format(var_key))
-                    continue
-                var_name = self.parser_link[var_key]
-                logger.debug("var_name is {0}".format(var_name))
-                # Skip all distances, except sample_distance
-                if 'distance_' in var_name:
-                    logger.debug("Storing away {0} = {1} to set later."
-                                 .format(var_name, value_str[0]))
-                    distances[var_name] = value_str[0]
-                    continue
-                if var_name not in self.parameters:
-                    # Input key not implemented in GUI
-                    logger.warning("Key '{0}' with name '{1}' read from input "
-                                   "file, but not defined in App. Skipping..."
-                                   .format(var_key, var_name))
-                    continue
-                # Set input values to ids.texts
-                if var_name == 'spectrum_range':
-                    self.ids['spectrum_range_min'].text = value_str[0]
-                    self.ids['spectrum_range_max'].text = value_str[1]
-                    logger.debug("Setting text of widget '{0}' to: [{1}, {2}]"
-                                 .format(var_name, value_str[0], value_str[1]))
-                elif var_name == 'field_of_view':
-                    # Check if it is integer
-                    if '.' in value_str[0] or '.' in value_str[1]:
-                        error_message = "FOV must be integer, not float."
-                        logger.error(error_message)
-                        raise check_input.InputError(error_message)
-                    logger.debug("Setting text of widget '{0}' to: [{1}, {2}]"
-                                 .format(var_name, value_str[0], value_str[1]))
-                    self.ids['field_of_view_x'].text = value_str[0]
-                    self.ids['field_of_view_y'].text = value_str[1]
-                elif var_name == 'fixed_grating':
-                    # Make upper case for GUI
-                    logger.debug("Setting text of widget '{0}' to: {1}"
-                                 .format(var_name, value_str[0].upper()))
-                    self.ids[var_name].text = value_str[0].upper()
-                elif var_name == 'dual_phase':
-                    logger.debug("Setting text of widget '{0}' to: {1}"
-                                 .format(var_name, True))
-                    self.ids[var_name].active = True
-                elif var_name == 'spectrum_file':
-                    self.spectrum_file_path = value_str[0]
-                else:
-                    logger.debug("Setting text of widget '{0}' to: {1}"
-                                 .format(var_name, value_str[0]))
-                    self.ids[var_name].text = value_str[0]
-        else:
-            logger.info("Setting widget values from parameters...")
-            for var_name, value in input_parameters.iteritems():
-                # Skip all the not-set parameters and all distances,
-                # except sample_distance
-                if value is None:
-                    # Set empty string to overwrite falsy set values
-                    # booleans will always be not none
-                    value = ''
-                if 'distance_' not in var_name:
-                    logger.debug("var_name is: {0}".format(var_name))
-                    logger.debug("value is: {0}".format(value))
-                    if var_name not in self.parser_info:
-                        # Input variable not implemented in parser
-                        logger.warning("Parameter '{0}' read from app, "
-                                       "but not defined in parser. "
-                                       "Skipping...".format(var_name))
+        try:
+            if from_file:
+                logger.info("Setting widget values from file...")
+                for var_key, value_str in input_parameters.iteritems():
+                    logger.debug("var_key is {0}".format(var_key))
+                    logger.debug("value_str is {0}".format(value_str))
+                    if var_key not in self.parser_link:
+                        # Input key not implemented in parser
+                        logger.warning("Key '{0}' read from input file, but "
+                                       "not defined in parser. Skipping..."
+                                       .format(var_key))
                         continue
-                    var_key = self.parser_info[var_name][0]
-                    logger.debug("var_key is: {0}".format(var_key))
+                    var_name = self.parser_link[var_key]
+                    logger.debug("var_name is {0}".format(var_name))
+                    # Skip all distances, except sample_distance
+                    if 'distance_' in var_name:
+                        logger.debug("Storing away {0} = {1} to set later."
+                                     .format(var_name, value_str[0]))
+                        distances[var_name] = value_str[0]
+                        continue
+                    if var_name not in self.parameters:
+                        # Input key not implemented in GUI
+                        logger.warning("Key '{0}' with name '{1}' read from "
+                                       "input file, but not defined in App. "
+                                       "Skipping..."
+                                       .format(var_key, var_name))
+                        continue
                     # Set input values to ids.texts
+                    if 'material' not in var_name:
+                        value_str = [value_cap.lower() for value_cap in
+                                     value_str]
                     if var_name == 'spectrum_range':
-                        if value == '':
-                            value = ['', '']
-                        logger.debug("Setting text of widget '{0}' to: "
-                                     "[{1}, {2}]".format(var_name,
-                                                         value[0],
-                                                         value[1]))
-                        self.ids['spectrum_range_min'].text = str(value[0])
-                        self.ids['spectrum_range_max'].text = str(value[1])
+                        self.ids['spectrum_range_min'].text = value_str[0]
+                        self.ids['spectrum_range_max'].text = value_str[1]
+                        logger.debug("Setting text of widget '{0}' to: [{1}, "
+                                     "{2}]"
+                                     .format(var_name, value_str[0],
+                                             value_str[1]))
                     elif var_name == 'field_of_view':
-                        if value == '':
-                            logger.debug("Setting text of widget '{0}' to: "
-                                     "[{1}, {2}]".format(var_name, value,
-                                                         value))
-                            self.ids['field_of_view_x'].text = str(value)
-                            self.ids['field_of_view_y'].text = str(value)
-                        else:
+                        # Check if it is integer
+                        if '.' in value_str[0] or '.' in value_str[1]:
+                            error_message = "FOV must be integer, not float."
+                            logger.error(error_message)
+                            raise check_input.InputError(error_message)
+                        logger.debug("Setting text of widget '{0}' to: [{1}, "
+                                     "{2}]"
+                                     .format(var_name, value_str[0],
+                                             value_str[1]))
+                        self.ids['field_of_view_x'].text = value_str[0]
+                        self.ids['field_of_view_y'].text = value_str[1]
+                    elif var_name == 'fixed_grating':
+                        # Make upper case for GUI
+                        logger.debug("Setting text of widget '{0}' to: {1}"
+                                     .format(var_name, value_str[0].upper()))
+                        self.ids[var_name].text = value_str[0].upper()
+                    elif var_name == 'dual_phase':
+                        logger.debug("Setting text of widget '{0}' to: {1}"
+                                     .format(var_name, True))
+                        self.ids[var_name].active = True
+                    elif var_name == 'spectrum_file':
+                        self.spectrum_file_path = value_str[0]
+                    else:
+                        logger.debug("Setting text of widget '{0}' to: {1}"
+                                     .format(var_name, value_str[0]))
+                        self.ids[var_name].text = value_str[0]
+            else:
+                logger.info("Setting widget values from parameters...")
+                for var_name, value in input_parameters.iteritems():
+                    # Skip all the not-set parameters and all distances,
+                    # except sample_distance
+                    if value is None:
+                        # Set empty string to overwrite falsy set values
+                        # booleans will always be not none
+                        value = ''
+                    if 'distance_' not in var_name:
+                        if var_name == 'look_up_table':
+                            value = str(value).lower()
+                        logger.debug("var_name is: {0}".format(var_name))
+                        logger.debug("value is: {0}".format(value))
+                        if var_name not in self.parser_info:
+                            # Input variable not implemented in parser
+                            logger.warning("Parameter '{0}' read from app, "
+                                           "but not defined in parser. "
+                                           "Skipping...".format(var_name))
+                            continue
+                        var_key = self.parser_info[var_name][0]
+                        logger.debug("var_key is: {0}".format(var_key))
+                        # Set input values to ids.texts
+                        if var_name == 'spectrum_range':
+                            if value == '':
+                                value = ['', '']
                             logger.debug("Setting text of widget '{0}' to: "
                                          "[{1}, {2}]".format(var_name,
                                                              value[0],
                                                              value[1]))
-                            self.ids['field_of_view_x'].text = str(int(value
-                                                                       [0]))
-                            self.ids['field_of_view_y'].text = str(int(value
-                                                                       [1]))
-                    elif var_name == 'fixed_grating':
-                        # Make upper case for GUI
-                        if value == '':
-                            value = 'Choose fixed grating...'
+                            self.ids['spectrum_range_min'].text = str(value[0])
+                            self.ids['spectrum_range_max'].text = str(value[1])
+                        elif var_name == 'field_of_view':
+                            if value == '':
+                                logger.debug("Setting text of widget '{0}' "
+                                             "to: [{1}, {2}]"
+                                             .format(var_name, value, value))
+                                self.ids['field_of_view_x'].text = str(value)
+                                self.ids['field_of_view_y'].text = str(value)
+                            else:
+                                logger.debug("Setting text of widget '{0}' "
+                                             "to: [{1}, {2}]"
+                                             .format(var_name, value[0],
+                                                     value[1]))
+                                self.ids['field_of_view_x'].text = \
+                                    str(int(value[0]))
+                                self.ids['field_of_view_y'].text = \
+                                    str(int(value[1]))
+                        elif var_name == 'fixed_grating':
+                            # Make upper case for GUI
+                            if value == '':
+                                value = 'Choose fixed grating...'
+                                logger.debug("Setting text of widget '{0}' "
+                                             "to: {1}"
+                                             .format(var_name, str(value)))
+                                self.ids[var_name].text = str(value)
+                            else:
+                                logger.debug("Setting text of widget '{0}' "
+                                             "to: {1}"
+                                             .format(var_name,
+                                                     str(value).upper()))
+                                self.ids[var_name].text = str(value).upper()
+                        elif var_name == 'dual_phase':
                             logger.debug("Setting text of widget '{0}' to: {1}"
-                                         .format(var_name, str(value)))
-                            self.ids[var_name].text = str(value)
+                                         .format(var_name, value))
+                            self.ids[var_name].active = value
+                        elif var_name == 'spectrum_file':
+                            self.spectrum_file_path = value
                         else:
                             logger.debug("Setting text of widget '{0}' to: {1}"
-                                         .format(var_name, str(value).upper()))
-                            self.ids[var_name].text = str(value).upper()
-                    elif var_name == 'dual_phase':
-                        logger.debug("Setting text of widget '{0}' to: {1}"
-                                     .format(var_name, value))
-                        self.ids[var_name].active = value
-                    elif var_name == 'spectrum_file':
-                        self.spectrum_file_path = value
+                                         .format(var_name, value))
+                            self.ids[var_name].text = str(value)
                     else:
-                        logger.debug("Setting text of widget '{0}' to: {1}"
+                        logger.debug("Storing away {0} = {1} to set later."
                                      .format(var_name, value))
-                        self.ids[var_name].text = str(value)
-                else:
-                    logger.debug("Storing away {0} = {1} to set later."
-                                 .format(var_name, value))
-                    distances[var_name] = str(value)
-        # Setting distances (not accesible directly via ids)
-        #   ids.distances contains one boxlayout per distance,
-        #   which then contains one label and one FloatInput
-        if distances:
-            for distance_layout in self.ids.distances.children:
-                for widget in distance_layout.children:
-                    if 'FloatInput' in str(widget):
-                        if widget.id in distances:
-                            logger.debug("Setting text of widget '{0}' to: {1}"
-                                         .format(widget.id,
-                                                 distances[widget.id]))
-                            widget.text = distances[widget.id]
-        logger.info("...done.")
+                        distances[var_name] = str(value)
+            # Setting distances (not accesible directly via ids)
+            #   ids.distances contains one boxlayout per distance,
+            #   which then contains one label and one FloatInput
+            if distances:
+                for distance_layout in self.ids.distances.children:
+                    for widget in distance_layout.children:
+                        if 'FloatInput' in str(widget):
+                            if widget.id in distances:
+                                logger.debug("Setting text of widget '{0}' "
+                                             "to: {1}"
+                                             .format(widget.id,
+                                                     distances[widget.id]))
+                                widget.text = distances[widget.id]
+            logger.info("...done.")
+        except IndexError:
+            error_message = ("Input argument '{0}' ({1}) is invalid. "
+                             "Alternatively, check the file layout and "
+                             "content.".format(var_name, var_key))
+            logger.error(error_message)
+            raise check_input.InputError(error_message)
 
     # Utility functions
 

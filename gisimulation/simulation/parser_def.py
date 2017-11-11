@@ -185,7 +185,7 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         type=numerical_type,
                         help="Sampling voxel size (cube). "
                         "If not set, it is pixel_size * 1e-3.")
-    parser.add_argument('-lut', dest='look_up_table', default='NIST',
+    parser.add_argument('-lut', dest='look_up_table', default='nist',
                         type=str.lower,
                         choices=['nist', 'x0h'],
                         metavar='LOOK_UP_TABLE',

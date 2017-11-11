@@ -273,7 +273,8 @@
                                                 Spinner:
                                                     id: look_up_table
                                                     text: 'NIST'
-                                                    values: ['NIST', 'X0h']
+                                                    values: ['NIST', 'X0H']
+                                                    on_text: self.text = 'NIST' if self.text.upper() not in self.values else self.text.upper()
 
                                     # Source
                                     StackLayout:
@@ -369,6 +370,7 @@
                                                     id: detector_type
                                                     text: 'photon'
                                                     values: ['photon', 'conv']
+                                                    on_text: self.text = 'photon' if self.text not in self.values else self.text
                                             BoxLayout:
                                                 disabled: detector_type.text == 'photon'
                                                 LabelHelp:
@@ -430,6 +432,7 @@
                                                 id: fixed_grating
                                                 text: 'Choose fixed grating...'
                                                 values: root.available_gratings
+                                                on_text: self.text = 'Choose fixed grating...' if (self.text not in self.values and self.text != 'Choose fixed grating...') else self.text
                                         BoxLayout:
                                             orientation: 'vertical'
                                             size_hint_y: None
@@ -460,6 +463,7 @@
                                                             Spinner:
                                                                 id: type_g0
                                                                 values: ['mix', 'phase', 'abs']
+                                                                on_text: self.text = '' if self.text not in self.values else self.text
                                                         BoxLayout:
                                                             LabelHelp:
                                                                 text: 'Pitch [um]'
@@ -544,6 +548,7 @@
                                                             Spinner:
                                                                 id: type_g1
                                                                 values: ['mix', 'phase', 'abs']
+                                                                on_text: self.text = '' if self.text not in self.values else self.text
                                                         BoxLayout:
                                                             LabelHelp:
                                                                 text: 'Pitch [um]'
@@ -628,6 +633,7 @@
                                                             Spinner:
                                                                 id: type_g2
                                                                 values: ['mix', 'phase', 'abs']
+                                                                on_text: self.text = '' if self.text not in self.values else self.text
                                                         BoxLayout:
                                                             LabelHelp:
                                                                 text: 'Pitch [um]'
