@@ -534,7 +534,7 @@ def mass_attenuation_coefficient(mu, rho, convert_to_um=False):
 
 
 def absorption_to_height(absorption, material, energy, rho=0,
-                         photo_only=False):
+                         photo_only=False, source='nist'):
     """
     Calculates the necessary height (thickness) of a grating to get the
     required percentage of x-ray absorption for a given material and energy.
@@ -548,6 +548,7 @@ def absorption_to_height(absorption, material, energy, rho=0,
     rho: density in [g/cm3], default=0 (no density given)
     photo_only: boolean for returning photo cross-section component only,
     default=False
+    source: material params LUT... default='nist'
 
     Returns
     =======
@@ -570,14 +571,15 @@ def absorption_to_height(absorption, material, energy, rho=0,
     # [um]
 
     """
-    beta = delta_beta(material, energy, rho, photo_only)[1]
+    beta = delta_beta(material, energy, rho, photo_only, source)[1]
     logger.debug('Beta is {}.'.format(beta))
     mu = attenuation_coefficient(beta, energy)
     logger.debug('The attenuation coefficient is {} [1/um].'.format(mu))
     return -np.log(1-absorption)/mu
 
 
-def height_to_absorption(height, material, energy, rho=0, photo_only=False):
+def height_to_absorption(height, material, energy, rho=0, photo_only=False,
+                         source='nist'):
     """
     Calculates the resulting x-ray absorption of a grating based on the given
     height (thickness) and for a given material and energy.
@@ -591,6 +593,7 @@ def height_to_absorption(height, material, energy, rho=0, photo_only=False):
     rho: density in [g/cm3], default=0 (no density given)
     photo_only: boolean for returning photo cross-section component only,
     default=False
+    source: material params LUT... default='nist'
 
     Returns
     =======
@@ -613,11 +616,38 @@ def height_to_absorption(height, material, energy, rho=0, photo_only=False):
     # [%]
 
     """
-    beta = delta_beta(material, energy, rho, photo_only)[1]
+    beta = delta_beta(material, energy, rho, photo_only, source)[1]
     logger.debug('Beta is {}.'.format(beta))
     mu = attenuation_coefficient(beta, energy)
     logger.debug('The attenuation coefficient is {} [1/um].'.format(mu))
     return 1 - np.exp(-mu*height)
+
+
+def height_to_transmission(height, material, energy, rho=0, photo_only=False,
+                           source='nist'):
+    """
+    Calculates the resulting x-ray transmission of an object based on the given
+    height (thickness) and for a given material and energy.
+
+    Parameters
+    ==========
+
+    height: grating height (thickness) [um]
+    material: chemical formula  ('Fe2O3', 'CaMg(CO3)2', 'La1.9Sr0.1CuO4')
+    energy: x-ray energy [keV]
+    rho: density in [g/cm3], default=0 (no density given)
+    photo_only: boolean for returning photo cross-section component only,
+    default=False
+    source: material params LUT... default='nist'
+
+    Returns
+    =======
+
+    transmission: percentage of resulting x-ray transmission
+
+    """
+    return 1 - height_to_absorption(height, material, energy, rho, photo_only,
+                                    source)
 
 
 def phase_shift(delta, energy):
@@ -657,7 +687,8 @@ def phase_shift(delta, energy):
     return 2*np.pi*delta/wavelength
 
 
-def shift_to_height(dphi, material, energy, rho=0, photo_only=False):
+def shift_to_height(dphi, material, energy, rho=0, photo_only=False,
+                    source='nist'):
     """
     Calculates grating height (thickness) from required phase shift (dphi) for
     a given material and energy.
@@ -671,6 +702,7 @@ def shift_to_height(dphi, material, energy, rho=0, photo_only=False):
     rho: density in [g/cm3], default=0 (no density given)
     photo_only: boolean for returning photo cross-section component only,
     default=False
+    source: material params LUT... default='nist'
 
     Returns
     =======
@@ -691,14 +723,15 @@ def shift_to_height(dphi, material, energy, rho=0, photo_only=False):
     # [um]
 
     """
-    delta = delta_beta(material, energy, rho, photo_only)[0]
+    delta = delta_beta(material, energy, rho, photo_only, source)[0]
     logger.debug('Delta is {}.'.format(delta))
     wavelength = energy_to_wavelength(energy)
     logger.debug('Wavelengthis {} [um].'.format(wavelength))
     return dphi*wavelength / (2*np.pi*delta)
 
 
-def height_to_shift(height, material, energy, rho=0, photo_only=False):
+def height_to_shift(height, material, energy, rho=0, photo_only=False,
+                    source='nist'):
     """
     Calculates phase shift (dphi) from given grating height (thickness) for
     a given material and energy.
@@ -712,6 +745,7 @@ def height_to_shift(height, material, energy, rho=0, photo_only=False):
     rho: density in [g/cm3], default=0 (no density given)
     photo_only: boolean for returning photo cross-section component only,
     default=False
+    source: material params LUT... default='nist'
 
     Returns
     =======
@@ -732,7 +766,7 @@ def height_to_shift(height, material, energy, rho=0, photo_only=False):
     # [rad]
 
     """
-    delta = delta_beta(material, energy, rho, photo_only)[0]
+    delta = delta_beta(material, energy, rho, photo_only, source)[0]
     logger.debug('Delta is {}.'.format(delta))
     wavelength = energy_to_wavelength(energy)
     logger.debug('Wavelengthis {} [um].'.format(wavelength))
@@ -745,9 +779,9 @@ def read_sample_values():
     """
 
 
-if __name__ == '__main__':
-    from scipy import interpolate
-    import matplotlib.pyplot as plt
+#if _name__ == '__main__':
+#    from scipy import interpolate
+#    import matplotlib.pyplot as plt
 
 #    energy = np.array([range(1, 101)])
 #

@@ -227,11 +227,13 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         help="Step size of range [keV].")
     parser.add_argument('-fm', dest='material_filter',
                         type=str,
-                        help="Choose filter material.")
+                        help="Choose filter material. Note: non-shape "
+                        "specific filter, filters homogenously over beam.")
     parser.add_argument('-fd', dest='thickness_filter',
                         action=_TruePositiveNumber,
                         type=numerical_type,
-                        help="Depth of filter [um].")
+                        help="Depth of filter [um]. Note: non-shape "
+                        "specific filter, filters homogenously over beam.")
 
     # Detector
     parser.add_argument('-dt', dest='detector_type', default='photon',
