@@ -973,6 +973,24 @@ class giGUI(F.BoxLayout):
         else:
             self.ids.look_up_table.text = self.ids.look_up_table.text.upper()
 
+    def on_phase_shift_spinner(self, grating):
+        """
+        phase_shift_g0_options, phase_shift_g0
+        """
+        if self.ids['phase_shift_'+grating+'_options'].text == 'pi':
+            self.ids['phase_shift_'+grating].text = str(np.pi)
+        elif self.ids['phase_shift_'+grating+'_options'].text == 'pi/2':
+            self.ids['phase_shift_'+grating].text = str(np.pi/2)
+        # Move cursor to front of number
+        self.ids['phase_shift_'+grating].do_cursor_movement('cursor_home')
+
+    def on_phase_shift(self, grating):
+        """
+        """
+        if self.ids['phase_shift_'+grating].text != str(np.pi) and \
+                self.ids['phase_shift_'+grating].text != str(np.pi/2):
+            self.ids['phase_shift_'+grating+'_options'].text = ''
+
     def on_geometry(self):
         """
         Set sample position options and activate required gratings.

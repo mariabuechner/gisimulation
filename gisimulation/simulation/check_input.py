@@ -653,14 +653,6 @@ def general_input(parameters, parser_info):
             logger.error(error_message)
             raise InputError(error_message)
 
-
-#        # FUTURE: NEEDED??? or conversion in sim functions?
-#        # Convert to standard units (e.g. mm to um)
-#        for key, value in parameters.iteritems():
-#            if 'distance' in key:
-#                # Convert all distances from mm to um
-#                parameters[key] = value * 1e3
-
         logger.debug("... done.")  # General checking
         return parameters
 

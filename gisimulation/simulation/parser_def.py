@@ -107,6 +107,31 @@ class _CheckFile(argparse.Action):
                          .format(option_string, values))
         setattr(namespace, self.dest, values)
 
+
+def _PhaseValue(value):
+    """
+    Custom class to accept true positives or 'pi' or 'pi/2'.
+
+    Parameters
+    ##########
+
+    value:      number or 'pi' or 'pi/2'
+
+    Returns
+    #######
+
+    value [NUMERICAL_TYPE]
+
+    """
+    print(type(value))
+    if type(value) is str:
+        if value.lower() == 'pi':
+            value = np.pi
+        elif value.lower() == 'pi/2':
+            value = np.pi / 2
+    return NUMERICAL_TYPE(value)
+
+
 # %% Functions
 
 
@@ -352,8 +377,9 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         help="Depth of G0 grating lines [um].")
     parser.add_argument('-s0', dest='phase_shift_g0',
                         action=_TruePositiveNumber,
-                        type=numerical_type,
-                        help="Phase shift of G0 grating lines [rad].")
+                        type=_PhaseValue,
+                        help="Phase shift of G0 grating lines [rad] or ['pi' "
+                        "or 'pi/2'].")
     parser.add_argument('-mw0', dest='wafer_material_g0',
                         type=str,
                         help="G0 wafer material.")
@@ -392,8 +418,9 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         help="Depth of G1 grating lines [um].")
     parser.add_argument('-s1', dest='phase_shift_g1', default=np.pi,
                         action=_TruePositiveNumber,
-                        type=numerical_type,
-                        help="Phase shift of G1 grating lines [rad].")
+                        type=_PhaseValue,
+                        help="Phase shift of G1 grating lines [rad] or ['pi' "
+                        "or 'pi/2'].")
     parser.add_argument('-mw1', dest='wafer_material_g1',
                         type=str,
                         help="G1 wafer material.")
@@ -432,8 +459,9 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         help="Depth of G2 grating lines [um]..")
     parser.add_argument('-s2', dest='phase_shift_g2',
                         action=_TruePositiveNumber,
-                        type=numerical_type,
-                        help="Phase shift of G2 grating lines [rad].")
+                        type=_PhaseValue,
+                        help="Phase shift of G2 grating lines [rad] or ['pi' "
+                        "or 'pi/2'].")
     parser.add_argument('-mw2', dest='wafer_material_g2',
                         type=str,
                         help="G2 wafer material.")

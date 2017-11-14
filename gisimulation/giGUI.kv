@@ -75,8 +75,8 @@
 # All FloatInputs and IntInputs cannot accept 0 values
 <FloatInput>:
     on_text: self.text = '' if self.text == '0' else self.text
-#<IntInput>:
-#    on_text: self.text = '' if self.text == '0' else self.text
+<IntInput>:
+    on_text: self.text = '' if self.text == '0' else self.text
 
 <MenuSpinnerButton>:
     background_color: dark_red_button
@@ -502,9 +502,16 @@
                                                             LabelHelp:
                                                                 text: 'Phase shift [rad]'
                                                                 help_message: parser_info['phase_shift_g0'][1]
+                                                            Spinner:
+                                                                id: phase_shift_g0_options
+                                                                size_hint_x: num_input_size*1.2
+                                                                values: ['pi', 'pi/2']
+                                                                on_text: root.on_phase_shift_spinner('g0')
                                                             FloatInput:
                                                                 id: phase_shift_g0
+                                                                size_hint_x: num_input_size*1.35
                                                                 disabled: thickness_g0.text or type_g0 == 'abs'
+                                                                on_text: root.on_phase_shift('g0')
                                                         BoxLayout:
                                                             LabelHelp:
                                                                 text: 'Wafer material'
@@ -587,9 +594,16 @@
                                                             LabelHelp:
                                                                 text: 'Phase shift [rad]'
                                                                 help_message: parser_info['phase_shift_g1'][1]
+                                                            Spinner:
+                                                                id: phase_shift_g1_options
+                                                                size_hint_x: num_input_size*1.2
+                                                                values: ['pi', 'pi/2']
+                                                                on_text: root.on_phase_shift_spinner('g1')
                                                             FloatInput:
                                                                 id: phase_shift_g1
+                                                                size_hint_x: num_input_size*1.35
                                                                 disabled: thickness_g1.text or type_g1 == 'abs'
+                                                                on_text: root.on_phase_shift('g1')
                                                         BoxLayout:
                                                             LabelHelp:
                                                                 text: 'Wafer material'
@@ -672,9 +686,16 @@
                                                             LabelHelp:
                                                                 text: 'Phase shift [rad]'
                                                                 help_message: parser_info['phase_shift_g2'][1]
+                                                            Spinner:
+                                                                id: phase_shift_g2_options
+                                                                size_hint_x: num_input_size*1.2
+                                                                values: ['pi', 'pi/2']
+                                                                on_text: root.on_phase_shift_spinner('g2')
                                                             FloatInput:
                                                                 id: phase_shift_g2
+                                                                size_hint_x: num_input_size*1.35
                                                                 disabled: thickness_g2.text or type_g2 == 'abs'
+                                                                on_text: root.on_phase_shift('g2')
                                                         BoxLayout:
                                                             LabelHelp:
                                                                 text: 'Wafer material'
