@@ -30,7 +30,7 @@ mix
 -m1
 Si
 -s1
-3.14
+pi
 -g2
 abs
 -m2

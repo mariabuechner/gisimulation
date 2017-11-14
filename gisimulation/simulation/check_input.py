@@ -115,6 +115,10 @@ def general_input(parameters, parser_info):
                                "photo-absorption, resetting to 'False'.")
             logger.warn(warning_message)
             parameters['photo_only'] = False
+        # Store design wavelength
+        parameters['design_wavelength'] = \
+            materials.energy_to_wavelength(parameters['design_energy'])
+
         logger.debug("... done.")
 
         # Source:
@@ -634,6 +638,7 @@ def general_input(parameters, parser_info):
                                              parser_info[current_distance][0]))
                     logger.error(error_message)
                     raise InputError(error_message)
+
             logger.debug("... done.")
         logger.debug("... done.")  # Component checking done
 

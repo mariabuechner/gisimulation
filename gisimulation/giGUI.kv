@@ -293,7 +293,7 @@
                                             size_hint_y: None
                                             height: root.calc_boxlayout_height(line_height, self)
                                             BoxLayout:
-                                                disabled: beam_gi_geometry.text == 'parallel'
+                                                disabled: beam_geometry.text == 'parallel'
                                                 LabelHelp:
                                                     text: 'Focal spot size [um]'
                                                     help_message: parser_info['focal_spot_size'][1]

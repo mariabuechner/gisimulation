@@ -110,6 +110,7 @@ import sys
 import simulation.utilities as utilities
 import simulation.parser_def as parser_def
 import simulation.check_input as check_input
+import interferometer.geometry as geometry
 # import materials
 # import geometry
 # import gratings
@@ -156,12 +157,25 @@ if __name__ == '__main__':
 #    for key, value in sorted(parameters.iteritems()):
 #        print key, value
 
+    try:
+        logger.info("Checking parsed arguments...")
+        parameters = check_input.check_parser(parameters)
+        logger.info("... done.")
+    except check_input.InputError:
+        logger.info("Command line error, exiting...")
+        sys.exit(2)  # 2: command line syntax errors
+
+    # Calc geometries
+    gi_geometry = geometry.Geometry(parameters)
+    parameters = gi_geometry.update_parameters()
+
+#    # Check sample position
 #    try:
-#        logger.info("Checking parsed arguments...")
-#        parameters = check_input.check_parser(parameters)
+#        logger.info("Checking sample position...")
+#        parameters = check_input.check_sample(geometry)
 #        logger.info("... done.")
 #    except check_input.InputError:
-#        logger.info("Command line error, exiting...")
+#        logger.info("Sample conflict, exiting...")
 #        sys.exit(2)  # 2: command line syntax errors
 
 

@@ -45,6 +45,7 @@ logger = logging.getLogger(__name__)
 import simulation.parser_def as parser_def
 import simulation.utilities as utilities
 import simulation.check_input as check_input
+import interferometer.geometry as geometry
 
 
 # Set App Window configuration
@@ -767,7 +768,21 @@ class giGUI(F.BoxLayout):
     def calculate_geometry(self):
         """
         """
-        self.ids.result_tabs.switch_to(self.ids.geometry_results)
+        # Calc geometries
+        logger.debug("Storing results in previous_results['geometry']...")
+        self.previous_results['geometry'] = self.parameters
+        logger.debug("... done.")
+
+        logger.info("Calculationg geomtry...")
+        gi_geometry = geometry.Geometry(self.parameters)
+        self.parameters = gi_geometry.update_parameters()
+        logger.info("... done.")
+
+        # Update widget content
+        self._set_widgets(self.parameters, from_file=False)
+
+#        # Switch tabs
+#        self.ids.result_tabs.switch_to(self.ids.geometry_results)
 
     def calculate_visibility(self):
         """
