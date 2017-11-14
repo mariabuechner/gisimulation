@@ -181,10 +181,10 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         "'vvv': info (None=default), 'vvvv': debug")
 
     # General and GI Design
-    parser.add_argument('-gi', dest='geometry', default='sym',
+    parser.add_argument('-gi', dest='gi_geometry', default='sym',
                         type=str.lower, required=True,
                         choices=['sym', 'conv', 'inv', 'free'],
-                        metavar='GEOMETRY',
+                        metavar='GI_GEOMETRY',
                         help="GI geometry. Choices are\n"
                         "'sym': symmetrical, 'conv': conventional, "
                         "'inv': inverse, 'free': free input.")

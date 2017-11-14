@@ -14,6 +14,20 @@ logger = logging.getLogger(__name__)
 
 class Geometry():
     """
+    """
+    def __init__(self, beam_geometry, gi_geometry):
+        """
+        """
+
+
+
+
+
+# %%
+
+
+class GeometryOld():
+    """
 
     just for cone beam and with G0... ???
 

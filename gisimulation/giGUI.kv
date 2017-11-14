@@ -223,13 +223,13 @@
                                             height: root.calc_boxlayout_height(line_height, self)
                                             BoxLayout:
                                                 LabelHelp:
-                                                    text: 'Geometry'
-                                                    help_message: parser_info['geometry'][1]
+                                                    text: 'GI geometry'
+                                                    help_message: parser_info['gi_geometry'][1]
                                                 Spinner:
-                                                    id: geometry
+                                                    id: gi_geometry
                                                     text: 'free'
                                                     values: ['sym', 'conv', 'inv', 'free'] if beam_geometry.text == 'cone' else ['conv', 'free']
-                                                    on_text: root.on_geometry()
+                                                    on_text: root.on_gi_geometry()
                                             BoxLayout:
                                                 LabelHelp:
                                                     text: 'Beam geometry'
@@ -251,14 +251,14 @@
                                                     help_message: parser_info['talbot_order'][1]
                                                 FloatInput:
                                                     id: talbot_order
-                                                    disabled: geometry.text == 'free'
+                                                    disabled: gi_geometry.text == 'free'
                                             BoxLayout:
                                                 LabelHelp:
                                                     text: 'Dual phase GI'
                                                     help_message: parser_info['dual_phase'][1]
                                                 CheckBox:
                                                     id: dual_phase
-                                                    disabled: geometry.text != 'conv'
+                                                    disabled: gi_geometry.text != 'conv'
                                                     on_active: root.on_dual_phase_checkbox_active()
                                             BoxLayout:
                                                 LabelHelp:
@@ -293,7 +293,7 @@
                                             size_hint_y: None
                                             height: root.calc_boxlayout_height(line_height, self)
                                             BoxLayout:
-                                                disabled: beam_geometry.text == 'parallel'
+                                                disabled: beam_gi_geometry.text == 'parallel'
                                                 LabelHelp:
                                                     text: 'Focal spot size [um]'
                                                     help_message: parser_info['focal_spot_size'][1]
@@ -430,7 +430,7 @@
 
                                     StackLayout:
                                         BoxLayout:
-                                            disabled: geometry.text == 'free'
+                                            disabled: gi_geometry.text == 'free'
                                             size_hint_y: None
                                             height: root.calc_boxlayout_height(line_height, self)
                                             NonFileBrowserLabel:
@@ -477,14 +477,14 @@
                                                                 help_message: parser_info['pitch_g0'][1]
                                                             FloatInput:
                                                                 id: pitch_g0
-                                                                disabled: fixed_grating.text != 'G0' and geometry.text != 'free'
+                                                                disabled: fixed_grating.text != 'G0' and gi_geometry.text != 'free'
                                                         BoxLayout:
                                                             LabelHelp:
                                                                 text: 'Duty cycle'
                                                                 help_message: parser_info['duty_cycle_g0'][1]
                                                             FloatInput:
                                                                 id: duty_cycle_g0
-                                                                disabled: fixed_grating.text != 'G0' and geometry.text != 'free'
+                                                                disabled: fixed_grating.text != 'G0' and gi_geometry.text != 'free'
                                                         BoxLayout:
                                                             LabelHelp:
                                                                 text: 'Grating material'
@@ -510,7 +510,7 @@
                                                             FloatInput:
                                                                 id: phase_shift_g0
                                                                 size_hint_x: num_input_size*1.35
-                                                                disabled: thickness_g0.text or type_g0 == 'abs'
+                                                                disabled: thickness_g0.text or type_g0.text == 'abs' or gi_geometry.text != 'free'
                                                                 on_text: root.on_phase_shift('g0')
                                                         BoxLayout:
                                                             LabelHelp:
@@ -547,7 +547,7 @@
                                                             bold: True
                                                         CheckBox:
                                                             id: g1_set
-                                                            disabled: geometry.text != 'free'
+                                                            disabled: gi_geometry.text != 'free'
                                                             background_checkbox_disabled_down: self.background_checkbox_down
                                                             on_active: root.on_grating_checkbox_active(self.active, g1_set_name.text)
                                                     BoxLayout:
@@ -569,14 +569,14 @@
                                                                 help_message: parser_info['pitch_g1'][1]
                                                             FloatInput:
                                                                 id: pitch_g1
-                                                                disabled: fixed_grating.text != 'G1' and geometry.text != 'free'
+                                                                disabled: fixed_grating.text != 'G1' and gi_geometry.text != 'free'
                                                         BoxLayout:
                                                             LabelHelp:
                                                                 text: 'Duty cycle'
                                                                 help_message: parser_info['duty_cycle_g1'][1]
                                                             FloatInput:
                                                                 id: duty_cycle_g1
-                                                                disabled: fixed_grating.text != 'G1' and geometry.text != 'free'
+                                                                disabled: fixed_grating.text != 'G1' and gi_geometry.text != 'free'
                                                         BoxLayout:
                                                             LabelHelp:
                                                                 text: 'Grating material'
@@ -602,7 +602,7 @@
                                                             FloatInput:
                                                                 id: phase_shift_g1
                                                                 size_hint_x: num_input_size*1.35
-                                                                disabled: thickness_g1.text or type_g1 == 'abs'
+                                                                disabled: thickness_g1.text or type_g1.text == 'abs' or gi_geometry.text != 'free'
                                                                 on_text: root.on_phase_shift('g1')
                                                         BoxLayout:
                                                             LabelHelp:
@@ -639,7 +639,7 @@
                                                             bold: True
                                                         CheckBox:
                                                             id: g2_set
-                                                            disabled: geometry.text != 'free'
+                                                            disabled: gi_geometry.text != 'free'
                                                             background_checkbox_disabled_down: self.background_checkbox_down
                                                             on_active: root.on_grating_checkbox_active(self.active, g2_set_name.text)
                                                     BoxLayout:
@@ -661,14 +661,14 @@
                                                                 help_message: parser_info['pitch_g2'][1]
                                                             FloatInput:
                                                                 id: pitch_g2
-                                                                disabled: fixed_grating.text != 'G2' and geometry.text != 'free'
+                                                                disabled: fixed_grating.text != 'G2' and gi_geometry.text != 'free'
                                                         BoxLayout:
                                                             LabelHelp:
                                                                 text: 'Duty cycle'
                                                                 help_message: parser_info['duty_cycle_g2'][1]
                                                             FloatInput:
                                                                 id: duty_cycle_g2
-                                                                disabled: fixed_grating.text != 'G2' and geometry.text != 'free'
+                                                                disabled: fixed_grating.text != 'G2' and gi_geometry.text != 'free'
                                                         BoxLayout:
                                                             LabelHelp:
                                                                 text: 'Grating material'
@@ -694,7 +694,7 @@
                                                             FloatInput:
                                                                 id: phase_shift_g2
                                                                 size_hint_x: num_input_size*1.35
-                                                                disabled: thickness_g2.text or type_g2 == 'abs'
+                                                                disabled: thickness_g2.text or type_g2.text == 'abs' or gi_geometry.text != 'free'
                                                                 on_text: root.on_phase_shift('g2')
                                                         BoxLayout:
                                                             LabelHelp:

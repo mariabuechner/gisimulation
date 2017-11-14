@@ -143,7 +143,7 @@ class Distances(F.GridLayout):
         self.update(['Source', 'Detector'])
 
     def update(self, component_list, beam_geometry='parallel',
-               geometry='free'):
+               gi_geometry='free'):
         """
         Update the distance widgets according to the component list or any
         special geometry/beam geometry.
@@ -153,7 +153,7 @@ class Distances(F.GridLayout):
 
         component_list [list]
         beam_geometry [str]
-        geometry [str]
+        gi_geometry [str]
 
         Notes
         #####
@@ -184,7 +184,7 @@ class Distances(F.GridLayout):
         if 'Sample' in component_list:
             component_list.remove('Sample')
         # Set relevant components
-        if beam_geometry == 'parallel' and geometry != 'free':
+        if beam_geometry == 'parallel' and gi_geometry != 'free':
             component_list = ['G1', 'G2']
         # Remove all old widgets
         self.clear_widgets()
@@ -205,12 +205,12 @@ class Distances(F.GridLayout):
             distance_value.id = distance_id
 
             # Just displays
-            if beam_geometry == 'parallel' and geometry != 'free':
+            if beam_geometry == 'parallel' and gi_geometry != 'free':
                 distance_value.disabled = True
-            elif beam_geometry == 'cone' and geometry != 'free':
+            elif beam_geometry == 'cone' and gi_geometry != 'free':
                 if distance_id == 'distance_g1_g2':
                     distance_value.disabled = True
-                if geometry == 'sym':
+                if gi_geometry == 'sym':
                     if distance_id == 'distance_source_g1' or \
                             distance_id == 'distance_g0_g1':
                         distance_value.disabled = True
@@ -224,7 +224,7 @@ class Distances(F.GridLayout):
             # Add option to set S/G0 to G2 distance
             if (distance_id == 'distance_source_g1' or
                     distance_id == 'distance_g0_g1') and \
-                    (geometry == 'conv' or geometry == 'inv'):
+                    (gi_geometry == 'conv' or gi_geometry == 'inv'):
                 # Add extra line for total length option
                 height = (len(component_list)) * LINE_HEIGHT
 
@@ -947,7 +947,7 @@ class giGUI(F.BoxLayout):
             self.ids.fixed_grating.values = ['G1', 'G2']  # Disable G0
             self.ids.g0_set.active = False
             self.ids.g0_set.disabled = True
-            if self.ids.geometry.text != 'free':
+            if self.ids.gi_geometry.text != 'free':
                 if self.ids.type_g2.text == 'abs':
                     self.ids.type_g2.text = 'phase'
                 self.ids.type_g2.values = ['mix', 'phase']
@@ -955,7 +955,7 @@ class giGUI(F.BoxLayout):
             if self.ids.beam_geometry.text == 'Cone':
                 self.ids.fixed_grating.values = ['G0', 'G1', 'G2']
             self.ids.g0_set.disabled = False
-            if self.ids.geometry.text != 'free':
+            if self.ids.gi_geometry.text != 'free':
                 if self.ids.type_g2.text == 'phase':
                     self.ids.type_g2.text = 'abs'
                 self.ids.type_g2.values = ['mix', 'abs']
@@ -991,12 +991,12 @@ class giGUI(F.BoxLayout):
                 self.ids['phase_shift_'+grating].text != str(np.pi/2):
             self.ids['phase_shift_'+grating+'_options'].text = ''
 
-    def on_geometry(self):
+    def on_gi_geometry(self):
         """
         Set sample position options and activate required gratings.
         """
-        if self.ids.geometry.text not in self.ids.geometry.values:
-            self.ids.geometry.text = 'free'
+        if self.ids.gi_geometry.text not in self.ids.gi_geometry.values:
+            self.ids.gi_geometry.text = 'free'
         #======================================================================
         #   Dirty fix for issue #12
         self.ids.fixed_grating.text = 'G0'
@@ -1009,7 +1009,7 @@ class giGUI(F.BoxLayout):
             logger.debug("Current setup consists of: {0}"
                          .format(self.setup_components))
         # Required gratings
-        if self.ids.geometry.text != 'free':
+        if self.ids.gi_geometry.text != 'free':
             # G1 and G2 required
             self.ids.g1_set.active = True
             self.ids.g2_set.active = True
@@ -1045,22 +1045,22 @@ class giGUI(F.BoxLayout):
             self.ids.type_g2.text = ''
             self.ids.type_g2.values = ['mix', 'phase', 'abs']
         # GI cases
-        if self.ids.geometry.text == 'conv':
+        if self.ids.gi_geometry.text == 'conv':
             self.ids.sample_relative_position.text = 'before'
             self.ids.sample_relative_position.values = ['before']
             if self.ids.beam_geometry.text == 'parallel':
                 self.ids.sample_relative_position.values = ['after', 'before']
-        elif self.ids.geometry.text == 'inv':
+        elif self.ids.gi_geometry.text == 'inv':
             self.ids.sample_relative_position.text = 'after'
             self.ids.sample_relative_position.values = ['after']
-        elif self.ids.geometry.text == 'sym':
+        elif self.ids.gi_geometry.text == 'sym':
             # Symmetrical case
             self.ids.sample_relative_position.text = 'after'
             self.ids.sample_relative_position.values = ['after', 'before']
         # Update distances options
         self.ids.distances.update(self.setup_components,
                                   self.ids.beam_geometry.text,
-                                  self.ids.geometry.text)
+                                  self.ids.gi_geometry.text)
         # Reset fixed grating input
         self.ids.fixed_grating.text = 'Choose fixed grating...'
         # Update dual_phase options
@@ -1084,10 +1084,10 @@ class giGUI(F.BoxLayout):
 
         if self.ids.beam_geometry.text == 'parallel':
             # Change GI geometry text
-            if self.ids.geometry.text == 'sym' or \
-              self.ids.geometry.text == 'inv':
+            if self.ids.gi_geometry.text == 'sym' or \
+              self.ids.gi_geometry.text == 'inv':
                 # Mode changes, reset GI geometry
-                self.ids.geometry.text = 'free'
+                self.ids.gi_geometry.text = 'free'
             # Set available and deactive gratings
             self.ids.g0_set.active = False
             self.ids.g0_set.disabled = True
@@ -1095,10 +1095,10 @@ class giGUI(F.BoxLayout):
             # Update distances options
             self.ids.distances.update(self.setup_components,
                                       self.ids.beam_geometry.text,
-                                      self.ids.geometry.text)
+                                      self.ids.gi_geometry.text)
         else:
             # Update geometry conditions for cone beam
-            self.on_geometry()  # Includes update distances
+            self.on_gi_geometry()  # Includes update distances
             self.ids.g0_set.disabled = False
         # Update dual_phase options
         self.on_dual_phase_checkbox_active()
@@ -1135,7 +1135,7 @@ class giGUI(F.BoxLayout):
         logger.debug("Current setup consists of: {0}"
                      .format(self.setup_components))
         # Update sample_relative_to and sample_relative_position
-        self.on_geometry()
+        self.on_gi_geometry()
         self.on_beam_geometry()  # Includes update distances
 
     def on_sample_relative_to(self):
@@ -1150,7 +1150,7 @@ class giGUI(F.BoxLayout):
         elif self.ids.sample_relative_to.text == 'Detector':
             self.ids.sample_relative_position.values = ['before']
             self.ids.sample_relative_position.text = 'before'
-        elif self.ids.geometry.text == 'free':
+        elif self.ids.gi_geometry.text == 'free':
             self.ids.sample_relative_position.values = ['after', 'before']
         # If sample is selected, Update component list and distances
         if self.sample_added:

@@ -95,7 +95,7 @@ def general_input(parameters, parser_info):
             logger.debug("Sampling rate is {0} um, with pixel size {1} "
                          "um..".format(parameters['sampling_rate'],
                                        parameters['pixel_size']))
-        if parameters['geometry'] != 'free':
+        if parameters['gi_geometry'] != 'free':
             # If GI, talbot order necessary
             if not parameters['talbot_order']:
                 error_message = ("Input argument missing: 'talbot_order' "
@@ -103,10 +103,10 @@ def general_input(parameters, parser_info):
                                  .format(parser_info['talbot_order'][0]))
                 logger.error(error_message)
                 raise InputError(error_message)
-        if parameters['dual_phase'] and parameters['geometry'] != 'conv':
+        if parameters['dual_phase'] and parameters['gi_geometry'] != 'conv':
             error_message = ("Dual phase setup can only be calculated for "
                              "conventional geometry. Geometry is '{0}'."
-                             .format(parameters['geometry']))
+                             .format(parameters['gi_geometry']))
             logger.error(error_message)
             raise InputError(error_message)
         if parameters['look_up_table'] == 'x0h' and \
@@ -200,12 +200,12 @@ def general_input(parameters, parser_info):
         logger.debug("Checking geometry scenarios...")
 
         if (parameters['beam_geometry'] == 'parallel' and
-                parameters['geometry'] == 'sym') or \
+                parameters['gi_geometry'] == 'sym') or \
                 (parameters['beam_geometry'] == 'parallel' and
-                 parameters['geometry'] == 'inv'):
+                 parameters['gi_geometry'] == 'inv'):
             error_message = ("Only '{0}' geometry valid for '{1}' beam "
                              "geometry."
-                             .format(parameters['geometry'],
+                             .format(parameters['gi_geometry'],
                                      parameters['beam_geometry']))
             logger.error(error_message)
             raise InputError(error_message)
@@ -215,7 +215,7 @@ def general_input(parameters, parser_info):
         if parameters['beam_geometry'] == 'parallel':
 
             # Individual checks
-            if parameters['geometry'] == 'conv':
+            if parameters['gi_geometry'] == 'conv':
                 # =============================================================
                 # Conventional and parallel beam
                 #
@@ -318,7 +318,7 @@ def general_input(parameters, parser_info):
         else:
             # Cone beam
             logger.debug("Checking 'cone' beam geometry...")
-            if parameters['geometry'] != 'free':
+            if parameters['gi_geometry'] != 'free':
                 logger.debug("Checking GI geometries...")
                 # Common checks for not 'free' geometry
                 # Add G1 and G2
@@ -340,7 +340,7 @@ def general_input(parameters, parser_info):
                         logger.error(error_message)
                         raise InputError(error_message)
                     # Fixed distance
-                    if parameters['geometry'] != 'sym':
+                    if parameters['gi_geometry'] != 'sym':
                         if not parameters['distance_source_g1'] and \
                                 not parameters['distance_source_g2']:
                             error_message = ("Either distance from Source to "
@@ -384,7 +384,7 @@ def general_input(parameters, parser_info):
                         logger.error(error_message)
                         raise InputError(error_message)
                     # Fixed distance
-                    if parameters['geometry'] != 'sym':
+                    if parameters['gi_geometry'] != 'sym':
                         if not parameters['distance_g0_g1'] and \
                                 not parameters['distance_g0_g2']:
                             error_message = ("Either distance from G0 to G1 "
@@ -424,7 +424,7 @@ def general_input(parameters, parser_info):
                     parameters['component_list'][0]
 
                 # Individaul checks
-                if parameters['geometry'] == 'conv':
+                if parameters['gi_geometry'] == 'conv':
                     # =========================================================
                     # Conventional and cone beam
                     #
@@ -452,7 +452,7 @@ def general_input(parameters, parser_info):
                             logger.error(error_message)
                             raise InputError(error_message)
                     logger.debug("... done.")
-                elif parameters['geometry'] == 'sym':
+                elif parameters['gi_geometry'] == 'sym':
                     # =========================================================
                     # Symmetrical and cone beam
                     #
@@ -484,7 +484,7 @@ def general_input(parameters, parser_info):
                             logger.error(error_message)
                             raise InputError(error_message)
                     logger.debug("... done.")
-                elif parameters['geometry'] == 'inv':
+                elif parameters['gi_geometry'] == 'inv':
                     # =========================================================
                     # Inverse and cone beam
                     #
@@ -582,12 +582,12 @@ def general_input(parameters, parser_info):
         # Info
         logger.info("Beam geometry is '{0}' and setup geometry is '{1}'."
                     .format(parameters['beam_geometry'],
-                            parameters['geometry']))
+                            parameters['gi_geometry']))
         logger.info("Setup consists of: {0}."
                     .format(parameters['component_list']))
         if 'Sample' not in parameters['component_list']:
             logger.info("NOTE: No sample included.")
-        if parameters['geometry'] != 'free':
+        if parameters['gi_geometry'] != 'free':
             logger.info("Fixed grating is: '{0}'."
                         .format(parameters['fixed_grating']))
             if parameters['beam_geometry'] == 'cone':
@@ -619,7 +619,7 @@ def general_input(parameters, parser_info):
             logger.debug("Checking G2...")
             _check_grating_input('g2', parameters, parser_info)
             logger.debug("... done.")
-        if parameters['geometry'] == 'free':
+        if parameters['gi_geometry'] == 'free':
             # Chack all necessary distances
             logger.debug("Checking distances for 'free' input...")
             for index, component in \
@@ -913,7 +913,7 @@ def _check_grating_input(grating, parameters, parser_info):
         raise InputError(error_message)
 
     # Check grating types for GI setups
-    if parameters['geometry'] != 'free':
+    if parameters['gi_geometry'] != 'free':
         # G0 (abs or mix)
         if grating == 'g0' and parameters['type_'+grating] == 'phase':
             error_message = ("Type of G0 ({0}) must be 'mix' or 'abs'."
@@ -942,9 +942,9 @@ def _check_grating_input(grating, parameters, parser_info):
 
     # Basic required input
     # If fixed grating (for none-free input) or free input
-    if (parameters['geometry'] != 'free' and
+    if (parameters['gi_geometry'] != 'free' and
             grating == parameters['fixed_grating']) or \
-            parameters['geometry'] == 'free':
+            parameters['gi_geometry'] == 'free':
         if not parameters['pitch_'+grating]:
             error_message = ("Pitch of {0} ({1}) must be defined."
                              .format(grating.upper(),
