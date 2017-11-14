@@ -191,6 +191,11 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         metavar='LOOK_UP_TABLE',
                         help="Source of material properties LUT. Choices are\n"
                         "'NIST', 'X0h'.")
+    parser.add_argument('--photo_only',
+                        action='store_true',
+                        help="Option to consider only photo_absorption "
+                        "[bool]. Else, the total cross_section is considered "
+                        "(default).")
 
     # Source
     parser.add_argument('-fs', dest='focal_spot_size',
@@ -515,7 +520,7 @@ def get_arguments_info(parser):
     arguments_info = dict()
     for help_message in help_messages:
         # Flags (--flag)
-        # A) generate an empty help_message
+        # A) generate an extra empty help_message
         if not help_message:
             continue
 

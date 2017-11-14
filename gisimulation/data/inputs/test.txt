@@ -49,3 +49,4 @@ x0h
 g1
 -spec
 C:\Users\mbuec\Documents\Code\gisimulation\gisimulation\data\spectra\Comet120kV.csv
+--photo_only

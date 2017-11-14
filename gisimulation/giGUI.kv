@@ -274,7 +274,14 @@
                                                     id: look_up_table
                                                     text: 'NIST'
                                                     values: ['NIST', 'X0H']
-                                                    on_text: self.text = 'NIST' if self.text.upper() not in self.values else self.text.upper()
+                                                    on_text: root.on_look_up_table()
+                                            BoxLayout:
+                                                LabelHelp:
+                                                    text: 'Only consider photo-absorption'
+                                                    help_message: parser_info['photo_only'][1]
+                                                CheckBox:
+                                                    id: photo_only
+                                                    disabled: look_up_table.text != 'NIST'
 
                                     # Source
                                     StackLayout:

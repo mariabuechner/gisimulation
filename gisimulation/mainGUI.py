@@ -616,6 +616,11 @@ def _collect_input(parameters, ids):
         parameters['dual_phase'] = True
     else:
         parameters['dual_phase'] = False
+    if ids.photo_only.active:
+        parameters['photo_only'] = True
+    else:
+        parameters['photo_only'] = False
+
 
     # Handel double numeric inputs
     # Spectrum range
@@ -954,6 +959,19 @@ class giGUI(F.BoxLayout):
                 if self.ids.type_g2.text == 'phase':
                     self.ids.type_g2.text = 'abs'
                 self.ids.type_g2.values = ['mix', 'abs']
+
+    def on_look_up_table(self):
+        """
+        Set photo_only to false it Xh0 and make inout uppercase and default if
+        necessary.
+        """
+        if self.ids.look_up_table.text != 'NIST':
+            self.ids.photo_only.active = False
+        if self.ids.look_up_table.text.upper() not in \
+                self.ids.look_up_table.values:
+            self.ids.look_up_table.text = 'NIST'
+        else:
+            self.ids.look_up_table.text = self.ids.look_up_table.text.upper()
 
     def on_geometry(self):
         """
@@ -1418,6 +1436,10 @@ class giGUI(F.BoxLayout):
                         logger.debug("Setting text of widget '{0}' to: {1}"
                                      .format(var_name, True))
                         self.ids[var_name].active = True
+                    elif var_name == 'photo_only':
+                        logger.debug("Setting text of widget '{0}' to: {1}"
+                                     .format(var_name, True))
+                        self.ids[var_name].active = True
                     elif var_name == 'spectrum_file':
                         self.spectrum_file_path = value_str[0]
                     else:
@@ -1489,6 +1511,10 @@ class giGUI(F.BoxLayout):
                                                      str(value).upper()))
                                 self.ids[var_name].text = str(value).upper()
                         elif var_name == 'dual_phase':
+                            logger.debug("Setting text of widget '{0}' to: {1}"
+                                         .format(var_name, value))
+                            self.ids[var_name].active = value
+                        elif var_name == 'photo_only':
                             logger.debug("Setting text of widget '{0}' to: {1}"
                                          .format(var_name, value))
                             self.ids[var_name].active = value

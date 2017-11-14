@@ -109,7 +109,12 @@ def general_input(parameters, parser_info):
                              .format(parameters['geometry']))
             logger.error(error_message)
             raise InputError(error_message)
-
+        if parameters['look_up_table'] == 'x0h' and \
+                parameters['photo_only']:
+            warning_message = ("With X0h material LUT cannot consider only "
+                               "photo-absorption, resetting to 'False'.")
+            logger.warn(warning_message)
+            parameters['photo_only'] = False
         logger.debug("... done.")
 
         # Source:
