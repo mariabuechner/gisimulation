@@ -165,12 +165,19 @@ class Distances(F.GridLayout):
         'free':                 have to set all distances manually, based
                                 on component list
 
-        'parallel'&'conv':      none needs to be set, display only G1-G2
+        'parallel'&'conv':      required:   none
+                                display:    G1-G2
 
-        'cone'& not 'free':     required:   S/G0_G1 OR S/G0_G2
-                                            if G0, than S_G0
-                                optional:   G2_Dectector
-                                display:    all based on component list
+        'cone'& not 'free' or 'sym:     required:   S/G0_G1 OR S/G0_G2
+                                        optional:   G2_Dectector
+                                                    if G0, than S_G0
+                                        display:    G1-G2
+
+        'cone'& 'sym:   required:   none
+                        optional:   G2_Dectector
+                                    if G0, than S_G0
+                        display:    G1-G2
+                                    S/G0 to G1
 
         """
         # Remove sample from list (if necessary)
@@ -203,6 +210,10 @@ class Distances(F.GridLayout):
             elif beam_geometry == 'cone' and geometry != 'free':
                 if distance_id == 'distance_g1_g2':
                     distance_value.disabled = True
+                if geometry == 'sym':
+                    if distance_id == 'distance_source_g1' or \
+                            distance_id == 'distance_g0_g1':
+                        distance_value.disabled = True
 
             distance_container.add_widget(distance_label)
             distance_container.add_widget(distance_value)
@@ -213,7 +224,7 @@ class Distances(F.GridLayout):
             # Add option to set S/G0 to G2 distance
             if (distance_id == 'distance_source_g1' or
                     distance_id == 'distance_g0_g1') and \
-                    geometry != 'free':
+                    (geometry == 'conv' or geometry == 'inv'):
                 # Add extra line for total length option
                 height = (len(component_list)) * LINE_HEIGHT
 

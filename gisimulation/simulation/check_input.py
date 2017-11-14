@@ -335,33 +335,37 @@ def general_input(parameters, parser_info):
                         logger.error(error_message)
                         raise InputError(error_message)
                     # Fixed distance
-                    if not parameters['distance_source_g1'] and \
-                            not parameters['distance_source_g2']:
-                        error_message = ("Either distance from Source to G1 "
-                                         "({0}) OR Source to G2 ({1}) must be "
-                                         "defined [mm]."
-                                         .format(parser_info
-                                                 ['distance_source_g1'][0],
-                                                 parser_info
-                                                 ['distance_source_g2'][0]))
-                        logger.error(error_message)
-                        raise InputError(error_message)
-                    elif parameters['distance_source_g1'] and \
-                            parameters['distance_source_g2']:
-                        logger.warning("Both distance from Source to G1 ({0}) "
-                                       "AND Source to G2 ({1}) are defined, "
-                                       "choosing  distance from Source to G2 "
-                                       "(total GI length)."
-                                       .format(parser_info
-                                               ['distance_source_g1'][0],
-                                               parser_info
-                                               ['distance_source_g2'][0]))
-                        parameters['distance_source_g1'] = None
-                        fixed_distance = 'distance_source_g2'
-                    elif parameters['distance_source_g1']:
-                        fixed_distance = 'distance_source_g1'
-                    elif parameters['distance_source_g2']:
-                        fixed_distance = 'distance_source_g2'
+                    if parameters['geometry'] != 'sym':
+                        if not parameters['distance_source_g1'] and \
+                                not parameters['distance_source_g2']:
+                            error_message = ("Either distance from Source to "
+                                             "G1 ({0}) OR Source to G2 ({1}) "
+                                             "must be defined [mm]."
+                                             .format(parser_info
+                                                     ['distance_source_g1'][0],
+                                                     parser_info
+                                                     ['distance_source_g2']
+                                                     [0]))
+                            logger.error(error_message)
+                            raise InputError(error_message)
+                        elif parameters['distance_source_g1'] and \
+                                parameters['distance_source_g2']:
+                            logger.warning("Both distance from Source to G1 "
+                                           "({0}) AND Source to G2 ({1}) are "
+                                           "defined, choosing  distance from "
+                                           "Source to G2 (total GI length)."
+                                           .format(parser_info
+                                                   ['distance_source_g1'][0],
+                                                   parser_info
+                                                   ['distance_source_g2'][0]))
+                            parameters['distance_source_g1'] = None
+                            fixed_distance = 'distance_source_g2'
+                        elif parameters['distance_source_g1']:
+                            fixed_distance = 'distance_source_g1'
+                        elif parameters['distance_source_g2']:
+                            fixed_distance = 'distance_source_g2'
+                    else:
+                        fixed_distance = None
                 else:
                     # With G0
                     # Add to component list (unless dual_phase)
@@ -375,33 +379,36 @@ def general_input(parameters, parser_info):
                         logger.error(error_message)
                         raise InputError(error_message)
                     # Fixed distance
-                    if not parameters['distance_g0_g1'] and \
-                            not parameters['distance_g0_g2']:
-                        error_message = ("Either distance from G0 to G1 ({0}) "
-                                         "OR G0 to G2 ({1}) must be defined "
-                                         "[mm]."
-                                         .format(parser_info['distance_g0_g1']
-                                                 [0],
-                                                 parser_info['distance_g0_g2']
-                                                 [0]))
-                        logger.error(error_message)
-                        raise InputError(error_message)
-                    elif parameters['distance_g0_g1'] and \
-                            parameters['distance_g0_g2']:
-                        logger.warning("Both distance from G0 to G1 ({0}) AND "
-                                       "G0 to G2 ({1}) are defined, choosing "
-                                       "distance from G0 to G2 (total GI "
-                                       "length)."
-                                       .format(parser_info['distance_g0_g1']
-                                               [0],
-                                               parser_info['distance_g0_g2']
-                                               [0]))
-                        parameters['distance_g0_g1'] = None
-                        fixed_distance = 'distance_g0_g2'
-                    elif parameters['distance_g0_g1']:
-                        fixed_distance = 'distance_g0_g1'
-                    elif parameters['distance_g0_g2']:
-                        fixed_distance = 'distance_g0_g2'
+                    if parameters['geometry'] != 'sym':
+                        if not parameters['distance_g0_g1'] and \
+                                not parameters['distance_g0_g2']:
+                            error_message = ("Either distance from G0 to G1 "
+                                             "({0}) OR G0 to G2 ({1}) must be "
+                                             "defined [mm]."
+                                             .format(parser_info
+                                                     ['distance_g0_g1'][0],
+                                                     parser_info
+                                                     ['distance_g0_g2'][0]))
+                            logger.error(error_message)
+                            raise InputError(error_message)
+                        elif parameters['distance_g0_g1'] and \
+                                parameters['distance_g0_g2']:
+                            logger.warning("Both distance from G0 to G1 ({0}) "
+                                           "AND G0 to G2 ({1}) are defined, "
+                                           "choosing distance from G0 to G2 "
+                                           "(total GI length)."
+                                           .format(parser_info
+                                                   ['distance_g0_g1'][0],
+                                                   parser_info
+                                                   ['distance_g0_g2'][0]))
+                            parameters['distance_g0_g1'] = None
+                            fixed_distance = 'distance_g0_g2'
+                        elif parameters['distance_g0_g1']:
+                            fixed_distance = 'distance_g0_g1'
+                        elif parameters['distance_g0_g2']:
+                            fixed_distance = 'distance_g0_g2'
+                    else:
+                        fixed_distance = None
 
                 # Sort updated component list
                 parameters['component_list'].sort()
