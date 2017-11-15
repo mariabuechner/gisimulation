@@ -13,6 +13,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+class GeometryError(Exception):
+    """
+    GeometryError, parent 'Exception'
+    """
+    pass
+
+
 class Geometry():
     """
     Class to calculate and set all missing geometry and GI parameters.
@@ -21,25 +28,82 @@ class Geometry():
         """
         Calculates the geometries and missing GI parameters.
 
+        ALSO: Check sample position!!! (GeometryError)
+
         Parameters
         ##########
 
         parameters [dict]
 
         """
-        self.parameters = parameters
+        self._parameters = parameters
         # nu = 2 if pi shift, nu = 1 if pi-half shift
-        self._nu = self.parameters['phase_shift_g1'] * 2/np.pi
+        self._nu = self._parameters['phase_shift_g1'] * 2/np.pi
 
-        if self.parameters['gi_geometry'] == 'conv':
-            self.type = 'conventional'
-            self.parameters = self._calc_conventional(self.parameters)
-        elif self.parameters['gi_geometry'] == 'sym':
-            self.type = 'symmetrical'
-            self.parameters = self._calc_symmetrical(self.parameters)
-        elif self.parameters['gi_geometry'] == 'inv':
-            self.type = 'inverse'
-            self.parameters = self._calc_inverse(self.parameters)
+        if self._parameters['gi_geometry'] == 'conv':
+            self._parameters = self._calc_conventional(self._parameters)
+        elif self._parameters['gi_geometry'] == 'sym':
+            self._parameters = self._calc_symmetrical(self._parameters)
+        elif self._parameters['gi_geometry'] == 'inv':
+            self._parameters = self._calc_inverse(self._parameters)
+
+        # Update geometry results
+        self.results = self._get_geometry_results(self._parameters)
+
+    # Set geometry results
+    def _get_geometry_results(self):
+        """
+        Update self._parameters['results']['geometry'] and return geometry
+        results dict.
+
+        Results contain:
+            - component_list
+            - gi_geometry
+            - beam_geometry
+            - distances (not none)
+            - pitches (not none)
+            - if sample:
+                - sample_position
+                - sample_distance
+
+        Returns
+        #######
+
+        self._parameters['results']['geometry'] [dict]
+
+        """
+        # Update geometry results
+        # Add component list
+        self._parameters['results']['geometry']['component_list'] = \
+            self._parameters['component_list']
+        # Add geometries
+        self._parameters['results']['geometry']['gi_geometry'] = \
+            self._parameters['gi_geometry']
+        self._parameters['results']['geometry']['beam_geometry'] = \
+            self._parameters['beam_geometry']
+        # Add distances
+        # distances =  [('distance_b', 10), ('distance_a', 10)]
+        distances = [(distance_name, distance_value)
+                     for distance_name, distance_value
+                     in self._parameters.iteritems()
+                     if ('distance_' in distance_name and
+                         distance_value is not None)]
+        for distance in distances:
+            self._parameters['results']['geometry'][distance[0]] = distance[1]
+        # Add pitches
+        pitches = [(pitch_name, pitch_value) for pitch_name, pitch_value
+                   in self._parameters.iteritems()
+                   if ('pitch_' in pitch_name and pitch_value is not None)]
+        for pitch in pitches:
+            self._parameters['results']['geometry'][pitch[0]] = pitch[1]
+        # Add sample info
+        if self._parameters['sample_position']:
+            self._parameters['results']['geometry']['sample_position'] = \
+                self._parameters['sample_position']
+            self._parameters['results']['geometry']['sample_distance'] = \
+                self._parameters['sample_distance']
+
+        return self._parameters['results']['geometry']
 
     # Update parameters
     def update_parameters(self):
@@ -52,48 +116,51 @@ class Geometry():
         parameters [dict]
 
         """
-        return self.parameters
+        return self._parameters
 
     # Calculate gi geometries
+
+    # ALSO: GeometryError if negative distances or pitches!!!
+
     def _calc_conventional(self):
         """
         For cone and parallel
 
         NOTE: Also calc phsae shift, thickness!!!
         """
-        if self.parameters['beam_geometry'] == 'parallel':
-            if not self.parameters['dual_phase']:
+        if self._parameters['beam_geometry'] == 'parallel':
+            if not self._parameters['dual_phase']:
                 # Standard GI
-                if self.parameters['fixed_grating'] == 'g1':
+                if self._parameters['fixed_grating'] == 'g1':
                     # Talbot distance
-                    self.parameters['distance_g1_g2'] = \
-                        self.parameters['talbot_order'] * \
-                        (np.square(self.parameters['pitch_g1'] / self._nu) /
-                         (2 * self.parameters['design_wavelength']))
+                    self._parameters['distance_g1_g2'] = \
+                        self._parameters['talbot_order'] * \
+                        (np.square(self._parameters['pitch_g1'] / self._nu) /
+                         (2 * self._parameters['design_wavelength']))
                     # Pitches
-                    self.parameters['pitch_g2'] = \
-                        self.parameters['pitch_g1'] / 2.0
+                    self._parameters['pitch_g2'] = \
+                        self._parameters['pitch_g1'] / 2.0
                     # Duty cycles
-                    self.parameters['duty_cycle_g2'] = \
-                        self.parameters['duty_cycle_g1']
+                    self._parameters['duty_cycle_g2'] = \
+                        self._parameters['duty_cycle_g1']
                 else:
                     # Pitches
-                    self.parameters['pitch_g1'] = \
-                        self.parameters['pitch_g2'] * 2.0
+                    self._parameters['pitch_g1'] = \
+                        self._parameters['pitch_g2'] * 2.0
                     # Duty cycles
-                    self.parameters['duty_cycle_g1'] = \
-                        self.parameters['duty_cycle_g2']
+                    self._parameters['duty_cycle_g1'] = \
+                        self._parameters['duty_cycle_g2']
                     # Talbot distance
-                    self.parameters['distance_g1_g2'] = \
-                        self.parameters['talbot_order'] * \
-                        (np.square(self.parameters['pitch_g1'] / self._nu) /
-                         (2 * self.parameters['design_wavelength']))
+                    self._parameters['distance_g1_g2'] = \
+                        self._parameters['talbot_order'] * \
+                        (np.square(self._parameters['pitch_g1'] / self._nu) /
+                         (2 * self._parameters['design_wavelength']))
             else:
                 # Dual phase setup
                 logger.warn("Parallel, conv and dual phase not possible yet!")
 
         else:
-            if not self.parameters['dual_phase']:
+            if not self._parameters['dual_phase']:
                 # Standard GI
                 logger.warn("Cone and conv not possible yet!")
             else:

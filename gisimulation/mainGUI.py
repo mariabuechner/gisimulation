@@ -622,7 +622,6 @@ def _collect_input(parameters, ids):
     else:
         parameters['photo_only'] = False
 
-
     # Handel double numeric inputs
     # Spectrum range
     if parameters['spectrum_range_min'] is None or \
@@ -768,15 +767,22 @@ class giGUI(F.BoxLayout):
     def calculate_geometry(self):
         """
         """
-        # Calc geometries
-        logger.debug("Storing results in previous_results['geometry']...")
-        self.previous_results['geometry'] = self.parameters
-        logger.debug("... done.")
+        # If previous resulots, store
+        if self.parameters['results']['geometry']:
+            logger.debug("Storing geometry results in "
+                         "previous_results['geometry']...")
+            self.previous_results['geometry'] = (self.parameters['results']
+                                                 ['geometry'])
+            logger.debug("... done.")
 
-        logger.info("Calculationg geomtry...")
-        gi_geometry = geometry.Geometry(self.parameters)
-        self.parameters = gi_geometry.update_parameters()
-        logger.info("... done.")
+        # Calc geometries
+        try:
+            logger.info("Calculationg geomtry...")
+            gi_geometry = geometry.Geometry(self.parameters)
+            self.parameters = gi_geometry.update_parameters()
+            logger.info("... done.")
+        except geometry.GeometryError as e:
+            ErrorDisplay('Geometry Error', str(e))
 
         # Update widget content
         self._set_widgets(self.parameters, from_file=False)
@@ -831,7 +837,6 @@ class giGUI(F.BoxLayout):
             finally:
                 # Reset load_input_file_paths to allow loading of same file
                 self.load_input_file_paths = ''
-
 
     def on_save_input_file_path(self, instance, value):
         """
@@ -1171,7 +1176,6 @@ class giGUI(F.BoxLayout):
         # Abs grating: reset phase input
         if self.ids['type_'+grating].text == 'abs':
             self.ids['phase_shift_'+grating].text = ''
-
 
     def on_sample_relative_to(self):
         """

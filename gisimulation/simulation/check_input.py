@@ -659,6 +659,11 @@ def general_input(parameters, parser_info):
             raise InputError(error_message)
 
         logger.debug("... done.")  # General checking
+
+        # Init result dictionaries
+        parameters['results'] = dict()
+        parameters['results']['geometry'] = dict()
+
         return parameters
 
     except AttributeError as e:
