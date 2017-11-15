@@ -1038,12 +1038,8 @@ def _check_grating_input(grating, parameters, parser_info):
                 logger.error(error_message)
                 raise InputError(error_message)
 
-            logger.debug(parameters['phase_shift_'+grating] - np.pi)
-            logger.debug(parameters['phase_shift_'+grating] - np.pi/2)
-            logger.debug(parameters['phase_shift_'+grating] - np.pi < 1e-5)
-            logger.debug(parameters['phase_shift_'+grating] - np.pi/2 < 1e-5)
-            if not((parameters['phase_shift_'+grating] - np.pi < 1e-5) or
-                   (parameters['phase_shift_'+grating] - np.pi/2 < 1e-5)):
+            if not((round(parameters['phase_shift_'+grating] - np.pi) == 0) or
+                   (round(parameters['phase_shift_'+grating] - np.pi/2) == 0)):
                 error_message = ("Phase shift ({0}) of {1} must be 'pi' or "
                                  "'pi/2'."
                                  .format(parser_info['phase_shift_'+grating]

@@ -38,17 +38,19 @@ class Geometry():
         """
         self._parameters = parameters
         # nu = 2 if pi shift, nu = 1 if pi-half shift
-        self._nu = self._parameters['phase_shift_g1'] * 2/np.pi
+        self._nu = round(self._parameters['phase_shift_g1'] * 2/np.pi)
+        logger.debug("self._nu: {}".format(self._nu))
 
+        # Calculate geometries
         if self._parameters['gi_geometry'] == 'conv':
-            self._parameters = self._calc_conventional(self._parameters)
+            self._calc_conventional()
         elif self._parameters['gi_geometry'] == 'sym':
-            self._parameters = self._calc_symmetrical(self._parameters)
+            self._calc_symmetrical()
         elif self._parameters['gi_geometry'] == 'inv':
-            self._parameters = self._calc_inverse(self._parameters)
+            self._calc_inverse()
 
         # Update geometry results
-        self.results = self._get_geometry_results(self._parameters)
+        self.results = self._get_geometry_results()
 
     # Set geometry results
     def _get_geometry_results(self):
@@ -124,10 +126,9 @@ class Geometry():
 
     def _calc_conventional(self):
         """
-        For cone and parallel
-
-        NOTE: Also calc phsae shift, thickness!!!
+        For cone and parallel.
         """
+
         if self._parameters['beam_geometry'] == 'parallel':
             if not self._parameters['dual_phase']:
                 # Standard GI
@@ -136,7 +137,9 @@ class Geometry():
                     self._parameters['distance_g1_g2'] = \
                         self._parameters['talbot_order'] * \
                         (np.square(self._parameters['pitch_g1'] / self._nu) /
-                         (2 * self._parameters['design_wavelength']))
+                         (2 * self._parameters['design_wavelength']))  # [um]
+                    self._parameters['distance_g1_g2'] = \
+                        self._parameters['distance_g1_g2'] * 1e-3  # [mm]
                     # Pitches
                     self._parameters['pitch_g2'] = \
                         self._parameters['pitch_g1'] / 2.0
