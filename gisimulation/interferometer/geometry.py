@@ -83,6 +83,7 @@ class Geometry():
             self._parameters['gi_geometry']
         self._parameters['results']['geometry']['beam_geometry'] = \
             self._parameters['beam_geometry']
+
         # Add distances
         # distances =  [('distance_b', 10), ('distance_a', 10)]
         distances = [(distance_name, distance_value)
@@ -92,12 +93,14 @@ class Geometry():
                          distance_value is not None)]
         for distance in distances:
             self._parameters['results']['geometry'][distance[0]] = distance[1]
-        # Add pitches
+
+            # Add pitches
         pitches = [(pitch_name, pitch_value) for pitch_name, pitch_value
                    in self._parameters.iteritems()
                    if ('pitch_' in pitch_name and pitch_value is not None)]
         for pitch in pitches:
             self._parameters['results']['geometry'][pitch[0]] = pitch[1]
+
         # Add sample info
         if self._parameters['sample_position']:
             self._parameters['results']['geometry']['sample_position'] = \
@@ -130,6 +133,7 @@ class Geometry():
         """
 
         if self._parameters['beam_geometry'] == 'parallel':
+            # Parallel beam
             if not self._parameters['dual_phase']:
                 # Standard GI
                 if self._parameters['fixed_grating'] == 'g1':
@@ -142,14 +146,14 @@ class Geometry():
                         self._parameters['distance_g1_g2'] * 1e-3  # [mm]
                     # Pitches
                     self._parameters['pitch_g2'] = \
-                        self._parameters['pitch_g1'] / 2.0
+                        self._parameters['pitch_g1'] / self._nu
                     # Duty cycles
                     self._parameters['duty_cycle_g2'] = \
                         self._parameters['duty_cycle_g1']
                 else:
                     # Pitches
                     self._parameters['pitch_g1'] = \
-                        self._parameters['pitch_g2'] * 2.0
+                        self._parameters['pitch_g2'] * self._nu
                     # Duty cycles
                     self._parameters['duty_cycle_g1'] = \
                         self._parameters['duty_cycle_g2']
@@ -157,15 +161,31 @@ class Geometry():
                     self._parameters['distance_g1_g2'] = \
                         self._parameters['talbot_order'] * \
                         (np.square(self._parameters['pitch_g1'] / self._nu) /
-                         (2 * self._parameters['design_wavelength']))
+                         (2 * self._parameters['design_wavelength']))  # [um]
+                    self._parameters['distance_g1_g2'] = \
+                        self._parameters['distance_g1_g2'] * 1e-3  # [mm]
             else:
                 # Dual phase setup
                 logger.warn("Parallel, conv and dual phase not possible yet!")
 
         else:
+            # Cone beam
             if not self._parameters['dual_phase']:
                 # Standard GI
-                logger.warn("Cone and conv not possible yet!")
+                if self._parameters['fixed_grating'] == 'g1':
+                    # G1 fixed
+                    if self._parameters['fixed_distance'] == \
+                            'distance_source_g1' or \
+                            self._parameters['fixed_distance'] == \
+                            'distance_g0_g1':
+                        # Distance from source/g0 to g1 fixed
+                        pass
+                elif self._parameters['fixed_grating'] == 'g2':
+                    # G2 fixed
+                    pass
+                else:
+                    # G0 fixed
+                    pass
             else:
                 # Dual phase setup
                 logger.warn("Cone, conv and dual phase not possible yet!")

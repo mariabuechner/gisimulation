@@ -418,6 +418,7 @@ def general_input(parameters, parser_info):
                             fixed_distance = 'distance_g0_g2'
                     else:
                         fixed_distance = None
+                parameters['fixed_distance'] = fixed_distance
 
                 # Sort updated component list
                 parameters['component_list'].sort()
@@ -582,6 +583,22 @@ def general_input(parameters, parser_info):
                 logger.debug("... done.")
 
             logger.debug("... done.")
+
+        # Set optional distances from None to 0
+        if parameters['beam_geometry'] == 'cone' and \
+                parameters['gi_geometry'] != 'free':
+            # G2 to detector
+            if parameters['distance_g2_detector'] is None:
+                logger.debug("Setting undefined optional distance "
+                             "'distance_g2_detector to: 0")
+                parameters['distance_g2_detector'] = 0
+
+            if 'G0' in parameters['component_list'] and \
+                    parameters['distance_source_g0'] is None:
+                logger.debug("Setting undefined optional distance "
+                             "'distance_source_g0' to: 0")
+                parameters['distance_source_g0'] = 0
+
 
         # Info
         logger.info("Beam geometry is '{0}' and setup geometry is '{1}'."
