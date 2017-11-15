@@ -129,6 +129,46 @@ class Geometry():
     def _calc_conventional(self):
         """
         For cone and parallel.
+
+        Notes
+        #####
+
+        For parallel:
+
+            Fractional talbot distance Dn:
+                Dn = n * p1^2/(nu^2 * 2 * lambda), n: talbot_order
+
+            Pitches:
+                p1 = p2 * nu
+                p2 = p1 / nu
+
+
+        For cone:
+
+            Magnification M:
+                M = (l + dn) / l
+                s = l + dn
+
+            Fractional talbot distance Dn:
+                Dn = n * p1^2/(nu^2 * 2 * lambda), n: talbot_order
+
+            G1 to G2:
+                dn = M * Dn
+                dn = l * Dn / (l - Dn)
+
+            Source/G0 to G1:
+                l = s - dn
+                l = s/2 + sqrt((s^2)/4 - s * Dn)
+
+            Source/G0 to G2:
+                s = l + dn
+
+            Pitches:
+
+                p1 = nu * p2 / M
+                p2 = M * p1 / nu
+                p0 = p2 * l / dn
+
         """
 
         if self._parameters['beam_geometry'] == 'parallel':
@@ -164,7 +204,7 @@ class Geometry():
                     self._parameters['distance_g1_g2'] = \
                         self._parameters['distance_g1_g2'] * 1e-3  # [mm]
             else:
-                # Dual phase setup
+                # Dual phase setup (HERE OR INSIDE CALCS???)
                 logger.warn("Parallel, conv and dual phase not possible yet!")
 
         else:
@@ -173,12 +213,90 @@ class Geometry():
                 # Standard GI
                 if self._parameters['fixed_grating'] == 'g1':
                     # G1 fixed
+
+                    # Talbot distance
+                    talbot_distance = self._parameters['talbot_order'] * \
+                        (np.square(self._parameters['pitch_g1'] / self._nu) /
+                         (2 * self._parameters['design_wavelength']))  # [mm]
+                    talbot_distance = talbot_distance * 1e-3  # [mm]
+
+                    # Other distances
                     if self._parameters['fixed_distance'] == \
                             'distance_source_g1' or \
                             self._parameters['fixed_distance'] == \
                             'distance_g0_g1':
-                        # Distance from source/g0 to g1 fixed
-                        pass
+                        # Distance from Source/G0 to G1 fixed (l)
+                        to_g1 = self._parameters[self._parameters
+                                                 ['fixed_distance']]
+                        # G1 to G2
+                        self._parameters['distance_g1_g2'] = \
+                            to_g1 * talbot_distance / \
+                            (to_g1 - talbot_distance)
+                        if self._parameters['distance_g1_g2'] <= 0:
+                            error_message = ("{0} too small for chosen talbot "
+                                             "order, energy and pitch of G1."
+                                             .format(self._parameters
+                                                     ['fixed_distance']))
+                            logger.error(error_message)
+                            raise GeometryError(error_message)
+
+                        # Source/G0 to G2
+                        total_length = to_g1 + \
+                            self._parameters['distance_g1_g2']
+                        if 'G0' in self._parameters['component_list']:
+                            self._parameters['distance_g0_g2'] = total_length
+                        else:
+                            self._parameters['distance_source_g2'] = \
+                                total_length
+
+                    elif self._parameters['fixed_distance'] == \
+                            'distance_source_g2' or \
+                            self._parameters['fixed_distance'] == \
+                            'distance_g0_g2':
+                        # Distance from Source/G0 to g2 fixed (s)
+                        total_length = self._parameters[self._parameters
+                                                        ['fixed_distance']]
+
+                        # Source/G0 to G1
+                        if total_length <= 4.0 * talbot_distance:
+                            error_message = ("{0} too small for chosen talbot "
+                                             "order, energy and pitch of G1."
+                                             .format(self._parameters
+                                                     ['fixed_distance']))
+                            logger.error(error_message)
+                            raise GeometryError(error_message)
+                        to_g1 = total_length/2.0 + np.sqrt(total_length**2.0 /
+                                                           4.0 - total_length *
+                                                           talbot_distance)
+
+                        if 'G0' in self._parameters['component_list']:
+                            self._parameters['distance_g0_g1'] = to_g1
+                        else:
+                            self._parameters['distance_source_g1'] = to_g1
+
+                        # G1 to G2
+                        self._parameters['distance_g1_g2'] = \
+                            to_g1 * talbot_distance / \
+                            (to_g1 - talbot_distance)
+
+                    # Magnification (s/l)
+                    M = total_length / to_g1
+
+                    # Pitches
+                    self._parameters['pitch_g2'] = \
+                        M * self._parameters['pitch_g1'] / self._nu
+                    if 'G0' in self._parameters['component_list']:
+                        self._parameters['pitch_g0'] = \
+                            (to_g1 / self._parameters['distance_g1_g2']) * \
+                            self._parameters['pitch_g1']
+
+                    # Duty cycles
+                    self._parameters['duty_cycle_g2'] = \
+                        self._parameters['duty_cycle_g1']
+                    if 'G0' in self._parameters['component_list']:
+                        self._parameters['duty_cycle_g0'] = \
+                            self._parameters['duty_cycle_g1']
+
                 elif self._parameters['fixed_grating'] == 'g2':
                     # G2 fixed
                     pass
@@ -186,7 +304,7 @@ class Geometry():
                     # G0 fixed
                     pass
             else:
-                # Dual phase setup
+                # Dual phase setup (HERE OR INSIDE CALCS???)
                 logger.warn("Cone, conv and dual phase not possible yet!")
 
     def _calc_symmetrical(self):
@@ -214,8 +332,8 @@ class Geometry():
 
         Pitches:
 
-            p1 = nu * p2 / M
-            p2 = M * p1 / nu
+            p1 = nu * p2 / 2
+            p2 = 2 * p1 / nu
             p0 = p2
 
         """
@@ -225,7 +343,7 @@ class Geometry():
 
             # Pitches
             self._parameters['pitch_g2'] = \
-                2 * self._parameters['pitch_g1'] / self._nu
+                2.0 * self._parameters['pitch_g1'] / self._nu
             if 'G0' in self._parameters['component_list']:
                 self._parameters['pitch_g0'] = \
                     self._parameters['pitch_g2']
@@ -242,7 +360,7 @@ class Geometry():
 
             # Pitches
             self._parameters['pitch_g1'] = \
-                self._nu * self._parameters['pitch_g2'] / 2
+                self._nu * self._parameters['pitch_g2'] / 2.0
             if 'G0' in self._parameters['component_list']:
                 self._parameters['pitch_g0'] = \
                     self._parameters['pitch_g2']
@@ -258,7 +376,7 @@ class Geometry():
 
             # Pitches
             self._parameters['pitch_g1'] = \
-                self._nu * self._parameters['pitch_g0'] / 2
+                self._nu * self._parameters['pitch_g0'] / 2.0
             self._parameters['pitch_g2'] = \
                 self._parameters['pitch_g0']
 
@@ -272,8 +390,8 @@ class Geometry():
         # G1 to G2
         talbot_distance = self._parameters['talbot_order'] * \
             (np.square(self._parameters['pitch_g1'] / self._nu) /
-             (2 * self._parameters['design_wavelength']))
-        self._parameters['distance_g1_g2'] = 2 * talbot_distance  # [um]
+             (2.0 * self._parameters['design_wavelength']))
+        self._parameters['distance_g1_g2'] = 2.0 * talbot_distance  # [um]
         self._parameters['distance_g1_g2'] = \
             self._parameters['distance_g1_g2'] * 1e-3  # [mm]
         # Source/G0 to G1 and Source/G0 to G2:
@@ -292,7 +410,100 @@ class Geometry():
         """
         For cone
         """
-        logger.warn("Cone and inv not possible yet!")
+        # Cone beam
+        # Standard GI
+        if self._parameters['fixed_grating'] == 'g1':
+            # G1 fixed
+
+            # Talbot distance
+            talbot_distance = self._parameters['talbot_order'] * \
+                (np.square(self._parameters['pitch_g1'] / self._nu) /
+                 (2 * self._parameters['design_wavelength']))  # [mm]
+            talbot_distance = talbot_distance * 1e-3  # [mm]
+
+            # Other distances
+            if self._parameters['fixed_distance'] == \
+                    'distance_source_g1' or \
+                    self._parameters['fixed_distance'] == \
+                    'distance_g0_g1':
+                # Distance from Source/G0 to G1 fixed (l)
+                to_g1 = self._parameters[self._parameters
+                                         ['fixed_distance']]
+                # G1 to G2
+                self._parameters['distance_g1_g2'] = \
+                    to_g1 * talbot_distance / \
+                    (to_g1 - talbot_distance)
+                if self._parameters['distance_g1_g2'] <= 0:
+                    error_message = ("{0} too small for chosen talbot "
+                                     "order, energy and pitch of G1."
+                                     .format(self._parameters
+                                             ['fixed_distance']))
+                    logger.error(error_message)
+                    raise GeometryError(error_message)
+
+                # Source/G0 to G2
+                total_length = to_g1 + \
+                    self._parameters['distance_g1_g2']
+                if 'G0' in self._parameters['component_list']:
+                    self._parameters['distance_g0_g2'] = total_length
+                else:
+                    self._parameters['distance_source_g2'] = \
+                        total_length
+
+            elif self._parameters['fixed_distance'] == \
+                    'distance_source_g2' or \
+                    self._parameters['fixed_distance'] == \
+                    'distance_g0_g2':
+                # Distance from Source/G0 to g2 fixed (s)
+                total_length = self._parameters[self._parameters
+                                                ['fixed_distance']]
+
+                # Source/G0 to G1
+                if total_length <= 4.0 * talbot_distance:
+                    error_message = ("{0} too small for chosen talbot "
+                                     "order, energy and pitch of G1."
+                                     .format(self._parameters
+                                             ['fixed_distance']))
+                    logger.error(error_message)
+                    raise GeometryError(error_message)
+                to_g1 = total_length/2.0 - np.sqrt(total_length**2.0 /
+                                                   4.0 - total_length *
+                                                   talbot_distance)
+
+                if 'G0' in self._parameters['component_list']:
+                    self._parameters['distance_g0_g1'] = to_g1
+                else:
+                    self._parameters['distance_source_g1'] = to_g1
+
+                # G1 to G2
+                self._parameters['distance_g1_g2'] = \
+                    to_g1 * talbot_distance / \
+                    (to_g1 - talbot_distance)
+
+            # Magnification (s/l)
+            M = total_length / to_g1
+
+            # Pitches
+            self._parameters['pitch_g2'] = \
+                M * self._parameters['pitch_g1'] / self._nu
+            if 'G0' in self._parameters['component_list']:
+                self._parameters['pitch_g0'] = \
+                    (to_g1 / self._parameters['distance_g1_g2']) * \
+                    self._parameters['pitch_g1']
+
+            # Duty cycles
+            self._parameters['duty_cycle_g2'] = \
+                self._parameters['duty_cycle_g1']
+            if 'G0' in self._parameters['component_list']:
+                self._parameters['duty_cycle_g0'] = \
+                    self._parameters['duty_cycle_g1']
+
+        elif self._parameters['fixed_grating'] == 'g2':
+            # G2 fixed
+            pass
+        else:
+            # G0 fixed
+            pass
 
 # %%
 #
