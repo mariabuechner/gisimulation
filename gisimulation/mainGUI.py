@@ -1078,10 +1078,13 @@ class giGUI(F.BoxLayout):
                 if self.ids.type_g2.text == 'phase':
                     self.ids.type_g2.text = ''
                 self.ids.type_g2.values = ['mix', 'abs']
-            # Reset grating thicknes values to ''
-            self.ids.thickness_g0.text = ''
-            self.ids.thickness_g1.text = ''
-            self.ids.thickness_g2.text = ''
+            # Reset grating thickness values to '' if not abs grating
+            if self.ids.type_g0.text != 'abs':
+                self.ids.thickness_g0.text = ''
+            if self.ids.type_g1.text != 'abs':
+                self.ids.thickness_g1.text = ''
+            if self.ids.type_g2.text != 'abs':
+                self.ids.thickness_g2.text = ''
         else:
             # Reset to 'free' (same as start)
             self.ids.sample_relative_position.text = 'after'

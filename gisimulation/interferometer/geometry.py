@@ -74,10 +74,10 @@ class Geometry():
         self._parameters['results']['geometry'] [dict]
 
         """
-        # Update geometry results
         # Add component list
         self._parameters['results']['geometry']['component_list'] = \
             self._parameters['component_list']
+
         # Add geometries
         self._parameters['results']['geometry']['gi_geometry'] = \
             self._parameters['gi_geometry']
@@ -94,7 +94,7 @@ class Geometry():
         for distance in distances:
             self._parameters['results']['geometry'][distance[0]] = distance[1]
 
-            # Add pitches
+        # Add pitches
         pitches = [(pitch_name, pitch_value) for pitch_name, pitch_value
                    in self._parameters.iteritems()
                    if ('pitch_' in pitch_name and pitch_value is not None)]
@@ -110,7 +110,6 @@ class Geometry():
 
         return self._parameters['results']['geometry']
 
-    # Update parameters
     def update_parameters(self):
         """
         Return updated parameter dict.
@@ -125,7 +124,7 @@ class Geometry():
 
     # Calculate gi geometries
 
-    # ALSO: GeometryError if negative distances or pitches!!!
+    # ALSO: GeometryError if negative distances!!!
 
     def _calc_conventional(self):
         """
@@ -193,8 +192,101 @@ class Geometry():
     def _calc_symmetrical(self):
         """
         For cone
+
+        Notes
+        #####
+
+        Magnification M:
+            M = (l + dn) / l = 2
+            s = l + dn with l = dn
+
+        Fractional talbot distance Dn:
+            Dn = n * p1^2/(nu^2 * 2 * lambda), n: talbot_order
+
+        G1 to G2:
+            dn = M * Dn = 2 * Dn
+
+        Source/G0 to G1:
+            l = dn
+
+        Source/G0 to G2:
+            s = 2 * l = 2* dn = l + dn
+
+        Pitches:
+
+            p1 = nu * p2 / M
+            p2 = M * p1 / nu
+            p0 = p2
+
         """
-        logger.warn("Cone and sym not possible yet!")
+        # Standard GI
+        if self._parameters['fixed_grating'] == 'g1':
+            # G1 fixed
+
+            # Pitches
+            self._parameters['pitch_g2'] = \
+                2 * self._parameters['pitch_g1'] / self._nu
+            if 'G0' in self._parameters['component_list']:
+                self._parameters['pitch_g0'] = \
+                    self._parameters['pitch_g2']
+
+            # Duty cycles
+            self._parameters['duty_cycle_g2'] = \
+                self._parameters['duty_cycle_g1']
+            if 'G0' in self._parameters['component_list']:
+                self._parameters['duty_cycle_g0'] = \
+                    self._parameters['duty_cycle_g1']
+
+        elif self._parameters['fixed_grating'] == 'g2':
+            # G2 fixed
+
+            # Pitches
+            self._parameters['pitch_g1'] = \
+                self._nu * self._parameters['pitch_g2'] / 2
+            if 'G0' in self._parameters['component_list']:
+                self._parameters['pitch_g0'] = \
+                    self._parameters['pitch_g2']
+
+            # Duty cycles
+            self._parameters['duty_cycle_g1'] = \
+                self._parameters['duty_cycle_g2']
+            if 'G0' in self._parameters['component_list']:
+                self._parameters['duty_cycle_g0'] = \
+                    self._parameters['duty_cycle_g2']
+        else:
+            # G0 fixed
+
+            # Pitches
+            self._parameters['pitch_g1'] = \
+                self._nu * self._parameters['pitch_g0'] / 2
+            self._parameters['pitch_g2'] = \
+                self._parameters['pitch_g0']
+
+            # Duty cycles
+            self._parameters['duty_cycle_g1'] = \
+                self._parameters['duty_cycle_g0']
+            self._parameters['duty_cycle_g2'] = \
+                self._parameters['duty_cycle_g0']
+
+        # Distances (the same for all, based on p1)
+        # G1 to G2
+        talbot_distance = self._parameters['talbot_order'] * \
+            (np.square(self._parameters['pitch_g1'] / self._nu) /
+             (2 * self._parameters['design_wavelength']))
+        self._parameters['distance_g1_g2'] = 2 * talbot_distance  # [um]
+        self._parameters['distance_g1_g2'] = \
+            self._parameters['distance_g1_g2'] * 1e-3  # [mm]
+        # Source/G0 to G1 and Source/G0 to G2:
+        if 'G0' in self._parameters['component_list']:
+            self._parameters['distance_g0_g1'] = \
+                self._parameters['distance_g1_g2']
+            self._parameters['distance_g0_g2'] = \
+                2 * self._parameters['distance_g1_g2']
+        else:
+            self._parameters['distance_source_g1'] = \
+                self._parameters['distance_g1_g2']
+            self._parameters['distance_source_g2'] = \
+                2 * self._parameters['distance_g1_g2']
 
     def _calc_inverse(self):
         """
