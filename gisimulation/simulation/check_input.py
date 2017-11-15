@@ -976,6 +976,9 @@ def _check_grating_input(grating, parameters, parser_info):
                                  parser_info['material_'+grating][0]))
         logger.error(error_message)
         raise InputError(error_message)
+
+    # Phase and/or thickness
+    # Abs grating
     if parameters['type_'+grating] == 'abs':
         if not parameters['thickness_'+grating]:
             error_message = ("Thickness of {0} ({1}) must be defined."
@@ -991,25 +994,57 @@ def _check_grating_input(grating, parameters, parser_info):
             logger.warn(warning_message)
             parameters['phase_shift_'+grating] = None
     else:
-        if not parameters['thickness_'+grating] and \
-                not parameters['phase_shift_'+grating]:
-            error_message = ("Thickness ({0}) OR phase shift ({1}) of {2} "
-                             "must be defined."
-                             .format(parser_info['thickness_'+grating][0],
-                                     parser_info['phase_shift_'+grating][0],
-                                     grating.upper()))
-            logger.error(error_message)
-            raise InputError(error_message)
-        if parameters['thickness_'+grating] and \
-                parameters['phase_shift_'+grating]:
-            if parameters['type_'+grating] == 'mix':
-                warning_message = ("Thickness AND phase shift of {0} are "
-                                   "defined. Basing calculations on "
-                                   "thickness.".format(grating.upper()))
-                logger.warn(warning_message)
-                parameters['phase_shift_'+grating] = None
-            else:
-                # pure phase grating
+        # phase and mix grating
+        if parameters['gi_geometry'] == 'free':
+            if not parameters['thickness_'+grating] and \
+                    not parameters['phase_shift_'+grating]:
+                error_message = ("Thickness ({0}) OR phase shift ({1}) of {2} "
+                                 "must be defined."
+                                 .format(parser_info['thickness_'+grating][0],
+                                         parser_info['phase_shift_'+grating]
+                                         [0],
+                                         grating.upper()))
+                logger.error(error_message)
+                raise InputError(error_message)
+
+            if parameters['thickness_'+grating] and \
+                    parameters['phase_shift_'+grating]:
+                if parameters['type_'+grating] == 'mix':
+                    warning_message = ("Thickness AND phase shift of {0} are "
+                                       "defined. Basing calculations on "
+                                       "thickness.".format(grating.upper()))
+                    logger.warn(warning_message)
+                    parameters['phase_shift_'+grating] = None
+                else:
+                    # pure phase grating
+                    warning_message = ("Thickness AND phase shift of {0} are "
+                                       "defined. Basing calculations on phase "
+                                       "shift.".format(grating.upper()))
+                    logger.warn(warning_message)
+                    parameters['thickness_'+grating] = None
+        else:
+            # Gi (!= 'free')
+            if not parameters['phase_shift_'+grating]:
+                error_message = ("Phase shift ({1}) of {2} "
+                                 "must be defined."
+                                 .format(parser_info['phase_shift_'+grating]
+                                         [0],
+                                         grating.upper()))
+                logger.error(error_message)
+                raise InputError(error_message)
+
+            if parameters['phase_shift_'+grating] != np.pi and \
+                    parameters['phase_shift_'+grating] != np.pi/2:
+                error_message = ("Phase shift ({1}) of {2} must be 'pi' or "
+                                 "'pi/2'."
+                                 .format(parser_info['phase_shift_'+grating]
+                                         [0],
+                                         grating.upper()))
+                logger.error(error_message)
+                raise InputError(error_message)
+
+            if parameters['thickness_'+grating] and \
+                    parameters['phase_shift_'+grating]:
                 warning_message = ("Thickness AND phase shift of {0} are "
                                    "defined. Basing calculations on phase "
                                    "shift.".format(grating.upper()))

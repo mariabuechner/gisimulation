@@ -313,6 +313,7 @@
                                                     text: 'Remove'
                                                     on_press: root.spectrum_file_path = ''
                                                 TextInput:
+                                                    id: spectrum_file_name
                                                     text: ntpath.basename(root.spectrum_file_path)
                                                     background_disabled_normal: self.background_normal
                                                     disabled_foreground_color: self.foreground_color
@@ -470,7 +471,7 @@
                                                             Spinner:
                                                                 id: type_g0
                                                                 values: ['mix', 'phase', 'abs']
-                                                                on_text: self.text = '' if self.text not in self.values else self.text
+                                                                on_text: root.on_grating_type('g0')
                                                         BoxLayout:
                                                             LabelHelp:
                                                                 text: 'Pitch [um]'
@@ -497,7 +498,7 @@
                                                                 help_message: parser_info['thickness_g0'][1]
                                                             FloatInput:
                                                                 id: thickness_g0
-                                                                disabled: phase_shift_g0.text
+                                                                disabled: phase_shift_g0.text or gi_geometry.text != 'free'
                                                         BoxLayout:
                                                             LabelHelp:
                                                                 text: 'Phase shift [rad]'
@@ -562,7 +563,7 @@
                                                             Spinner:
                                                                 id: type_g1
                                                                 values: ['mix', 'phase', 'abs']
-                                                                on_text: self.text = '' if self.text not in self.values else self.text
+                                                                on_text: root.on_grating_type('g1')
                                                         BoxLayout:
                                                             LabelHelp:
                                                                 text: 'Pitch [um]'
@@ -589,7 +590,7 @@
                                                                 help_message: parser_info['thickness_g1'][1]
                                                             FloatInput:
                                                                 id: thickness_g1
-                                                                disabled: phase_shift_g1.text
+                                                                disabled: phase_shift_g1.text or gi_geometry.text != 'free'
                                                         BoxLayout:
                                                             LabelHelp:
                                                                 text: 'Phase shift [rad]'
@@ -654,7 +655,7 @@
                                                             Spinner:
                                                                 id: type_g2
                                                                 values: ['mix', 'phase', 'abs']
-                                                                on_text: self.text = '' if self.text not in self.values else self.text
+                                                                on_text: root.on_grating_type('g2')
                                                         BoxLayout:
                                                             LabelHelp:
                                                                 text: 'Pitch [um]'
@@ -681,7 +682,7 @@
                                                                 help_message: parser_info['thickness_g2'][1]
                                                             FloatInput:
                                                                 id: thickness_g2
-                                                                disabled: phase_shift_g2.text
+                                                                disabled: phase_shift_g2.text or gi_geometry.text != 'free'
                                                         BoxLayout:
                                                             LabelHelp:
                                                                 text: 'Phase shift [rad]'

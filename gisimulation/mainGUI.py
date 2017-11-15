@@ -992,6 +992,7 @@ class giGUI(F.BoxLayout):
         """
         phase_shift_g0_options, phase_shift_g0
         """
+        grating = grating.lower()
         if self.ids['phase_shift_'+grating+'_options'].text == 'pi':
             self.ids['phase_shift_'+grating].text = str(np.pi)
         elif self.ids['phase_shift_'+grating+'_options'].text == 'pi/2':
@@ -1002,8 +1003,12 @@ class giGUI(F.BoxLayout):
     def on_phase_shift(self, grating):
         """
         """
-        if self.ids['phase_shift_'+grating].text != str(np.pi) and \
-                self.ids['phase_shift_'+grating].text != str(np.pi/2):
+        grating = grating.lower()
+        if self.ids['phase_shift_'+grating].text == str(np.pi):
+            self.ids['phase_shift_'+grating+'_options'].text = 'pi'
+        elif self.ids['phase_shift_'+grating].text == str(np.pi/2):
+            self.ids['phase_shift_'+grating+'_options'].text = 'pi/2'
+        else:
             self.ids['phase_shift_'+grating+'_options'].text = ''
 
     def on_gi_geometry(self):
@@ -1046,6 +1051,10 @@ class giGUI(F.BoxLayout):
                 if self.ids.type_g2.text == 'phase':
                     self.ids.type_g2.text = ''
                 self.ids.type_g2.values = ['mix', 'abs']
+            # Reset grating thicknes values to ''
+            self.ids.thickness_g0.text = ''
+            self.ids.thickness_g1.text = ''
+            self.ids.thickness_g2.text = ''
         else:
             # Reset to 'free' (same as start)
             self.ids.sample_relative_position.text = 'after'
@@ -1125,7 +1134,6 @@ class giGUI(F.BoxLayout):
         if not self.sample_added:
             self.ids.sample_relative_to.text = self.setup_components[0]
 
-
     def on_grating_checkbox_active(self, state, checkbox_name):
         """
         Add/remove activate/deactivaded grating to/from component list and
@@ -1152,6 +1160,18 @@ class giGUI(F.BoxLayout):
         # Update sample_relative_to and sample_relative_position
         self.on_gi_geometry()
         self.on_beam_geometry()  # Includes update distances
+
+    def on_grating_type(self, grating):
+        """
+        """
+        grating = grating.lower()
+        if self.ids['type_'+grating].text not in \
+                self.ids['type_'+grating].values:
+            self.ids['type_'+grating].text = ''
+        # Abs grating: reset phase input
+        if self.ids['type_'+grating].text == 'abs':
+            self.ids['phase_shift_'+grating].text = ''
+
 
     def on_sample_relative_to(self):
         """
@@ -1441,6 +1461,14 @@ class giGUI(F.BoxLayout):
                     if 'material' not in var_name:
                         value_str = [value_cap.lower() for value_cap in
                                      value_str]
+
+                    if 'phase_shift_' in var_name:
+                        if value_str[0] == 'pi':
+                            value_str[0] = str(np.pi)
+                        elif value_str[0] == 'pi/2':
+                            value_str[0] = str(np.pi / 2)
+                        # Move cursor to front of number
+                        self.ids[var_name].do_cursor_movement('cursor_home')
                     if var_name == 'spectrum_range':
                         self.ids['spectrum_range_min'].text = value_str[0]
                         self.ids['spectrum_range_max'].text = value_str[1]
@@ -1475,6 +1503,9 @@ class giGUI(F.BoxLayout):
                         self.ids[var_name].active = True
                     elif var_name == 'spectrum_file':
                         self.spectrum_file_path = value_str[0]
+                        # Move cursor to front of file name
+                        self.ids['spectrum_file_name'].do_cursor_movement(
+                                                       'cursor_home')
                     else:
                         logger.debug("Setting text of widget '{0}' to: {1}"
                                      .format(var_name, value_str[0]))
@@ -1553,6 +1584,9 @@ class giGUI(F.BoxLayout):
                             self.ids[var_name].active = value
                         elif var_name == 'spectrum_file':
                             self.spectrum_file_path = value
+                            # Move cursor to front of file name
+                            self.ids['spectrum_file_name'].do_cursor_movement(
+                                                           'cursor_home')
                         else:
                             logger.debug("Setting text of widget '{0}' to: {1}"
                                          .format(var_name, value))
