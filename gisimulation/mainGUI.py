@@ -737,6 +737,28 @@ class giGUI(F.BoxLayout):
 
             # Check values
             logger.info("Checking input parameters...")
+
+            if self.parameters['spectrum_file']:
+                # Check spectrum file (done in parser, but extra here)
+                # Normaliye for OS
+                self.parameters['spectrum_file'] = \
+                    os.path.normpath(self.parameters['spectrum_file'])
+                # if main path missing, add, then check
+                logger.info(os.path.isabs(self.parameters['spectrum_file']))
+                if not os.path.isabs(self.parameters['spectrum_file']):
+                    script_path = os.path.dirname(os.path.abspath(__file__))
+                    self.parameters['spectrum_file'] = \
+                        os.path.join(script_path,
+                                     self.parameters['spectrum_file'])
+                logger.debug("Full path to spectrum is: {0}"
+                             .format(self.parameters['spectrum_file']))
+                # Check if file exists
+                if not os.path.exists(self.parameters['spectrum_file']):
+                    error_message = ("Spectrum file ({0}) does not exist."
+                                     .format(self.parameters['spectrum_file']))
+                    logger.error(error_message)
+                    raise check_input.InputError(error_message)
+
             # Are required (in parser) defined?
             if not self.parameters['pixel_size']:
                 error_message = "Input arguments missing: 'pixel_size' " \
@@ -1462,7 +1484,8 @@ class giGUI(F.BoxLayout):
                                        .format(var_key, var_name))
                         continue
                     # Set input values to ids.texts
-                    if 'material' not in var_name:
+                    if 'material' not in var_name and \
+                            var_name != 'spectrum_file':
                         value_str = [value_cap.lower() for value_cap in
                                      value_str]
 

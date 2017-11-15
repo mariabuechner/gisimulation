@@ -1030,7 +1030,7 @@ def _check_grating_input(grating, parameters, parser_info):
         else:
             # Gi (!= 'free')
             if not parameters['phase_shift_'+grating]:
-                error_message = ("Phase shift ({1}) of {2} "
+                error_message = ("Phase shift ({0}) of {1} "
                                  "must be defined."
                                  .format(parser_info['phase_shift_'+grating]
                                          [0],
@@ -1038,9 +1038,13 @@ def _check_grating_input(grating, parameters, parser_info):
                 logger.error(error_message)
                 raise InputError(error_message)
 
-            if parameters['phase_shift_'+grating] != np.pi and \
-                    parameters['phase_shift_'+grating] != np.pi/2:
-                error_message = ("Phase shift ({1}) of {2} must be 'pi' or "
+            logger.debug(parameters['phase_shift_'+grating] - np.pi)
+            logger.debug(parameters['phase_shift_'+grating] - np.pi/2)
+            logger.debug(parameters['phase_shift_'+grating] - np.pi < 1e-5)
+            logger.debug(parameters['phase_shift_'+grating] - np.pi/2 < 1e-5)
+            if not((parameters['phase_shift_'+grating] - np.pi < 1e-5) or
+                   (parameters['phase_shift_'+grating] - np.pi/2 < 1e-5)):
+                error_message = ("Phase shift ({0}) of {1} must be 'pi' or "
                                  "'pi/2'."
                                  .format(parser_info['phase_shift_'+grating]
                                          [0],

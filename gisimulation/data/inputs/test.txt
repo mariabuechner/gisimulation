@@ -16,7 +16,7 @@
 -gi
 conv
 -bg
-cone
+parallel
 -t
 3
 -fs
@@ -37,8 +37,6 @@ abs
 Si
 -d2
 300
--s2
-2.5
 -g0
 mix
 -lut
@@ -48,5 +46,4 @@ x0h
 -fg
 g1
 -spec
-C:\Users\mbuec\Documents\Code\gisimulation\gisimulation\data\spectra\Comet120kV.csv
---photo_only
+.\data\spectra\Comet120kV.csv
