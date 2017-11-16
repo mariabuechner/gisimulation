@@ -716,6 +716,9 @@ class giGUI(F.BoxLayout):
         self.parameters = _collect_input(self.parameters, self.ids)
         self.parameters['spectrum_file'] = None
         self._set_widgets(self.parameters, from_file=False)
+        # Init geometry result dictionaries
+        self.parameters['results'] = dict()
+        self.parameters['results']['geometry'] = dict()
         # Components trackers
         self.setup_components = ['Source', 'Detector']
         # Avail fixed gratings
@@ -1079,6 +1082,7 @@ class giGUI(F.BoxLayout):
         else:
             logger.debug("Current setup consists of: {0}"
                          .format(self.setup_components))
+
         # Required gratings
         if self.ids.gi_geometry.text != 'free':
             # G1 and G2 required
@@ -1122,6 +1126,7 @@ class giGUI(F.BoxLayout):
             self.ids.type_g1.values = ['mix', 'phase', 'abs']
             self.ids.type_g2.text = ''
             self.ids.type_g2.values = ['mix', 'phase', 'abs']
+
         # GI cases
         if self.ids.gi_geometry.text == 'conv':
             self.ids.sample_relative_position.text = 'before'
@@ -1135,12 +1140,28 @@ class giGUI(F.BoxLayout):
             # Symmetrical case
             self.ids.sample_relative_position.text = 'after'
             self.ids.sample_relative_position.values = ['after', 'before']
+
         # Update distances options
         self.ids.distances.update(self.setup_components,
                                   self.ids.beam_geometry.text,
                                   self.ids.gi_geometry.text)
+        # Keep calculated distances from previous results
+        if self.parameters['results']['geometry']:
+            # Geometry results have been calculated
+            distances = self.parameters['results']['geometry']['distances']
+            logger.info(distances)
+            for distance_layout in self.ids.distances.children:
+                for widget in distance_layout.children:
+                    if 'FloatInput' in str(widget) and widget.id in distances:
+                        logger.info(widget.id)
+                        # If distance from results can be set now
+                        widget.text = str(distances[widget.id])
+                        # Move cursor to front of text input
+                        widget.do_cursor_movement('cursor_home')
+
         # Reset fixed grating input
         self.ids.fixed_grating.text = 'Choose fixed grating...'
+
         # Update dual_phase options
         self.on_dual_phase_checkbox_active()
 

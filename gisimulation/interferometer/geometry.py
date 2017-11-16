@@ -8,7 +8,6 @@ ToDo:
 @author: buechner_m <maria.buechner@gmail.com>
 """
 import numpy as np
-import materials
 import logging
 logger = logging.getLogger(__name__)
 

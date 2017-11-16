@@ -677,7 +677,7 @@ def general_input(parameters, parser_info):
 
         logger.debug("... done.")  # General checking
 
-        # Init result dictionaries
+        # Re-Init geometry result dictionaries
         parameters['results'] = dict()
         parameters['results']['geometry'] = dict()
 
