@@ -261,8 +261,15 @@ class Distances(F.GridLayout):
         self.height = height
 
     def on_text(self, linked_instance, instance, value):
+        """
+        if one of them has text, disable input
+        if both have text (load file or results), enable depetion of input
+        """
         if value != '':
             linked_instance.disabled = True
+            if linked_instance. text != '':
+                linked_instance.disabled = False
+                instance.disabled = False
         else:
             linked_instance.disabled = False
 
@@ -598,7 +605,7 @@ def _collect_input(parameters, ids):
                 if widget.text == '':
                     parameters[widget.id] = None
                 else:
-                    parameters[widget.id] = widget.text
+                    parameters[widget.id] = float(widget.text)
 
     # Handle fixed grating
     if parameters['fixed_grating'] == 'Choose fixed grating...':
@@ -1497,8 +1504,8 @@ class giGUI(F.BoxLayout):
                             value_str[0] = str(np.pi)
                         elif value_str[0] == 'pi/2':
                             value_str[0] = str(np.pi / 2)
-                        # Move cursor to front of number
-                        self.ids[var_name].do_cursor_movement('cursor_home')
+#                        # Move cursor to front of number
+#                        self.ids[var_name].do_cursor_movement('cursor_home')
                     if var_name == 'spectrum_range':
                         self.ids['spectrum_range_min'].text = value_str[0]
                         self.ids['spectrum_range_max'].text = value_str[1]
@@ -1533,9 +1540,9 @@ class giGUI(F.BoxLayout):
                         self.ids[var_name].active = True
                     elif var_name == 'spectrum_file':
                         self.spectrum_file_path = value_str[0]
-                        # Move cursor to front of file name
-                        self.ids['spectrum_file_name'].do_cursor_movement(
-                                                       'cursor_home')
+#                        # Move cursor to front of file name
+#                        self.ids['spectrum_file_name'].do_cursor_movement(
+#                                                       'cursor_home')
                     else:
                         logger.debug("Setting text of widget '{0}' to: {1}"
                                      .format(var_name, value_str[0]))
@@ -1614,9 +1621,9 @@ class giGUI(F.BoxLayout):
                             self.ids[var_name].active = value
                         elif var_name == 'spectrum_file':
                             self.spectrum_file_path = value
-                            # Move cursor to front of file name
-                            self.ids['spectrum_file_name'].do_cursor_movement(
-                                                           'cursor_home')
+#                            # Move cursor to front of file name
+#                            self.ids['spectrum_file_name'].do_cursor_movement(
+#                                                           'cursor_home')
                         else:
                             logger.debug("Setting text of widget '{0}' to: {1}"
                                          .format(var_name, value))
@@ -1625,6 +1632,12 @@ class giGUI(F.BoxLayout):
                         logger.debug("Storing away {0} = {1} to set later."
                                      .format(var_name, value))
                         distances[var_name] = str(value)
+
+            # Move cursor to front of text input
+            for widget_id, widget in self.ids.iteritems():
+                if 'Input' in str(widget):
+                    widget.do_cursor_movement('cursor_home')
+
             # Setting distances (not accesible directly via ids)
             #   ids.distances contains one boxlayout per distance,
             #   which then contains one label and one FloatInput
@@ -1638,6 +1651,8 @@ class giGUI(F.BoxLayout):
                                              .format(widget.id,
                                                      distances[widget.id]))
                                 widget.text = distances[widget.id]
+                                # Move cursor to front of text input
+                                widget.do_cursor_movement('cursor_home')
             logger.info("...done.")
         except IndexError:
             error_message = ("Input argument '{0}' ({1}) is invalid. "
