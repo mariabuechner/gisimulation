@@ -924,10 +924,35 @@ def _check_grating_input(grating, parameters, parser_info):
         pitch (if fixed grating)
         duty cycle (if fixed grating)
         material
-        thickness OR phase shift
-            pure absorption: require always thickness
-            pure phase: if both, base on phase shift
-            mix: if both, base on thickness
+        Phase and/or thickness and/or absorption:
+            If free:
+                abs:
+                    required: thickness or absorption (dominant)
+                    calculated: missing thickness or absorption; phase=None
+                phase:
+                    required: phase (dominant) or thickness
+                    calculated: missing phase or thickness; absorption=None
+                mix:
+                    required: thickness (dominant) or phase or absorption
+                    calculated: missing two thickness or phase or absorption
+
+            If GI:
+                if G0/G2: (if dual phase: G2: phase or mix, like G1)
+                    abs:
+                        required: thickness or absorption (dominant)
+                        calculated: missing thickness or absoprtion; phase=None
+                    mix:
+                        required: thickness (dominant) or absorption
+                        calculated: missing thickness or absorption and phase
+                if G1:
+                    phase:
+                        required: phase
+                        calculated: thickness; absorption=None
+                    mix:
+                        required: phase
+                        calculated: thickness and absorption
+
+            -> abs same for free and GI
 
     """
     grating = grating.lower()
@@ -999,27 +1024,28 @@ def _check_grating_input(grating, parameters, parser_info):
         logger.error(error_message)
         raise InputError(error_message)
 
-    # Phase and/or thickness
-    # Abs grating
+    # Phase and/or thickness and/or absorption
+
     if parameters['type_'+grating] == 'abs':
+        # Absorption grating
         if not parameters['thickness_'+grating]:
             error_message = ("Thickness of {0} ({1}) must be defined."
                              .format(grating.upper(),
                                      parser_info['thickness_'+grating][0]))
             logger.error(error_message)
             raise InputError(error_message)
-        if parameters['thickness_'+grating] and \
-                parameters['phase_shift_'+grating]:
-            warning_message = ("Thickness AND phase shift of {0} are "
-                               "defined. Basing calculations on "
-                               "thickness.".format(grating.upper()))
+        if parameters['phase_shift_'+grating]:
+            warning_message = ("Phase shift of {0} is defined, but ignored."
+                               .format(grating.upper()))
             logger.warn(warning_message)
             parameters['phase_shift_'+grating] = None
-    else:
-        # phase and mix grating
+    elif parameters['type_'+grating] == 'phase':
+        # Phase grating
         if parameters['gi_geometry'] == 'free':
+            # Free input
             if not parameters['thickness_'+grating] and \
                     not parameters['phase_shift_'+grating]:
+                # Nothing defined
                 error_message = ("Thickness ({0}) OR phase shift ({1}) of {2} "
                                  "must be defined."
                                  .format(parser_info['thickness_'+grating][0],
@@ -1028,24 +1054,41 @@ def _check_grating_input(grating, parameters, parser_info):
                                          grating.upper()))
                 logger.error(error_message)
                 raise InputError(error_message)
-
-            if parameters['thickness_'+grating] and \
-                    parameters['phase_shift_'+grating]:
-                if parameters['type_'+grating] == 'mix':
-                    warning_message = ("Thickness AND phase shift of {0} are "
-                                       "defined. Basing calculations on "
-                                       "thickness.".format(grating.upper()))
-                    logger.warn(warning_message)
-                    parameters['phase_shift_'+grating] = None
-                else:
-                    # pure phase grating
+            if parameters['phase_shift_'+grating]:
+                # Phase defined
+                if parameters['thickness_'+grating]:
+                    # Thickness as well
                     warning_message = ("Thickness AND phase shift of {0} are "
                                        "defined. Basing calculations on phase "
                                        "shift.".format(grating.upper()))
                     logger.warn(warning_message)
-                    parameters['thickness_'+grating] = None
+                # Calc thickness
+                parameters['thickness_'+grating] = \
+                    materials.shift_to_height(parameters
+                                              ['phase_shift_'+grating],
+                                              parameters
+                                              ['material_'+grating],
+                                              parameters['design_energy'],
+                                              photo_only=
+                                              parameters['photo_only'],
+                                              source=
+                                              parameters['look_up_table'])
+            else:
+                # Phase not defined, but thickness
+                # Calc phase shift
+                parameters['phase_shift_'+grating] = \
+                    materials.height_to_shift(parameters
+                                              ['thickness_'+grating],
+                                              parameters
+                                              ['material_'+grating],
+                                              parameters['design_energy'],
+                                              photo_only=
+                                              parameters['photo_only'],
+                                              source=
+                                              parameters['look_up_table'])
         else:
-            # Gi (!= 'free')
+            # GI setup
+            # Either phase G1 or phase G2 (for dual phase)
             if not parameters['phase_shift_'+grating]:
                 error_message = ("Phase shift ({0}) of {1} "
                                  "must be defined."
@@ -1071,7 +1114,104 @@ def _check_grating_input(grating, parameters, parser_info):
                                    "defined. Basing calculations on phase "
                                    "shift.".format(grating.upper()))
                 logger.warn(warning_message)
-                parameters['thickness_'+grating] = None
+            # Calc thickness
+            parameters['thickness_'+grating] = \
+                materials.shift_to_height(parameters['phase_shift_'+grating],
+                                          parameters['material_'+grating],
+                                          parameters['design_energy'],
+                                          photo_only=parameters['photo_only'],
+                                          source=parameters['look_up_table'])
+    else:
+        # Mix grating
+        if parameters['gi_geometry'] == 'free':
+            # Free input
+            if not parameters['thickness_'+grating] and \
+                    not parameters['phase_shift_'+grating]:
+                # Nothing defined
+                error_message = ("Thickness ({0}) OR phase shift ({1}) of {2} "
+                                 "must be defined."
+                                 .format(parser_info['thickness_'+grating][0],
+                                         parser_info['phase_shift_'+grating]
+                                         [0],
+                                         grating.upper()))
+                logger.error(error_message)
+                raise InputError(error_message)
+            if parameters['thickness_'+grating]:
+                # Thickness defined
+                if parameters['phase_shift_'+grating]:
+                    # Phase as well
+                    warning_message = ("Thickness AND phase shift of {0} are "
+                                       "defined. Basing calculations on "
+                                       "thickness.".format(grating.upper()))
+                    logger.warn(warning_message)
+                # Calc phase shift
+                parameters['phase_shift_'+grating] = \
+                    materials.height_to_shift(parameters
+                                              ['thickness_'+grating],
+                                              parameters
+                                              ['material_'+grating],
+                                              parameters['design_energy'],
+                                              photo_only=
+                                              parameters['photo_only'],
+                                              source=
+                                              parameters['look_up_table'])
+            else:
+                # Phase shift defined
+                # Calc thickness
+                parameters['thickness_'+grating] = \
+                    materials.shift_to_height(parameters
+                                              ['phase_shift_'+grating],
+                                              parameters['material_'+grating],
+                                              parameters['design_energy'],
+                                              photo_only=
+                                              parameters['photo_only'],
+                                              source=
+                                              parameters['look_up_table'])
+        else:
+            # GI setup
+            if grating == 'g0' or (grating == 'g2' and
+                                   not parameters['dual_phase']):
+                # For G0 or G2 if not dual_phase
+                if not parameters['thickness_'+grating]:
+                    # Thickness not defined
+                    error_message = ("Thickness ({0}) of {1} "
+                                     "must be defined."
+                                     .format(parser_info['thickness_'+grating]
+                                             [0],
+                                             grating.upper()))
+                    logger.error(error_message)
+                    raise InputError(error_message)
+                # Calc phase shift
+                parameters['phase_shift_'+grating] = \
+                    materials.height_to_shift(parameters
+                                              ['thickness_'+grating],
+                                              parameters
+                                              ['material_'+grating],
+                                              parameters['design_energy'],
+                                              photo_only=
+                                              parameters['photo_only'],
+                                              source=
+                                              parameters['look_up_table'])
+            else:
+                # G1 or G2 if dual phase
+                if not parameters['phase_shift_'+grating]:
+                    error_message = ("Phase shift ({0}) of {1} "
+                                     "must be defined."
+                                     .format(parser_info
+                                             ['phase_shift_'+grating][0],
+                                             grating.upper()))
+                    logger.error(error_message)
+                    raise InputError(error_message)
+                # Calc thickness
+                parameters['thickness_'+grating] = \
+                    materials.shift_to_height(parameters
+                                              ['phase_shift_'+grating],
+                                              parameters['material_'+grating],
+                                              parameters['design_energy'],
+                                              photo_only=
+                                              parameters['photo_only'],
+                                              source=
+                                              parameters['look_up_table'])
 
     # Optional input
     # Wafer

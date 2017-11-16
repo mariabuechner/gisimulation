@@ -1022,6 +1022,16 @@ class giGUI(F.BoxLayout):
         else:
             self.ids.look_up_table.text = self.ids.look_up_table.text.upper()
 
+    def on_grating_thickness(self, grating):
+        """
+        """
+        # If both phase shift and thickness are set (after calc or load from
+        # file), enable both to reset
+        if self.ids['phase_shift_'+grating].text != '' and \
+                self.ids['thickness_'+grating].text != '':
+            self.ids['phase_shift_'+grating].disabled = False
+            self.ids['thickness_'+grating].disabled = False
+
     def on_phase_shift_spinner(self, grating):
         """
         phase_shift_g0_options, phase_shift_g0
@@ -1033,6 +1043,13 @@ class giGUI(F.BoxLayout):
             self.ids['phase_shift_'+grating].text = str(np.pi/2)
         # Move cursor to front of number
         self.ids['phase_shift_'+grating].do_cursor_movement('cursor_home')
+
+        # If both phase shift and thickness are set (after calc or load from
+        # file), enable both to reset
+        if self.ids['phase_shift_'+grating].text != '' and \
+                self.ids['thickness_'+grating].text != '':
+            self.ids['phase_shift_'+grating].disabled = False
+            self.ids['thickness_'+grating].disabled = False
 
     def on_phase_shift(self, grating):
         """

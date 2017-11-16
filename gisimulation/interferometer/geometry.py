@@ -74,16 +74,20 @@ class Geometry():
         self._parameters['results']['geometry'] [dict]
 
         """
+        # To 'Setup'
+        self._parameters['results']['geometry']['Setup'] = dict()
         # Add component list
-        self._parameters['results']['geometry']['component_list'] = \
+        self._parameters['results']['geometry']['Setup']['component_list'] = \
             self._parameters['component_list']
 
         # Add geometries
-        self._parameters['results']['geometry']['gi_geometry'] = \
+        self._parameters['results']['geometry']['Setup']['gi_geometry'] = \
             self._parameters['gi_geometry']
-        self._parameters['results']['geometry']['beam_geometry'] = \
+        self._parameters['results']['geometry']['Setup']['beam_geometry'] = \
             self._parameters['beam_geometry']
 
+        # To 'distances'
+        self._parameters['results']['geometry']['distances'] = dict()
         # Add distances
         # distances =  [('distance_b', 10), ('distance_a', 10)]
         distances = [(distance_name, distance_value)
@@ -92,21 +96,27 @@ class Geometry():
                      if ('distance_' in distance_name and
                          distance_value is not None)]
         for distance in distances:
-            self._parameters['results']['geometry'][distance[0]] = distance[1]
+            self._parameters['results']['geometry']['distances'][distance[0]] \
+                = distance[1]
 
+        # To 'pitches'
+        self._parameters['results']['geometry']['pitches'] = dict()
         # Add pitches
         pitches = [(pitch_name, pitch_value) for pitch_name, pitch_value
                    in self._parameters.iteritems()
                    if ('pitch_' in pitch_name and pitch_value is not None)]
         for pitch in pitches:
-            self._parameters['results']['geometry'][pitch[0]] = pitch[1]
+            self._parameters['results']['geometry']['pitches'][pitch[0]] = \
+                pitch[1]
 
+        # To 'sample'
+        self._parameters['results']['geometry']['sample'] = dict()
         # Add sample info
         if self._parameters['sample_position']:
-            self._parameters['results']['geometry']['sample_position'] = \
-                self._parameters['sample_position']
-            self._parameters['results']['geometry']['sample_distance'] = \
-                self._parameters['sample_distance']
+            (self._parameters['results']['geometry']['sample']
+             ['sample_position']) = self._parameters['sample_position']
+            (self._parameters['results']['geometry']['sample']
+             ['sample_distance']) = self._parameters['sample_distance']
 
         return self._parameters['results']['geometry']
 
