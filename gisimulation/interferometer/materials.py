@@ -750,7 +750,7 @@ def height_to_shift(height, material, energy, rho=0, photo_only=False,
     Returns
     =======
 
-    dphi: required phase shift [(rad)/um]
+    dphi: required phase shift [(rad)/um] (modulus of dphi and pi)
 
     Notes
     =====
@@ -770,7 +770,8 @@ def height_to_shift(height, material, energy, rho=0, photo_only=False,
     logger.debug('Delta is {}.'.format(delta))
     wavelength = energy_to_wavelength(energy)
     logger.debug('Wavelengthis {} [um].'.format(wavelength))
-    return 2*np.pi*delta*height/wavelength
+    dphi = 2*np.pi*delta*height/wavelength
+    return np.mod(dphi, np.pi)
 
 
 def read_sample_values():
