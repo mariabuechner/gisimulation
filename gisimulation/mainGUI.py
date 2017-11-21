@@ -361,6 +361,46 @@ class ScrollableLabel(F.ScrollView):
     """
     text = F.StringProperty('')
 
+
+class GeometrySketch(F.BoxLayout):
+    """
+    """
+    def __init__(self, **kwargs):
+        """
+        """
+        super(GeometrySketch, self).__init__(**kwargs)
+
+        # Blank image
+        with self.canvas:
+            F.Color(1, 0, 0, 0.4)  # gray
+            self.blank_geometry = F.Rectangle(size=(20, 20))  # Fixed
+#            self.blank_geometry = F.Rectangle(pos=self.center,
+#                                              size=(1000, 400))  # Fixed
+
+#        self.bind(pos=self.update_blank_geometry)
+#
+#    def update_blank_geometry(self, *args):
+#        """
+#        Actual position of parent and thus canvas is determined online, not
+#        at init. Thus, need to update.
+#        """
+#        self.blank_geometry.pos = self.pos
+
+    def update_geometry(self, geometry_results):
+        """
+
+        Parameters
+        ##########
+
+        geometry_results [dict]
+
+        """
+        if geometry_results:
+            # Results exists, add components to blank_geometry
+            with self.canvas:
+                pass
+
+
 # %% Utiliies
 
 
@@ -583,8 +623,9 @@ def _collect_input(parameters, ids):
             continue
         elif 'Distances' in str(value):
             continue
+        elif 'GeometrySketch' in str(value):
+            continue
         elif value.text == '':
-#            logger.debug('Setting to None')
             parameters[var_name] = None
         elif 'FloatInput' in str(value):
             parameters[var_name] = float(value.text)

@@ -803,28 +803,28 @@
 
             # Geometry
             TabbedPanelItem:
-                text: 'Geometry'
+                text: 'Geometry Overview'
                 id: geometry_results
-                BoxLayout:
-                    orientation: 'vertical'
-                    size_hint_y: None
-                    height: root.calc_boxlayout_height(line_height, self)
-                    BoxLayout:
-                        orientation: 'vertical'
+
+                ScrollView:
+                    FloatLayout:
                         size_hint_y: None
-                        height: root.calc_boxlayout_height(line_height, self)
-                        NonFileBrowserLabel:
-                            text: 'Do stuff'
+                        height: 1024
 
-                    Widget:
-                    Widget:
-                    Widget:
+                        #NonFileBrowserLabel:
+                        #    pos_hint: {'top': 1}
+                        #    text: str(beam_geometry.text+' beam and '+gi_geometry.text+' geometry')
+                        GeometrySketch:
+                            id: geometry_sketch
+                            pos_hint: {'top': 1}
 
-                    Button:
-                        text: 'Calculate visibility'
-                        on_press: root.calculate_visibility()
 
-            # Visibility
+#                Button:
+#                    text: 'Calculate visibility'
+#                    on_press: root.calculate_visibility()
+
+            # Visibility (Maybe in overview tab???)
+            # For normal spectrum, with sample spectrum
             TabbedPanelItem:
                 text: 'Visibility'
                 id: visibility_results
