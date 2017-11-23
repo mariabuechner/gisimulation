@@ -364,17 +364,50 @@ class ScrollableLabel(F.ScrollView):
     text = F.StringProperty('')
 
 
+
+#class GeometrySketch(F.Widget):
+#    """
+#    """
+#    def __init__(self, **kwargs):
+#        """
+#        """
+#        super(GeometrySketch, self).__init__(**kwargs)
+#
+#        with self.canvas:
+#            G.Color(0, 0, 0, 0.75)
+#            G.Rectangle()
+#
+#
+#
+#
+#
+#    def update_geometry(self, geometry_results):
+#        """
+#
+#        Parameters
+#        ##########
+#
+#        geometry_results [dict]
+#
+#        """
+#        frame_width = self.sketch.width
+#        frame_height = self.sketch.height
+#
+#        with self.canvas:
+#            G.Color(1, 1, 0)
+#            G.Ellipse(pos=(frame_width/10, frame_height/10), size=(30, 30))
+
 class GeometrySketch(F.Widget):
     """
     """
     def __init__(self, **kwargs):
         """
+        Add dark grey rectangle to geometry_group.
         """
         super(GeometrySketch, self).__init__(**kwargs)
         self.geometry_group = G.InstructionGroup()
-        self.rectangle = G.Rectangle()  # size=(1000, 400)
-        self.color = G.Color(0, 0, 0, 0.75)
-        self.geometry_group.add(self.color)
+        self.rectangle = G.Rectangle()
+        self.geometry_group.add(G.Color(0, 0, 0, 0.75))
         self.geometry_group.add(self.rectangle)
 
 
@@ -385,6 +418,10 @@ class GeometryGrid(F.GridLayout):
     """
     def __init__(self, **kwargs):
         """
+        Init Geometry Grid with one child, that has a dark grey background.
+
+        Child: GeometrySketch()
+
         """
         super(GeometryGrid, self).__init__(**kwargs)
         self.add_widget(GeometrySketch())
@@ -396,32 +433,124 @@ class GeometryGrid(F.GridLayout):
         kivy.clock.Clock.schedule_once(self.set_attributes)
 
     def set_attributes(self, dt):
+        """
+        Set size and position after app has started.
+        """
         self.sketch.rectangle.size = self.size
         #  989=1024-line_height
         self.sketch.rectangle.pos = (80, 989-self.height)
 
-    def update_geometry(self, geometry_results):
+    def update_geometry(self, geometry_results, focal_spot_size):
         """
+        Update Geometry Sketch according to geometry results.
+
+        TODO: Add round gratings or missmatching gratings!
 
         Parameters
         ##########
 
         geometry_results [dict]
+        focal_spot_size [um]:       is None, if parallel beam
+
+        Notes
+        #####
+
+        Source:
+            Position: in y center and starting at 1/20 of width.
+            Size: max (10, 10); if source size, distorted (10, 20)
+
+        Detector:
+            Position: in y center and ending at 1/20 of width.
+
+        Beam:
+            From source center to detector edges. Either triangel or rectangle.
 
         """
+        # Test
+        focal_spot_size = None
+        parameters['beam_geometry'] = 'parallel'
+
+#        focal_spot_size = 1
+#        parameters['beam_geometry'] = 'cone'
+
+        # Get (0,0) coordinates of sketch
+        frame_x0 = self.sketch.pos[0]
+        frame_y0 = self.sketch.pos[1]
+        # Get width and height of sketch (absolut, not from origin)
         frame_width = self.sketch.width
         frame_height = self.sketch.height
 
-        with self.canvas:
-            G.Color(1, 1, 0)
-            G.Ellipse(pos=(frame_width/10, frame_height/10), size=(30, 30))
+        frame_y_center = frame_y0 + frame_height/2
+
+        # Add Source
+        width = 10
+        height = 20
+        pos_x = frame_x0 + frame_width/20 - width/2
+        pos_y = frame_y_center - height/2
+
+        self.source = G.Ellipse(pos=(pos_x, pos_y), size=(width, height))
+        self.sketch.geometry_group.add(G.Color(1, 0, 0, 0.5))
+        self.sketch.geometry_group.add(self.source)
+        if not focal_spot_size:
+            self.sketch.geometry_group.remove(self.source)
+
+        # Add Detector
+        width = 20
+        height = frame_height*0.8
+        pos_x = frame_x0 + frame_width - frame_width/20 - width/2
+        pos_y = frame_y_center - height/2
+
+        self.detector = G.Rectangle(pos=(pos_x, pos_y), size=(width, height))
+        self.sketch.geometry_group.add(G.Color(1, 1, 1, 0.5))
+        self.sketch.geometry_group.add(self.detector)
+
+        # Add beam
+        width = frame_width - frame_width/10 - 10
+        height = frame_height*0.8
+
+        if geometry_result['Setup']s['beam_geometry'] == 'parallel':
+            pos_x = self.source.pos[0] + self.source.size[0]/2
+            pos_y = self.detector.pos[1]
+            self.beam = G.Rectangle(pos=(pos_x, pos_y), size=(width, height))
+        else:
+            x1 = self.source.pos[0] + self.source.size[0]/2
+            y1 = self.source.pos[1] + self.source.size[1]/2
+            x2 = x1 + width
+            y2 = self.detector.pos[1] + height
+            x3 = x1 + width
+            y3 = self.detector.pos[1]
+            self.beam = G.Triangle(points=[x1, y1, x2, y2, x3, y3])
+
+        self.sketch.geometry_group.add(G.Color(1, 1, 0, 0.1))
+        self.sketch.geometry_group.add(self.beam)
+
+        # Get scaling distances
+#        total_setup_length = self.detector.pos[0] - \
+#            self.source.pos[0]  # [points]
 
 
 
-#
-#        self.sketch.geometry_group.color = G.Color(0, 0, 0, 0.15)
-#
-#        test_square =
+
+        # Add Gratings
+
+
+        # Add sample
+#        if 'Sample' in geometry_results['Setup']['component_list']:
+#            # FUTURE
+#            # Define size and shape
+#            # Now just use blue dot
+#            width = 100  # [mm]
+#            height = 100  # [mm]
+#            pos_x =
+#            # Scale size to sketch area
+#            pos_y = frame_y_center - height/2
+#            self.sample = G.Ellipse(pos=(pos_x, pos_y), size=(width, height))
+#            self.sketch.geometry_group.add(G.Color(0, 0, 1, 0.75))
+#            self.sketch.geometry_group.add(self.sample)
+
+
+
+
 
 
 # %% Utiliies

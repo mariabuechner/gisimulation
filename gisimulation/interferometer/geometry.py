@@ -116,6 +116,8 @@ class Geometry():
              ['sample_position']) = self._parameters['sample_position']
             (self._parameters['results']['geometry']['sample']
              ['sample_distance']) = self._parameters['sample_distance']
+             # FUTURE
+             # Add shape and size
 
         return self._parameters['results']['geometry']
 
