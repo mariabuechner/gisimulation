@@ -810,14 +810,27 @@
                     FloatLayout:
                         size_hint_y: None
                         height: 1024
-
-                        #NonFileBrowserLabel:
-                        #    pos_hint: {'top': 1}
-                        #    text: str(beam_geometry.text+' beam and '+gi_geometry.text+' geometry')
-                        GeometrySketch:
-                            id: geometry_sketch
+                        NonFileBrowserLabel:
                             pos_hint: {'top': 1}
+                            text: str(beam_geometry.text+' beam and '+gi_geometry.text+' geometry')
+                        GridLayout:
+                            cols: 1
+                            pos_hint: {'top': 0.9}
+                            NonFileBrowserLabel:
+                                text: str(beam_geometry.text+' beam and '+gi_geometry.text+' geometry')
 
+#                    GridLayout:
+#                        cols: 1
+#                        size_hint_y: None
+#                        height: 1024
+#
+#                        NonFileBrowserLabel:
+#                            text: str(beam_geometry.text+' beam and '+gi_geometry.text+' geometry')
+#                        GeometrySketch:
+#                            id: geometry_sketch
+#                        Widget:
+#                            size_hint_y: None
+#                            height: 485
 
 #                Button:
 #                    text: 'Calculate visibility'
