@@ -468,10 +468,10 @@ class GeometryGrid(F.GridLayout):
         """
         # Test
         focal_spot_size = None
-        parameters['beam_geometry'] = 'parallel'
+        geometry_results['Setup']['beam_geometry'] = 'parallel'
 
 #        focal_spot_size = 1
-#        parameters['beam_geometry'] = 'cone'
+#        geometry_results['Setup']['beam_geometry'] = 'cone'
 
         # Get (0,0) coordinates of sketch
         frame_x0 = self.sketch.pos[0]
@@ -508,7 +508,7 @@ class GeometryGrid(F.GridLayout):
         width = frame_width - frame_width/10 - 10
         height = frame_height*0.8
 
-        if geometry_result['Setup']s['beam_geometry'] == 'parallel':
+        if geometry_results['Setup']['beam_geometry'] == 'parallel':
             pos_x = self.source.pos[0] + self.source.size[0]/2
             pos_y = self.detector.pos[1]
             self.beam = G.Rectangle(pos=(pos_x, pos_y), size=(width, height))
@@ -532,7 +532,8 @@ class GeometryGrid(F.GridLayout):
 
 
         # Add Gratings
-
+        # FUTURE
+        # Seperate between bent and straight gratings
 
         # Add sample
 #        if 'Sample' in geometry_results['Setup']['component_list']:
