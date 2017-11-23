@@ -32,6 +32,8 @@ from kivy.garden.filebrowser import FileBrowser
 from kivy.core.window import Window
 # UIX
 from kivy.factory import Factory as F
+# Graphics
+import kivy.graphics as G
 
 # Logging
 # Set logger before importing simulation modules (to set format for all)
@@ -369,22 +371,34 @@ class GeometrySketch(F.Widget):
         """
         """
         super(GeometrySketch, self).__init__(**kwargs)
+        self.geometry_group = G.InstructionGroup()
+        self.rectangle = G.Rectangle()  # size=(1000, 400)
+        self.color = G.Color(0, 0, 0, 0.75)
+        self.geometry_group.add(self.color)
+        self.geometry_group.add(self.rectangle)
 
-        # Blank image
-        with self.canvas:
-            F.Color(1, 0, 0, 0.4)  # gray
-#            self.blank_geometry = F.Rectangle(size=(20, 20))  # Fixed
-            self.blank_geometry = F.Rectangle(pos=self.center,
-                                              size=(900, 400))  # Fixed
 
-        self.bind(pos=self.update_blank_geometry)
-
-    def update_blank_geometry(self, *args):
+class GeometryGrid(F.GridLayout):
+    """
+    GridLayout, in which has one child, which canvas contains the
+    geometry_group of GeometrySketch.
+    """
+    def __init__(self, **kwargs):
         """
-        Actual position of parent and thus canvas is determined online, not
-        at init. Thus, need to update.
         """
-        self.blank_geometry.pos = self.pos
+        super(GeometryGrid, self).__init__(**kwargs)
+        self.add_widget(GeometrySketch())
+        self.sketch = self.children[0]
+        # Link canvas to geometry_group
+        self.canvas.add(self.sketch.geometry_group)
+
+        # Update to parents size and position
+        kivy.clock.Clock.schedule_once(self.set_attributes)
+
+    def set_attributes(self, dt):
+        self.sketch.rectangle.size = self.size
+        #  989=1024-line_height
+        self.sketch.rectangle.pos = (80, 989-self.height)
 
     def update_geometry(self, geometry_results):
         """
@@ -395,10 +409,19 @@ class GeometrySketch(F.Widget):
         geometry_results [dict]
 
         """
-        if geometry_results:
-            # Results exists, add components to blank_geometry
-            with self.canvas:
-                pass
+        frame_width = self.sketch.width
+        frame_height = self.sketch.height
+
+        with self.canvas:
+            G.Color(1, 1, 0)
+            G.Ellipse(pos=(frame_width/10, frame_height/10), size=(30, 30))
+
+
+
+#
+#        self.sketch.geometry_group.color = G.Color(0, 0, 0, 0.15)
+#
+#        test_square =
 
 
 # %% Utiliies
@@ -623,7 +646,7 @@ def _collect_input(parameters, ids):
             continue
         elif 'Distances' in str(value):
             continue
-        elif 'GeometrySketch' in str(value):
+        elif 'GeometryGrid' in str(value):
             continue
         elif value.text == '':
             parameters[var_name] = None

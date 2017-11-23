@@ -813,24 +813,22 @@
                         NonFileBrowserLabel:
                             pos_hint: {'top': 1}
                             text: str(beam_geometry.text+' beam and '+gi_geometry.text+' geometry')
-                        GridLayout:
+                        GeometryGrid:
+                            id: geometry_sketch
                             cols: 1
-                            pos_hint: {'top': 0.9}
-                            NonFileBrowserLabel:
-                                text: str(beam_geometry.text+' beam and '+gi_geometry.text+' geometry')
+                            pos: (80, 1024-line_height-self.height)
+                            size_hint: (None, None)
+                            height: 400
+                            width: 800
 
-#                    GridLayout:
-#                        cols: 1
-#                        size_hint_y: None
-#                        height: 1024
-#
-#                        NonFileBrowserLabel:
-#                            text: str(beam_geometry.text+' beam and '+gi_geometry.text+' geometry')
-#                        GeometrySketch:
-#                            id: geometry_sketch
-#                        Widget:
-#                            size_hint_y: None
-#                            height: 485
+                        Button:
+                            text: 'Update sketch'
+                            pos_hint: {'top': 0.3}
+                            on_press: geometry_sketch.update_geometry(dict())
+
+
+
+
 
 #                Button:
 #                    text: 'Calculate visibility'
