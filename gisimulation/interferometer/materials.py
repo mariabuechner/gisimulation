@@ -771,7 +771,7 @@ def height_to_shift(height, material, energy, rho=0, photo_only=False,
     wavelength = energy_to_wavelength(energy)
     logger.debug('Wavelengthis {} [um].'.format(wavelength))
     dphi = 2*np.pi*delta*height/wavelength
-    return np.mod(dphi, np.pi)
+    return np.mod(dphi, 2.0*np.pi)
 
 
 def read_sample_values():

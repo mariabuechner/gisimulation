@@ -741,23 +741,23 @@ def _get_spectrum(spectrum_file, range_, spectrum_step, design_energy):
                 logger.error(error_message)
                 raise InputError(error_message)
             # Check if within bounds of spectrum
-            if range_[0] >= max(spectrum.energies):
+            if range_[0] >= max(spectrum['energies']):
                 error_message = ("Energy range minimum value must be smaller "
                                  "than spectrum maximum ({0} keV)."
-                                 .format(max(spectrum.energies)))
+                                 .format(max(spectrum['energies'])))
                 logger.error(error_message)
                 raise InputError(error_message)
-            if range_[1] <= min(spectrum.energies):
+            if range_[1] <= min(spectrum['energies']):
                 error_message = ("Energy range maximum value must be larger "
                                  "than spectrum minimum ({0} keV)."
-                                 .format(min(spectrum.energies)))
+                                 .format(min(spectrum['energies'])))
                 logger.error(error_message)
                 raise InputError(error_message)
 
             # Find min and max closes to range min and max
-            [min_energy, min_index] = _nearest_value(spectrum.energies,
+            [min_energy, min_index] = _nearest_value(spectrum['energies'],
                                                      range_[0])
-            [max_energy, max_index] = _nearest_value(spectrum.energies,
+            [max_energy, max_index] = _nearest_value(spectrum['energies'],
                                                      range_[1])
             # More than 1 energy in spectrum?
             if min_energy == max_energy:
@@ -766,8 +766,8 @@ def _get_spectrum(spectrum_file, range_, spectrum_step, design_energy):
                                  "together.".format(range_[0], range_[1]))
                 logger.error(error_message)
                 raise InputError(error_message)
-            spectrum.energies = spectrum.energies[min_index:max_index+1]
-            spectrum.photons = spectrum.photons[min_index:max_index+1]
+            spectrum['energies'] = spectrum['energies'][min_index:max_index+1]
+            spectrum['photons'] = spectrum['photons'][min_index:max_index+1]
             logger.debug("\tSet energy range from {0} to {1} keV."
                          .format(min_energy, max_energy))
         logger.info("... done.")
@@ -808,12 +808,12 @@ def _get_spectrum(spectrum_file, range_, spectrum_step, design_energy):
         logger.debug("\tSet photons to 1.")
         logger.info("... done.")
         logger.info("Spectrum is design energy {} keV."
-                    .format(spectrum.energies))
-        return spectrum, spectrum.energies, spectrum.energies
+                    .format(spectrum['energies']))
+        return spectrum, spectrum['energies'], spectrum['energies']
 
     # Check and show spectrum results
-    min_energy = min(spectrum.energies)
-    max_energy = max(spectrum.energies)
+    min_energy = min(spectrum['energies'])
+    max_energy = max(spectrum['energies'])
     # Design energy in spectrum?
     if design_energy < min_energy or \
        design_energy > max_energy:
@@ -826,7 +826,7 @@ def _get_spectrum(spectrum_file, range_, spectrum_step, design_energy):
     logger.debug("Design energy within spectrum.")
     logger.info("Spectrum from {0} keV to {1} keV in {2} keV steps."
                 .format(min_energy, max_energy,
-                        spectrum.energies[1]-spectrum.energies[0]))
+                        spectrum['energies'][1]-spectrum['energies'][0]))
     return spectrum, min_energy, max_energy
 
 
@@ -843,8 +843,8 @@ def _read_spectrum(spectrum_file_path):
     Returns
     #######
 
-    spectrum [struct] [keV]:                            spectrum.energies
-                                                        spectrum.photons
+    spectrum [dict] [keV]:          spectrum['energies']
+                                    spectrum['energies']
 
     Format
     ######
@@ -865,20 +865,18 @@ def _read_spectrum(spectrum_file_path):
         # Rename 'energy' to 'energies'
         spectrum_struct_array.dtype.names = ('energies', 'photons')
     # Convert to dict
-    spectrum_dict = dict()
+    spectrum = dict()
     try:
-        spectrum_dict['energies'] = spectrum_struct_array['energies']
-        spectrum_dict['photons'] = spectrum_struct_array['photons']
+        spectrum['energies'] = spectrum_struct_array['energies']
+        spectrum['energies'] = spectrum_struct_array['photons']
     except AttributeError as e:
         error_message = "Spectrum file at {0} is missing '{1}'-column." \
                         .format(spectrum_file_path, str(e).split()[-1])
         logger.error()
         raise InputError
-    # Convert to struct
-    spectrum = utilities.Struct(**spectrum_dict)
 
     # Check if more than 2 energies in spectrum
-    if len(spectrum.energies) <= 1:
+    if len(spectrum['energies']) <= 1:
                 error_message = ("Spectrum file only contains 1 energy."
                                  "Minimum is 2.")
                 logger.error(error_message)
