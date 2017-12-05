@@ -207,6 +207,102 @@ def constraint_mean_energy(filter_thickness, *args):
 #    return np.mean(E*t/np.max(E))
 
 
+def calc_thetas(parameters):
+    """
+    Returns angles from source center to detector pixel center on positive
+    x-axis, not oncluding center pixel (if odd number of pixels).
+
+    Parameters
+    ##########
+
+    parameters [dict]
+
+    Returns
+    #######
+
+    thetas [rad]
+
+    """
+    number_pixels = parameters['field_of_view'][0]  # in x>0 direction
+    if parameters['curved_detector']:
+        pass
+    else:
+        # Flat detector
+        number_pixels = np.round(number_pixels / 2.0)
+        thetas = np.zeros(number_pixels)
+        for pixel_number in np.arange(0, number_pixels):
+            if number_pixels%2 == 0:
+                # is even
+                pixel_position = parameters['pixel_size']/2.0 + \
+                    pixel_number * parameters['pixel_size']  # [um]
+            else:
+                # is odd
+                pixel_position = pixel_number * parameters['pixel_size']  # [um]
+            # Calc angle
+            pixel_position = pixel_position * 1e-3  # [mm]
+            thetas[pixel_number] = np.arctan(pixel_position /
+                                       parameters['distance_source_detector'])
+    return thetas
+
+def calc_sample_thicknesses(parameters):
+    """
+    Calculate sample crosssection (thickness, length of path) for given thetas.
+
+    x = b +/- sqrt(b^2 - a)
+    y = tan(theta) * x
+
+    with a = (sample_distance^2 - sample_radius^2)/(1+tan^2(theta))
+    and  b = (sample_distance*tan(theta))/(1+tan^2(theta))
+
+    with b^2-a > 0 and sqrt(b^2-a)>b (else: 0 thickness)
+
+    Parameters
+    ##########
+
+    parameters [dict]
+
+    Returns
+    #######
+
+    sample_thicknesses [mm]
+    thetas [rad]:               array of angles that actually pass through the
+                                sample. others are set to zero.
+
+    Notes
+    #####
+
+    if tangent or ray passes out of sample, thickness = 0. Round sample.
+
+    """
+    sample_radius = parameters['thickness_sample'] / 2.0  # [mm]
+
+    a = (parameters['sample_distance']**2.0 - sample_radius**2.0) / \
+        (1.0+np.tan(parameters['thetas'])**2.0)  # [mm^2]
+    b = (parameters['sample_distance']*np.tan(parameters['thetas'])) / \
+        (1.0+np.tan(parameters['thetas'])**2.0)  # [mm]
+
+    x_1 = b - sqrt(b**2 - a)  # [mm]
+    x_2 = b + sqrt(b**2 - a)  # [mm]
+    # Set nans (complex) and negative (?) to 0
+    x_1 = np.nan_to_num(x_1)
+    x_1[x_1 < 0] = 0.0
+    x_2 = np.nan_to_num(x_2)
+    x_2[x_2 < 0] = 0.0
+
+
+    # Calc sample cross section
+    y_1 = tan(theta) * x_1  # Element wise, [mm]
+    y_2 = tan(theta) * x_2  # Element wise, [mm]
+
+    dx = x_2 - x_1  # [mm]
+    dy = y_2 - y_1  # [mm]
+    sample_thicknesses = np.sqrt(dx**2.0 + dy**2.0)  # [mm]
+
+    # Set all angles that do not pass throught the sample (thockness==0) to 0
+    parameters['thetas'][sample_thicknesses == 0] = 0
+    return sample_thicknesses, parameters['thetas']
+
+
 if __name__ == "__main__":
 
 #    E = 4.0
@@ -249,12 +345,15 @@ if __name__ == "__main__":
 
     # Calc sample thicknesses depending on theta
     parameters['thetas'] = calc_thetas(parameters)  # [rad]
-    sample_thicknesses = calc_sample_thicknesses(parameters)  # [mm]
+    sample_thicknesses, thetas = calc_sample_thicknesses(parameters)  # [mm]
 
     # Calc theta=0 filter thickness and mean energy
+    theta_0 = 0.0  # [rad]
+    sample_thickness_0 = parameters['thichness_sample']
+
     filter_thickness_0 = 0.0  # [um]
     sigma_0 = 0.0
-    mean_energy_0 = 0.0  # [leV]
+    mean_energy_0 = 0.0  # [keV]
 
     filter_thicknesses = parameters['thetas'] * 0.0
     x0 = filter_thickness_0
