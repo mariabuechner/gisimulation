@@ -225,7 +225,9 @@ def calc_thetas(parameters):
     """
     number_pixels = parameters['field_of_view'][0]  # in x>0 direction
     if parameters['curved_detector']:
-        pass
+        logger.warning("Theta calculation for curved detector not yet "
+                       "implemented. Change to flat detector "
+                       "(parameters['curved_detector'] =  False).")
     else:
         # Flat detector
         number_pixels = np.round(number_pixels / 2.0)
