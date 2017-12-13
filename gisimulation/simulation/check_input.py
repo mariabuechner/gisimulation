@@ -50,6 +50,9 @@ def check_parser(parameters):
     parameters [dict]:
 
     """
+    # Use copy of paramters, since reference and not content is passed
+    parameters = parameters.copy()
+
     # Get parameter infos from parser, to link var_names and var_keys
     parser_info = parser_def.get_arguments_info(parser_def.input_parser())
 
@@ -80,6 +83,9 @@ def general_input(parameters, parser_info):
     If an parser argument is required, it can be None from the GUI. Thus,
     check it the first time it is called.
     """
+    # Use copy of paramters, since reference and not content is passed
+    parameters = parameters.copy()
+
     try:
         # % Minimal required input for 'free', 'parallel', no gatings
         logger.debug("Checking general input...")
@@ -782,29 +788,27 @@ def _get_spectrum(spectrum_file, range_, spectrum_step, design_energy):
             logger.error(error_message)
             raise InputError(error_message)
         # Calc spectrum
-        spectrum_dict = dict()
+        spectrum = dict()
         # Calc from range
         logger.info("Setting spectrum based on input range...")
-        spectrum_dict['energies'] = np.arange(range_[0],
-                                              range_[1]+spectrum_step,
-                                              spectrum_step,
-                                              dtype=np.float)
-        spectrum_dict['photons'] = (np.ones(len(spectrum_dict['energies']),
-                                            dtype=np.float) /
-                                    len(spectrum_dict['energies']))
+        spectrum['energies'] = np.arange(range_[0],
+                                         range_[1]+spectrum_step,
+                                         spectrum_step,
+                                         dtype=np.float)
+        spectrum['photons'] = (np.ones(len(spectrum['energies']),
+                                       dtype=np.float) /
+                               len(spectrum['energies']))
         logger.debug("\tSet all photons to {}."
-                     .format(spectrum_dict['photons'][0]))
+                     .format(spectrum['photons'][0]))
         # Convert to struct
-        spectrum = utilities.Struct(**spectrum_dict)
         logger.info("... done.")
     # Both spectrum_file and _range are None, use design energy as spectrum
     else:
         logger.info("Only design energy specified, calculating only for {} "
                     "keV...".format(design_energy))
-        spectrum_dict = dict()
-        spectrum_dict['energies'] = np.array(design_energy, dtype=np.float)
-        spectrum_dict['photons'] = np.array(1, dtype=np.float)
-        spectrum = utilities.Struct(**spectrum_dict)
+        spectrum = dict()
+        spectrum['energies'] = np.array(design_energy, dtype=np.float)
+        spectrum['photons'] = np.array(1, dtype=np.float)
         logger.debug("\tSet photons to 1.")
         logger.info("... done.")
         logger.info("Spectrum is design energy {} keV."
@@ -844,7 +848,7 @@ def _read_spectrum(spectrum_file_path):
     #######
 
     spectrum [dict] [keV]:          spectrum['energies']
-                                    spectrum['energies']
+                                    spectrum['photons']
 
     Format
     ######
@@ -868,7 +872,7 @@ def _read_spectrum(spectrum_file_path):
     spectrum = dict()
     try:
         spectrum['energies'] = spectrum_struct_array['energies']
-        spectrum['energies'] = spectrum_struct_array['photons']
+        spectrum['photons'] = spectrum_struct_array['photons']
     except AttributeError as e:
         error_message = "Spectrum file at {0} is missing '{1}'-column." \
                         .format(spectrum_file_path, str(e).split()[-1])

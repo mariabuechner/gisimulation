@@ -35,7 +35,7 @@ class Geometry():
         parameters [dict]
 
         """
-        self._parameters = parameters
+        self._parameters = parameters.copy()
         # nu = 2 if pi shift, nu = 1 if pi-half shift
         self._nu = round(self._parameters['phase_shift_g1'] * 2/np.pi)
         logger.debug("self._nu: {}".format(self._nu))

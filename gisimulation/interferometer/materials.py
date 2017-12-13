@@ -778,6 +778,7 @@ def read_sample_values():
     """
     Read delta and mu fom sample files and interpolate for energies
     """
+    pass
 
 
 #if _name__ == '__main__':

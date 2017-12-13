@@ -26,7 +26,7 @@ Note:
         thetas [rad]:                   fan-angles from source center to pixels
         number_phase_steps
         material_sample
-        sample_position [mm]
+        sample_distance [mm]
         thichness_sample [mm]           if round, is diameter
         material_filter
         filter_position [mm]
@@ -54,9 +54,12 @@ Note:
 """
 import numpy as np
 import logging
-import materials
+import interferometer.materials as materials
+import simulation.check_input as check_input
 from scipy.optimize import minimize, minimize_scalar
 logger = logging.getLogger(__name__)
+#logger.setLevel = logging.INFO
+logger.level = logging.INFO
 
 
 def optimize_phase_detector_variance(filter_thickness, *args):
@@ -70,20 +73,21 @@ def optimize_phase_detector_variance(filter_thickness, *args):
     args[2]                     sample_thickness [mm] (=f(theta))
 
     """
-    parameters = args[0]
+    # Use copy of paramters, since reference and not content is passed
+    parameters = args[0].copy()
+
     sigma_0 = args[1]
-    sample_thickness = args[2]  # [mm] (=f(theta))
+    sample_thickness = args[2].copy()  # [mm] (=f(theta))
     sample_thickness = sample_thickness * 1e3  # [um]
 
     # constants
     c_0 = 1.0 / (2.0 * np.pi**2 * parameters['number_phase_steps'])
 
-    # visibility factor (energy dependent)
-    visibility = (4/np.pi) * (() / ()) * (() / ())
-
     # calc sigma over all energies
     sigma = 0.0
     for index, energy in enumerate(parameters['spectrum']['energies']):
+        print("{0} keV...".format(energy))
+        logger.info("Calculating for {0} keV....".format(energy))
         # Background visibility factor (energy dependent)
         # Transmission of G0 and G2 [%]
         t_g0 = materials.height_to_transmission(parameters['thickness_g0'],
@@ -95,7 +99,7 @@ def optimize_phase_detector_variance(filter_thickness, *args):
         dc_g0 = parameters['duty_cycle_g0']
         dc_g2 = parameters['duty_cycle_g2']
         # Background visibility
-        visibility = (.04/np.pi) * \
+        visibility = (4.0/np.pi) * \
                      ((dc_g2*(1.0-t_g2)*np.sinc(dc_g2)) /
                       (t_g2+dc_g2*(1.0-t_g2))) * \
                      ((dc_g0*(1.0-t_g0)*np.sinc(dc_g0)) /
@@ -107,7 +111,8 @@ def optimize_phase_detector_variance(filter_thickness, *args):
         transmission = \
             materials.height_to_transmission(sample_thickness,
                                              parameters['material_sample'],
-                                             energy)
+                                             energy,
+                                             rho=1.19)
         c_t = 1.0 + 1.0/transmission
 
         # Counts factor (energy dependent)
@@ -118,13 +123,14 @@ def optimize_phase_detector_variance(filter_thickness, *args):
         c_n = parameters['spectrum']['photons'][index] * t_g0 * t_g1 * t_g2
 
         # Sigma
-        a = c_0 * c_v * v_t / c_n
+        a = c_0 * c_v * c_t / c_n
         beta_filter = materials.delta_beta(parameters['material_filter'],
                                            energy,
                                            source=parameters['look_up_table'])[0]
         b = - materials.attenuation_coefficient(beta_filter, energy)
         # Sum pver energy
         sigma = sigma + a * np.exp(b*filter_thickness)
+        logger.info("...done.")
 
     # Minimize least square error
     return (sigma - sigma_0)**2
@@ -146,19 +152,26 @@ def constraint_mean_energy(filter_thickness, *args):
     minimize method must be  COBYLA or SLSQP to consider constraints
 
     """
-    parameters = args[0]
+    # Use copy of paramters, since reference and not content is passed
+    parameters = args[0].copy()
+
     mean_energy_0 = args[1]  # [keV]
     sample_thickness = args[2]  # [mm] (=f(theta))
     sample_thickness = sample_thickness * 1e3  # [um]
 
-    counts = parameters['spectrum']['photons']
+    counts = parameters['spectrum']['photons'].copy()  # copy necessary again?
     # Rescale counts for each energy
     for index, energy in enumerate(parameters['spectrum']['energies']):
+        print("ME {0} keV...".format(energy))
+        logger.info("Calculating mean energy for {0} keV....".format(energy))
         # Sample transmission
         transmission = \
                 materials.height_to_transmission(sample_thickness,
                                                  parameters['material_sample'],
-                                                 energy)
+                                                 energy,
+                                                 rho=1.19)
+        if transmission == 0.0:
+            transmission = 1e-15
 
         # Grating transmission
         t_g0 = materials.height_to_transmission(parameters['thickness_g0'],
@@ -181,6 +194,8 @@ def constraint_mean_energy(filter_thickness, *args):
         # counts through sample, grating and filter
         counts[index] = parameters['spectrum']['photons'][index] * \
             transmission * t_g0 * t_g1 * t_g2 * filter_transmission
+
+        logger.info("...done.")
 
     weighted_spectrum = sum(counts*parameters['spectrum']['energies']) / \
         sum(counts)  # [kev]
@@ -223,6 +238,9 @@ def calc_thetas(parameters):
     thetas [rad]
 
     """
+    # Use copy of paramters, since reference and not content is passed
+    parameters = parameters.copy()
+
     number_pixels = parameters['field_of_view'][0]  # in x>0 direction
     if parameters['curved_detector']:
         logger.warning("Theta calculation for curved detector not yet "
@@ -230,7 +248,7 @@ def calc_thetas(parameters):
                        "(parameters['curved_detector'] =  False).")
     else:
         # Flat detector
-        number_pixels = np.round(number_pixels / 2.0)
+        number_pixels = int(np.round(number_pixels / 2.0))
         thetas = np.zeros(number_pixels)
         for pixel_number in np.arange(0, number_pixels):
             if number_pixels%2 == 0:
@@ -276,33 +294,38 @@ def calc_sample_thicknesses(parameters):
     if tangent or ray passes out of sample, thickness = 0. Round sample.
 
     """
-    sample_radius = parameters['thickness_sample'] / 2.0  # [mm]
+    # Use copy of paramters, since reference and not content is passed
+    parameters = parameters.copy()
+
+    sample_radius = parameters['thichness_sample'] / 2.0  # [mm]
 
     a = (parameters['sample_distance']**2.0 - sample_radius**2.0) / \
-        (1.0+np.tan(parameters['thetas'])**2.0)  # [mm^2]
-    b = (parameters['sample_distance']*np.tan(parameters['thetas'])) / \
-        (1.0+np.tan(parameters['thetas'])**2.0)  # [mm]
+        (1.0 + np.tan(parameters['thetas'])**2.0)  # [mm^2]
+    b = (parameters['sample_distance'] * np.tan(parameters['thetas'])) / \
+        (1.0 + np.tan(parameters['thetas'])**2.0)  # [mm]
 
-    x_1 = b - sqrt(b**2 - a)  # [mm]
-    x_2 = b + sqrt(b**2 - a)  # [mm]
+    x_1 = b - np.sqrt(b**2 - a)  # [mm]
+    x_2 = b + np.sqrt(b**2 - a)  # [mm]
+
+
     # Set nans (complex) and negative (?) to 0
     x_1 = np.nan_to_num(x_1)
     x_1[x_1 < 0] = 0.0
     x_2 = np.nan_to_num(x_2)
     x_2[x_2 < 0] = 0.0
 
-
     # Calc sample cross section
-    y_1 = tan(theta) * x_1  # Element wise, [mm]
-    y_2 = tan(theta) * x_2  # Element wise, [mm]
+    y_1 = np.tan(parameters['thetas']) * x_1  # Element wise, [mm]
+    y_2 = np.tan(parameters['thetas']) * x_2  # Element wise, [mm]
 
     dx = x_2 - x_1  # [mm]
     dy = y_2 - y_1  # [mm]
     sample_thicknesses = np.sqrt(dx**2.0 + dy**2.0)  # [mm]
 
-    # Set all angles that do not pass throught the sample (thockness==0) to 0
-    parameters['thetas'][sample_thicknesses == 0] = 0
-    return sample_thicknesses, parameters['thetas']
+    # Set all angles that do not pass throught the sample (thickness==0) to 0
+    thetas = parameters['thetas'].copy()  # not clear why necessary again...?
+    thetas[sample_thicknesses == 0] = 0
+    return sample_thicknesses, thetas
 
 
 if __name__ == "__main__":
@@ -319,9 +342,11 @@ if __name__ == "__main__":
     # Set paramters
     parameters = dict()
     parameters['look_up_table'] = 'nist'
-    parameters['spectrum_file'] = ("C:\Users\buechner_m\Documents\Code\"
-                                   "bCTDesign\Simulation\matlab_calcs\"
+    parameters['spectrum_file'] = ("C:\\Users\\buechner_m\\Documents\\Code\\"
+                                   "bCTDesign\\Simulation\\matlab_calcs\\"
                                    "Comet100kV_counts.csv")
+    # _counts calculated as mean of 10keV and 20keV from 20 keV on, before from
+    # 10 keV!!!
     parameters['spectrum_range'] = None
     parameters['spectrum_step'] = None
     parameters['design_energy'] = 46  # [keV]
@@ -330,12 +355,17 @@ if __name__ == "__main__":
                                   parameters['spectrum_range'],
                                   parameters['spectrum_step'],
                                   parameters['design_energy'])
+    # FOV at detector 208 mm at 75 um pixel size: ca. 2775 pixel
+    parameters['pixel_size'] = 75  # [um]
+    parameters['field_of_view'] = np.array([2775, 1.0])
+    parameters['curved_detector'] = False
+    parameters['distance_source_detector'] = 1041  # [mm]
     parameters['number_phase_steps'] = 31.0
-    parameters['material_sample'] = 'PMMA'
-    parameters['sample_position'] = 520.5  # [mm]
-    parameters['thichness_sample'] = 10.0  # [mm]
+    parameters['material_sample'] = 'C5H8O2'  # PMMA
+    parameters['sample_distance'] = 520.5  # [mm]
+    parameters['thichness_sample'] = 100.0  # [mm]
     parameters['material_filter'] = 'Al'
-    parameters['filter_position'] = 250.0  # [mm] ??? matters???
+    parameters['filter_position'] = 165.0  # [mm]
     parameters['material_g0'] = 'Au'
     parameters['material_g1'] = 'Au'
     parameters['material_g2'] = 'Au'
@@ -353,21 +383,102 @@ if __name__ == "__main__":
     theta_0 = 0.0  # [rad]
     sample_thickness_0 = parameters['thichness_sample']
 
-    filter_thickness_0 = 0.0  # [um]
-    sigma_0 = 0.0
-    mean_energy_0 = 0.0  # [keV]
+    # Optimize mean energy to 46 keV at center beam
+    filter_thickness_0 = 2.0 * 1e3  # [um]
+    # For _counts and 2.0 mm: 33.0312174676 before, 46.1058165904 after
+    # for normal 100kVp and 2.0mm: 33.2284455028, 46.1275334897
 
-    filter_thicknesses = parameters['thetas'] * 0.0
-    x0 = filter_thickness_0
-    for index, sample_thickness in enumerate(sample_thicknesses):
-        # Options
-        method = 'COBYLA'  # COBYLA or SLSQP
-        args = (parameters, sigma_0, sample_thickness)
-        constraints = {'type': 'eq', 'fun': constraint_mean_energy,
-                       'args': (parameters, mean_energy_0, sample_thickness)}
+    mean_before = np.sum(parameters['spectrum']['energies'] *
+                         parameters['spectrum']['photons']) / \
+        np.sum(parameters['spectrum']['photons'])
+    print(mean_before)
 
-        results = minimize(optimize_phase_detector_variance, x0, args,
-                           tol=10**-3)
-        filter_thicknesses[index] = results.x
-        # set next starting point to current thickness
-        x0 = filter_thicknesses
+    filtered_counts = parameters['spectrum']['photons'] * \
+        materials.height_to_transmission(filter_thickness_0,
+                                         parameters['material_filter'],
+                                         parameters['spectrum']['energies'],
+                                         source=parameters['look_up_table'])
+
+    mean_after = np.sum(parameters['spectrum']['energies'] *
+                        filtered_counts) / np.sum(filtered_counts)
+    print(mean_after)
+    # Done
+
+    # Calc 0-values
+    mean_energy_0 = mean_after  # [keV]
+
+#    sample_thickness_0 = sample_thickness_0 * 1e3  # [um]
+#
+#    # constants
+#    c_0 = 1.0 / (2.0 * np.pi**2 * parameters['number_phase_steps'])
+#    sigma_0 = 0.0
+#    for index, energy in enumerate(parameters['spectrum']['energies']):
+#        print("{0} keV...".format(energy))
+#        logger.info("Calculating for {0} keV....".format(energy))
+#        # Background visibility factor (energy dependent)
+#        # Transmission of G0 and G2 [%]
+#        t_g0 = materials.height_to_transmission(parameters['thickness_g0'],
+#                                                parameters['material_g0'],
+#                                                energy)
+#        t_g2 = materials.height_to_transmission(parameters['thickness_g2'],
+#                                                parameters['material_g2'],
+#                                                energy)
+#        dc_g0 = parameters['duty_cycle_g0']
+#        dc_g2 = parameters['duty_cycle_g2']
+#        # Background visibility
+#        visibility = (4.0/np.pi) * \
+#                     ((dc_g2*(1.0-t_g2)*np.sinc(dc_g2)) /
+#                      (t_g2+dc_g2*(1.0-t_g2))) * \
+#                     ((dc_g0*(1.0-t_g0)*np.sinc(dc_g0)) /
+#                      (t_g0+dc_g0*(1.0-t_g0)))
+#        c_v = 1.0/visibility**2
+#
+#        # Sample transmission factor (energy and sample_thickness dependent)
+#        # sample_thickness dependes on theta
+#        transmission = \
+#            materials.height_to_transmission(sample_thickness_0,
+#                                             parameters['material_sample'],
+#                                             energy,
+#                                             rho=1.19)
+#        if transmission == 0.0:
+#            transmission = 1e-15
+#        c_t = 1.0 + 1.0/transmission
+#
+#        # Counts factor (energy dependent)
+#        # Remaining transmission
+#        t_g1 = materials.height_to_transmission(parameters['thickness_g1'],
+#                                                parameters['material_g1'],
+#                                                energy)
+#        c_n = parameters['spectrum']['photons'][index] * t_g0 * t_g1 * t_g2
+#
+#        # Sigma
+#        a = c_0 * c_v * c_t / c_n
+#        beta_filter = materials.delta_beta(parameters['material_filter'],
+#                                           energy,
+#                                           source=parameters['look_up_table'])[0]
+#        b = - materials.attenuation_coefficient(beta_filter, energy)
+#        # Sum pver energy
+#        sigma_0 = sigma_0 + a * np.exp(b*filter_thickness_0)
+#        logger.info('...done.')
+
+    sigma_0 = 5.4192948236178471e-47
+
+#    filter_thicknesses = parameters['thetas'] * 0.0
+#    x0 = filter_thickness_0
+#    for index, sample_thickness in enumerate(sample_thicknesses):
+#        print("{0} rad ({1}.)...".format(parameters['thetas'][index], index))
+#        logger.info("Calculating for {0} rad ({1}.)..."
+#                    .format(parameters['thetas'][index], index))
+#        # Options
+#        method = 'COBYLA'  # COBYLA or SLSQP
+#        args = (parameters, sigma_0, sample_thickness)
+#        constraints = {'type': 'eq', 'fun': constraint_mean_energy,
+#                       'args': (parameters, mean_energy_0, sample_thickness)}
+#
+#        results = minimize(optimize_phase_detector_variance, x0, args,
+#                           tol=10**-3)
+#        filter_thicknesses[index] = results.x
+#        print(results.x)
+#        # set next starting point to current thickness
+#        x0 = filter_thicknesses
+#        logger.info('...done.')
