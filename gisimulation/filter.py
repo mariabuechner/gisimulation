@@ -649,11 +649,6 @@ if __name__ == "__main__":
     filter_thicknesses = filter_thicknesses * 1e-3  # [mm]
 
 
-
-    filter_thicknesses[17] = 4551.0625 * 1e-3
-    filter_thicknesses[18] = 5011.0 * 1e-3
-    filter_thicknesses[19] = 5512.8125 * 1e-3
-
     x = parameters['filter_position'] * np.tan(thetas) + \
         filter_thicknesses * np.sin(thetas)
     y = parameters['filter_position'] + \
@@ -668,10 +663,4 @@ if __name__ == "__main__":
     all_results['x'] = x.copy()
     all_results['y'] = y.copy()
     scipy.io.savemat('results_17_end-rad_49_50-step_30_82-keV', all_results)
-
-    # TODO:
-        # add   17.: 4551.0625 * 1e-3
-        #       18.: 5011.0 * 1e-3
-        #       19.: 5512.8125 * 1e-3
-    # and save and calc all as '...17_end...'
 
