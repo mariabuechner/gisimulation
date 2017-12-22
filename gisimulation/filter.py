@@ -1,3 +1,5 @@
+# Vis calc??? talbot order not important! Check formula
+
 """
 Module to calculate the shape of a filter for x-ray grating interferometry.
 
@@ -92,10 +94,10 @@ def optimize_phase_detector_variance(filter_thickness, *args):
         logger.debug("Calculating for {0} keV....".format(energy))
         # Background visibility factor (energy dependent)
         # Transmission of G0 and G2 [%]
-        t_g0 = materials.height_to_transmission(parameters['thickness_g0'],
+        t_g0 = materials.height_to_transmission(parameters['thickness_g0']+100,
                                                 parameters['material_g0'],
                                                 energy)
-        t_g2 = materials.height_to_transmission(parameters['thickness_g2'],
+        t_g2 = materials.height_to_transmission(parameters['thickness_g2']+120,
                                                 parameters['material_g2'],
                                                 energy)
         dc_g0 = parameters['duty_cycle_g0']
@@ -126,6 +128,12 @@ def optimize_phase_detector_variance(filter_thickness, *args):
 
         # Counts factor (energy dependent)
         # Remaining transmission
+        t_g0 = materials.height_to_transmission(parameters['thickness_g0'],
+                                                parameters['material_g0'],
+                                                energy)
+        t_g2 = materials.height_to_transmission(parameters['thickness_g2'],
+                                                parameters['material_g2'],
+                                                energy)
         t_g1 = materials.height_to_transmission(parameters['thickness_g1'],
                                                 parameters['material_g1'],
                                                 energy)
@@ -405,9 +413,12 @@ if __name__ == "__main__":
     parameters['material_g0'] = 'Au'
     parameters['material_g1'] = 'Au'
     parameters['material_g2'] = 'Au'
-    parameters['thickness_g0'] = 80.0  # [um]
-    parameters['thickness_g1'] = 1.2  # [um]
-    parameters['thickness_g2'] = 60.0  # [um]
+    # Grating thickness:
+    # For visibility calc use actual 46 keV design heights
+    # For energy calc use these missing thicknesses
+    parameters['thickness_g0'] = 80.0  # [um] should be 180
+    parameters['thickness_g1'] = 0.4  # [um] Was 8.8 and should be 9.2?
+    parameters['thickness_g2'] = 60.0  # [um] should be 180
     parameters['duty_cycle_g0'] = 0.5
     parameters['duty_cycle_g2'] = 0.5
 
@@ -415,8 +426,8 @@ if __name__ == "__main__":
     parameters['thetas'] = calc_thetas(parameters)  # [rad]
     sample_thicknesses, thetas = calc_sample_thicknesses(parameters)  # [mm]
 
-    plt.plot(thetas, sample_thicknesses)
-    plt.show()
+#    plt.plot(thetas, sample_thicknesses)
+#    plt.show()
 
     # Calc theta=0 filter thickness and mean energy
     theta_0 = 0.0  # [rad]
@@ -434,9 +445,9 @@ if __name__ == "__main__":
                          parameters['spectrum']['photons']) / \
         np.sum(parameters['spectrum']['photons'])
 
-    plt.plot(parameters['spectrum']['energies'],
-             parameters['spectrum']['photons'] )
-    plt.show()
+#    plt.plot(parameters['spectrum']['energies'],
+#             parameters['spectrum']['photons'] )
+#    plt.show()
 
     print(mean_before)
 
@@ -479,8 +490,8 @@ if __name__ == "__main__":
     filtered_counts = parameters['spectrum']['photons'] * \
         t_g0 * t_g1 * t_g2 * sample_transmission * filter_transmission
 
-    plt.plot(parameters['spectrum']['energies'], filtered_counts)
-    plt.show()
+#    plt.plot(parameters['spectrum']['energies'], filtered_counts)
+#    plt.show()
 
 
     mean_after = np.sum(parameters['spectrum']['energies'] *
@@ -499,10 +510,10 @@ if __name__ == "__main__":
 #        logger.info("Calculating for {0} keV....".format(energy))
 #        # Background visibility factor (energy dependent)
 #        # Transmission of G0 and G2 [%]
-#        t_g0 = materials.height_to_transmission(parameters['thickness_g0'],
+#        t_g0 = materials.height_to_transmission(parameters['thickness_g0']+100,
 #                                                parameters['material_g0'],
 #                                                energy)
-#        t_g2 = materials.height_to_transmission(parameters['thickness_g2'],
+#        t_g2 = materials.height_to_transmission(parameters['thickness_g2']+120,
 #                                                parameters['material_g2'],
 #                                                energy)
 #        dc_g0 = parameters['duty_cycle_g0']
@@ -515,7 +526,7 @@ if __name__ == "__main__":
 #                      (t_g0+dc_g0*(1.0-t_g0)))
 #        c_v = 1.0/visibility**2
 #
-##        print(visibility)
+#        print(visibility)
 #
 #        # Sample transmission factor (energy and sample_thickness dependent)
 #        # sample_thickness dependes on theta
@@ -533,6 +544,12 @@ if __name__ == "__main__":
 #
 #        # Counts factor (energy dependent)
 #        # Remaining transmission
+#        t_g0 = materials.height_to_transmission(parameters['thickness_g0'],
+#                                                parameters['material_g0'],
+#                                                energy)
+#        t_g2 = materials.height_to_transmission(parameters['thickness_g2'],
+#                                                parameters['material_g2'],
+#                                                energy)
 #        t_g1 = materials.height_to_transmission(parameters['thickness_g1'],
 #                                                parameters['material_g1'],
 #                                                energy)
@@ -561,36 +578,37 @@ if __name__ == "__main__":
 
 #    sigma_0 = 31.381097701311816  # with positive mu..., 30-100keV
 #    sigma_0 = 1.5580242573545113  # with positive mu..., 30-60keV
-    sigma_0 = 10.377495157145837  # with positive mu..., 30-82keV
+#    sigma_0 = 10.377495157145837  # with positive mu..., 30-82keV
+    sigma_0 = 0.93802246451191473  # with positive mu..., 30-82keV, correct vis calc
 
     # Optimize filter
 
     # Take only every 50th angle
     sample_thicknesses = sample_thicknesses[49::50]  # [mm]
-    parameters['thetas'] = parameters['thetas'][49::50]  # [rad]
     thetas = thetas[49::50]  # [rad]
     print(sample_thicknesses)
-    print(parameters['thetas'])
+    print(thetas)
 
-    filter_thicknesses = parameters['thetas'] * 0.0
+    filter_thicknesses = thetas * 0.0
     x0 = filter_thickness_0
+    x0 = 5518.8125+500
     for index, sample_thickness in enumerate(sample_thicknesses):
-        print("{0} rad ({1}.)...".format(parameters['thetas'][index], index))
+        print("{0} rad ({1}.)...".format(thetas[index], index))
         logger.info("Calculating for {0} rad ({1}.)..."
-                    .format(parameters['thetas'][index], index))
+                    .format(thetas[index], index))
         # Skip if zero
         if sample_thickness == 0.0:
             filter_thicknesses[index] = 0.0
             logger.debug('Filter thickness is {0} [um]'
                          .format(filter_thicknesses[index]))
             continue
+        if index < 20:
+            continue
         # Options
 #        solver = 'COBYLA'  # COBYLA or SLSQP
         args = (parameters, sigma_0, sample_thickness)
         constraints = {'type': 'eq', 'fun': constraint_mean_energy,
                        'args': (parameters, mean_energy_0, sample_thickness)}
-
-
 
 #        # Minimize Scalar (no contraints)
 #        results = minimize_scalar(optimize_phase_detector_variance, args=args,
@@ -612,8 +630,8 @@ if __name__ == "__main__":
         # COBYLA
         results = minimize(optimize_phase_detector_variance, x0, args,
                            method='COBYLA',
-                           options={'rhobeg': 10.0, 'tol': 1.0,
-                                    'catol':  1.0, 'maxiter': 100})
+                           options={'rhobeg': 200.0, 'tol': 1.0,  # 50
+                                    'catol':  1.0})  # , 'maxiter': 1000
 #        # SLSQP
 #        results = minimize(optimize_phase_detector_variance, x0, args,
 #                           method='SLSQP',
@@ -629,17 +647,31 @@ if __name__ == "__main__":
 
     # Calculate x and y pairs
     filter_thicknesses = filter_thicknesses * 1e-3  # [mm]
-    x = parameters['filter_position'] * np.tan(parameters['thetas']) + \
-        filter_thicknesses * np.sin(parameters['thetas'])
+
+
+
+    filter_thicknesses[17] = 4551.0625 * 1e-3
+    filter_thicknesses[18] = 5011.0 * 1e-3
+    filter_thicknesses[19] = 5512.8125 * 1e-3
+
+    x = parameters['filter_position'] * np.tan(thetas) + \
+        filter_thicknesses * np.sin(thetas)
     y = parameters['filter_position'] + \
-        filter_thicknesses * np.cos(parameters['thetas'])
+        filter_thicknesses * np.cos(thetas)
 
     all_results = dict()
     all_results['mean_energy_0'] = mean_energy_0  # [keV]
     all_results['sigma_0'] = sigma_0
     all_results['thetas'] = thetas.copy()  # [rad]
     all_results['sample_thicknesses'] = sample_thicknesses.copy()  # [mm]
-    all_results['filter_thicknesses'] = filter_thicknesses * 1e-3  # [mm]
+    all_results['filter_thicknesses'] = filter_thicknesses  # [mm]
     all_results['x'] = x.copy()
     all_results['y'] = y.copy()
-    scipy.io.savemat('results_0_5-rad_49_50-step_30_82-keV', all_results)
+    scipy.io.savemat('results_17_end-rad_49_50-step_30_82-keV', all_results)
+
+    # TODO:
+        # add   17.: 4551.0625 * 1e-3
+        #       18.: 5011.0 * 1e-3
+        #       19.: 5512.8125 * 1e-3
+    # and save and calc all as '...17_end...'
+
