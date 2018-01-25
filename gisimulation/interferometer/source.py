@@ -14,7 +14,7 @@ class Source():
     X-ray source for grating interferometer simulation.
 
     Parameters
-    ##########
+    ==========
 
     spectrum [keV]
     focal_spot_size [um]:   if None or 0, infinite source size (parallel beam)

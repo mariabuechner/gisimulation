@@ -513,18 +513,18 @@ def get_arguments_info(parser):
     parser.print_help() into a custom sdtout.
 
     Parameters
-    ##########
+    ==========
 
     parser [argparse.ArgumentParser]
 
     Returns
-    #######
+    =======
 
     arguments_info [dict]:  arguments_info[variable_name] =
                                 [optional_key, help_message]
 
     Usage
-    #####
+    =====
 
     info = get_arguments_info(parser)
 
@@ -533,7 +533,7 @@ def get_arguments_info(parser):
     help_message = info[variable_name][1]
 
     Notes
-    #####
+    =====
 
     Removes all linebreaks in help message, as they are not the original
     anymore, but defined via the help formatter used by parser.print_help

@@ -40,12 +40,12 @@ def check_parser(parameters):
     checking all input (parser)
 
     Parameters
-    ##########
+    ==========
 
     parameters [dict]
 
     Returns
-    #######
+    =======
 
     parameters [dict]:
 
@@ -72,13 +72,13 @@ def general_input(parameters, parser_info):
     checking general input (everything to calculate the geometries)
 
     Parameters
-    ##########
+    ==========
 
     parameters [dict]
     parser_info [dict]:         parser_info[var_name] = [var_key, var_help]
 
     Notes
-    #####
+    =====
 
     If an parser argument is required, it can be None from the GUI. Thus,
     check it the first time it is called.
@@ -709,7 +709,7 @@ def _get_spectrum(spectrum_file, range_, spectrum_step, design_energy):
     energies and relative photons (normalized to 1 in total).
 
     Parameters
-    ##########
+    ==========
 
     spectrum_file:              path to spectrum file
     range_ [keV, keV]:          [min, max]
@@ -717,14 +717,14 @@ def _get_spectrum(spectrum_file, range_, spectrum_step, design_energy):
     design_energy [keV]
 
     Returns
-    #######
+    =======
 
     [spectrum, min, max]        spectrum: [energies, photons] [keV, relative]
                                 min: minimal energy [keV]
                                 max: maximal energy [keV]
 
     Notes
-    #####
+    =====
 
     if from file and range:
         range is set within loaded spectrum. Photons not rescaled.
@@ -839,19 +839,19 @@ def _read_spectrum(spectrum_file_path):
     Read from spectrum file.
 
     Parameters
-    ##########
+    ==========
 
     spectrum_file_path [str]:       to .csv or .txt file.
                                     Delimiter is ',', see Format
 
     Returns
-    #######
+    =======
 
     spectrum [dict] [keV]:          spectrum['energies']
                                     spectrum['photons']
 
     Format
-    ######
+    ======
 
     energy, photons
     1, 10e3
@@ -894,12 +894,13 @@ def _nearest_value(array, value):
     Funtion to find the nearest value of a number within a numpy array.
 
     Parameters
-    ##########
+    ==========
+
     array [numpy array]     array to be searched
     value                   target number
 
     Returns
-    #######
+    =======
 
     [nearest_value, index]
 
@@ -913,14 +914,14 @@ def _check_grating_input(grating, parameters, parser_info):
     Check grating input.
 
     Parameters
-    ##########
+    ==========
 
     grating [str]:          converts to lower case, 'g0', 'g1' or 'g2'
     parameters [dict]
     parser_info [dict]:     parser_info[var_name] = [var_key, var_help]
 
     Notes
-    #####
+    =====
 
     Basic required input:
         pitch (if fixed grating)

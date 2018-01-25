@@ -45,12 +45,12 @@ class Detector():
         """
 
         Parameters
-        ##########
+        ==========
 
         image [x, y, energies]
 
         Notes
-        #####
+        =====
 
         image * self.efficiency with self.efficiency [energies]
         multiplies each energy 2D matrix in image with the corresponding

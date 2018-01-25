@@ -30,7 +30,7 @@ class Geometry():
         ALSO: Check sample position!!! (GeometryError)
 
         Parameters
-        ##########
+        ==========
 
         parameters [dict]
 
@@ -68,7 +68,7 @@ class Geometry():
                 - sample_distance
 
         Returns
-        #######
+        =======
 
         self._parameters['results']['geometry'] [dict]
 
@@ -126,7 +126,7 @@ class Geometry():
         Return updated parameter dict.
 
         Returns
-        #######
+        =======
 
         parameters [dict]
 
@@ -142,7 +142,7 @@ class Geometry():
         For cone and parallel.
 
         Notes
-        #####
+        =====
 
         For parallel:
 
@@ -323,7 +323,7 @@ class Geometry():
         For cone
 
         Notes
-        #####
+        =====
 
         Magnification M:
             M = (l + dn) / l = 2
