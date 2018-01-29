@@ -94,13 +94,13 @@ def density(material):
         page = dict(page)
         return page[material]  # return density belonging to material
     except urllib2.URLError:
-        logger.error('URL "{}" cannot be accessed, check internet connection'
+        logger.error('URL "{0}" cannot be accessed, check internet connection'
                      .format(url_material))
         raise
     except KeyError:
-        logger.error("Density of material '{0}' not accessible at "
-                     "'http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe'".
-                     format(material))
+        logger.error("Density of material '{0}' not accessible at {1}. "
+                     "Check spelling and capitalization."
+                     .format(material, url_material))
         raise MaterialError("'{0}' is not a valid material".format(material))
 
 
@@ -164,13 +164,13 @@ def read_x0h(material, energy):
                         [0][1:])
         return delta, -beta
     except urllib2.URLError:
-        logger.error('URL "{}" cannot be accessed, check internet connection'
+        logger.error('URL "{0}" cannot be accessed, check internet connection'
                      .format(url_material))
         raise
-    except IndexError:
-        logger.error("'{0}' is not a valid material at "
-                     "'http://x-server.gmca.aps.anl.gov/cgi/www_dbli.exe'".
-                     format(material))
+    except KeyError:
+        logger.error("Density of material '{0}' not accessible at {1}. "
+                     "Check spelling and capitalization."
+                     .format(material, url_material))
         raise MaterialError("'{0}' is not a valid material".format(material))
 
 

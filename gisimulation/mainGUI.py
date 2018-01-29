@@ -716,7 +716,7 @@ def _save_input_file(input_file_path, input_parameters):
 
 def _collect_input(parameters, ids):
     """
-    Converts self.ids from widget to dict and then to struct.
+    Converts self.ids from widget to dict.
 
     Parameters
     ==========
@@ -811,7 +811,7 @@ def _collect_input(parameters, ids):
     else:
         parameters['field_of_view'] = np.array([parameters['field_of_view_x'],
                                                parameters['field_of_view_y']],
-                                               dtype=float)
+                                               dtype=int)
     del parameters['field_of_view_x']
     del parameters['field_of_view_y']
 
@@ -1770,9 +1770,16 @@ class giGUI(F.BoxLayout):
                     elif var_name == 'field_of_view':
                         # Check if it is integer
                         if '.' in value_str[0] or '.' in value_str[1]:
-                            error_message = "FOV must be integer, not float."
-                            logger.error(error_message)
-                            raise check_input.InputError(error_message)
+                            value_str = np.array(value_str)
+                            value_str = np.round(value_str.astype(float))
+                            value_str = value_str.astype(int)
+                            value_str = value_str.astype('|S4')
+                            warning_message = ("FOV must be integer, not "
+                                               "float. Rounding to next "
+                                               "integers: [{0}, {1}]"
+                                               .format(value_str[0],
+                                                       value_str[1]))
+                            logger.warning(warning_message)
                         logger.debug("Setting text of widget '{0}' to: [{1}, "
                                      "{2}]"
                                      .format(var_name, value_str[0],
