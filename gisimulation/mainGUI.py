@@ -1764,9 +1764,13 @@ class giGUI(F.BoxLayout):
                         self.ids['spectrum_range_min'].text = value_str[0]
                         self.ids['spectrum_range_max'].text = value_str[1]
                         logger.debug("Setting text of widget '{0}' to: [{1}, "
-                                     "{2}]"
+                                     "{2}]."
                                      .format(var_name, value_str[0],
                                              value_str[1]))
+                        # Also set spectrum_range_set to true
+                        self.ids['spectrum_range_set'].active = True
+                        logger.debug("Setting text of widget '{0}' to: {1}."
+                                     .format('spectrum_range_set', True))
                     elif var_name == 'field_of_view':
                         # Check if it is integer
                         if '.' in value_str[0] or '.' in value_str[1]:
@@ -1846,12 +1850,20 @@ class giGUI(F.BoxLayout):
                         if var_name == 'spectrum_range':
                             if value == '':
                                 value = ['', '']
+                                range_set = False
+                            else:
+                                range_set = True
                             logger.debug("Setting text of widget '{0}' to: "
                                          "[{1}, {2}]".format(var_name,
                                                              value[0],
                                                              value[1]))
                             self.ids['spectrum_range_min'].text = str(value[0])
                             self.ids['spectrum_range_max'].text = str(value[1])
+                            # Also set spectrum_range_set
+                            self.ids['spectrum_range_set'].active = range_set
+                            logger.debug("Setting text of widget '{0}' to: "
+                                         "{1}.".format('spectrum_range_set',
+                                                       range_set))
                         elif var_name == 'field_of_view':
                             if value == '':
                                 logger.debug("Setting text of widget '{0}' "
