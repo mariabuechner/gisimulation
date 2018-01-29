@@ -1792,13 +1792,23 @@ class giGUI(F.BoxLayout):
                                      .format(var_name, value_str[0].upper()))
                         self.ids[var_name].text = value_str[0].upper()
                     elif var_name == 'dual_phase':
-                        logger.debug("Setting text of widget '{0}' to: {1}"
-                                     .format(var_name, True))
-                        self.ids[var_name].active = True
+                        if value_str[0] == 'True':
+                            logger.debug("Setting text of widget '{0}' to: {1}"
+                                         .format(var_name, True))
+                            self.ids[var_name].active = True
+                        else:
+                            logger.debug("Setting text of widget '{0}' to: {1}"
+                                         .format(var_name, False))
+                            self.ids[var_name].active = False
                     elif var_name == 'photo_only':
-                        logger.debug("Setting text of widget '{0}' to: {1}"
-                                     .format(var_name, True))
-                        self.ids[var_name].active = True
+                        if value_str[0] == 'True':
+                            logger.debug("Setting text of widget '{0}' to: {1}"
+                                         .format(var_name, True))
+                            self.ids[var_name].active = True
+                        else:
+                            logger.debug("Setting text of widget '{0}' to: {1}"
+                                         .format(var_name, False))
+                            self.ids[var_name].active = False
                     elif var_name == 'spectrum_file':
                         self.spectrum_file_path = value_str[0]
 #                        # Move cursor to front of file name
