@@ -816,7 +816,6 @@ def _collect_input(parameters, ids):
     del parameters['field_of_view_y']
 
     logger.debug("... done.")
-    return parameters
 
 
 # #############################################################################
@@ -877,7 +876,7 @@ class giGUI(F.BoxLayout):
         for var_name, value in self.parser_info.iteritems():
             self.parser_link[value[0]] = var_name
         # parameters
-        self.parameters = _collect_input(self.parameters, self.ids)
+        _collect_input(self.parameters, self.ids)
         self.parameters['spectrum_file'] = None
         self._set_widgets(self.parameters, from_file=False)
         # Init geometry result dictionaries
@@ -908,7 +907,7 @@ class giGUI(F.BoxLayout):
         """
         try:
             # Convert input
-            self.parameters = _collect_input(self.parameters, self.ids)
+            _collect_input(self.parameters, self.ids)
 
             # Check values
             logger.info("Checking input parameters...")
@@ -965,7 +964,7 @@ class giGUI(F.BoxLayout):
         """
         Calculate the GI geometry based on the set input parameters.
         """
-        # If previous resulots, store
+        # If previous results, store
         if self.parameters['results']['geometry']:
             logger.debug("Storing geometry results in "
                          "previous_results['geometry']...")
@@ -974,6 +973,7 @@ class giGUI(F.BoxLayout):
             logger.debug("... done.")
 
         # Calc geometries
+        self.check_general_input()
         try:
             logger.info("Calculationg geomtry...")
             gi_geometry = geometry.Geometry(self.parameters)
@@ -1059,7 +1059,7 @@ class giGUI(F.BoxLayout):
         """
         if self.save_input_file_path != '':  # e.g. after reset.
             # Check input
-            self.parameters = _collect_input(self.parameters, self.ids)
+            _collect_input(self.parameters, self.ids)
             # Select parameters to save
             logger.debug("Collecting all paramters to save...")
             input_parameters = dict()

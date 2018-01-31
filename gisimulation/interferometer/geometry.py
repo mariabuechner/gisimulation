@@ -22,6 +22,18 @@ class GeometryError(Exception):
 class Geometry():
     """
     Class to calculate and set all missing geometry and GI parameters.
+
+    Notes
+    =====
+
+    Changes self._parameters (copy of parameters) to update geometry and GI
+    parameters. Returns self._parameters with .update_parameters().
+
+    Adds self._parameters['results']['geometry'] containing summary of
+    geometry. self._parameters['results']['geometry'] is also stored in
+    .results
+    => NECESSARY????
+
     """
     def __init__(self, parameters):
         """
