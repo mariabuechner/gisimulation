@@ -44,15 +44,7 @@ def check_parser(parameters):
 
     parameters [dict]
 
-    Returns
-    =======
-
-    parameters [dict]:
-
     """
-    # Use copy of paramters, since reference and not content is passed
-    parameters = parameters.copy()
-
     # Get parameter infos from parser, to link var_names and var_keys
     parser_info = parser_def.get_arguments_info(parser_def.input_parser())
 
@@ -63,8 +55,6 @@ def check_parser(parameters):
 
     # % Scenario specific requirements
     # General and connected parameters (calculated geom., Metrices, ct, ...)
-
-    return parameters
 
 
 def general_input(parameters, parser_info):
@@ -83,9 +73,6 @@ def general_input(parameters, parser_info):
     If an parser argument is required, it can be None from the GUI. Thus,
     check it the first time it is called.
     """
-    # Use copy of paramters, since reference and not content is passed
-    parameters = parameters.copy()
-
     try:
         # % Minimal required input for 'free', 'parallel', no gatings
         logger.debug("Checking general input...")
@@ -686,8 +673,6 @@ def general_input(parameters, parser_info):
         # Re-Init geometry result dictionaries
         parameters['results'] = dict()
         parameters['results']['geometry'] = dict()
-
-        return parameters
 
     except AttributeError as e:
         error_message = "Input arguments missing: {}." \

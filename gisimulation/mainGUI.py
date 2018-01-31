@@ -724,11 +724,6 @@ def _collect_input(parameters, ids):
     parameters [dict]:      dict of already existing parameters
     ids [widget.ids]
 
-    Returns
-    =======
-
-    parameters [dict]
-
     Notes
     =====
 
@@ -950,7 +945,7 @@ class giGUI(F.BoxLayout):
                 logger.error(error_message)
                 raise check_input.InputError(error_message)
             # Check rest
-            self.parameters = check_input.general_input(self.parameters,
+            check_input.general_input(self.parameters,
                                                         self.parser_info)
             logger.info("... done.")
 
