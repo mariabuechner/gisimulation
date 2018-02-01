@@ -192,6 +192,11 @@ class Geometry():
                 p2 = M * p1 / nu
                 p0 = p2 * l / dn
 
+            Conditions:
+
+                l > dn
+                s > s*dn
+
         """
 
         if self._parameters['beam_geometry'] == 'parallel':
@@ -228,19 +233,18 @@ class Geometry():
                         self._parameters['distance_g1_g2'] * 1e-3  # [mm]
             else:
                 # Dual phase setup (HERE OR INSIDE CALCS???)
-                logger.warn("Parallel, conv and dual phase not possible yet!")
+                logger.warning("Parallel, conv and dual phase not possible "
+                               "yet!")
 
         else:
             # Cone beam
             if not self._parameters['dual_phase']:
-                # Standard GI
+                # G1 fixed
                 if self._parameters['fixed_grating'] == 'g1':
-                    # G1 fixed
-
-                    # Talbot distance
+                    # Talbot distance (Dn)
                     talbot_distance = self._parameters['talbot_order'] * \
                         (np.square(self._parameters['pitch_g1'] / self._nu) /
-                         (2 * self._parameters['design_wavelength']))  # [mm]
+                         (2 * self._parameters['design_wavelength']))  # [um]
                     talbot_distance = talbot_distance * 1e-3  # [mm]
 
                     # Other distances
@@ -250,16 +254,30 @@ class Geometry():
                             'distance_g0_g1':
                         # Distance from Source/G0 to G1 fixed (l)
                         to_g1 = self._parameters[self._parameters
-                                                 ['fixed_distance']]
-                        # G1 to G2
+                                                 ['fixed_distance']]  # [mm]
+
+                        # G1 to G2 (dn)
                         self._parameters['distance_g1_g2'] = \
                             to_g1 * talbot_distance / \
                             (to_g1 - talbot_distance)
+
                         if self._parameters['distance_g1_g2'] <= 0:
                             error_message = ("{0} too small for chosen talbot "
-                                             "order, energy and pitch of G1."
+                                             "order, energy and pitch of G1. "
+                                             "Must be larger than: {1} mm"
                                              .format(self._parameters
-                                                     ['fixed_distance']))
+                                                     ['fixed_distance'],
+                                                     talbot_distance))
+                            logger.error(error_message)
+                            raise GeometryError(error_message)
+                        elif self._parameters['distance_g1_g2'] > to_g1:
+                            error_message = ("{0} too small for chosen talbot "
+                                             "order, energy and pitch of G1 "
+                                             "Must be larger than: {1} mm"
+                                             .format(self._parameters
+                                                     ['fixed_distance'],
+                                                     self._parameters
+                                                     ['distance_g1_g2']))
                             logger.error(error_message)
                             raise GeometryError(error_message)
 
@@ -276,18 +294,21 @@ class Geometry():
                             'distance_source_g2' or \
                             self._parameters['fixed_distance'] == \
                             'distance_g0_g2':
-                        # Distance from Source/G0 to g2 fixed (s)
+                        # Distance from Source/G0 to G2 fixed (s)
                         total_length = self._parameters[self._parameters
                                                         ['fixed_distance']]
 
                         # Source/G0 to G1
                         if total_length <= 4.0 * talbot_distance:
                             error_message = ("{0} too small for chosen talbot "
-                                             "order, energy and pitch of G1."
+                                             "order, energy and pitch of G1. "
+                                             "Must be larger than: {1} mm"
                                              .format(self._parameters
-                                                     ['fixed_distance']))
+                                                     ['fixed_distance'],
+                                                     4.0 * talbot_distance))
                             logger.error(error_message)
                             raise GeometryError(error_message)
+
                         to_g1 = total_length/2.0 + np.sqrt(total_length**2.0 /
                                                            4.0 - total_length *
                                                            talbot_distance)
@@ -328,7 +349,7 @@ class Geometry():
                     pass
             else:
                 # Dual phase setup (HERE OR INSIDE CALCS???)
-                logger.warn("Cone, conv and dual phase not possible yet!")
+                logger.warning("Cone, conv and dual phase not possible yet!")
 
     def _calc_symmetrical(self):
         """

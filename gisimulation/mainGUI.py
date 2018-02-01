@@ -142,6 +142,7 @@ class Distances(F.GridLayout):
         super(Distances, self).__init__(**kwargs)
         self.cols = 1
         self.update(['Source', 'Detector'])
+        self.distance_fixed = False
 
     def update(self, component_list, beam_geometry='parallel',
                gi_geometry='free'):
@@ -205,7 +206,7 @@ class Distances(F.GridLayout):
                                                     .lower())
             distance_value.id = distance_id
 
-            # Just displays
+            # Just to show results
             if beam_geometry == 'parallel' and gi_geometry != 'free':
                 distance_value.disabled = True
             elif beam_geometry == 'cone' and gi_geometry != 'free':
@@ -263,13 +264,25 @@ class Distances(F.GridLayout):
     def on_text(self, linked_instance, instance, value):
         """
         if one of them has text, disable input
-        if both have text (load file or results), enable depetion of input
+        if both have text (load file or results), enable both for input
+            -> from disabled to enabled
+        if both have text and one is changed, set other to "" (and disable)
+            -> if both are already enabled
         """
         if value != '':
-            linked_instance.disabled = True
-            if linked_instance. text != '':
-                linked_instance.disabled = False
-                instance.disabled = False
+            if self.distance_fixed is False:
+                linked_instance.disabled = True
+                linked_instance.text = ''
+            if linked_instance.text != '':
+                # Both not empty after results etc.
+                if self.distance_fixed is True:
+                    linked_instance.disabled = False
+                    instance.disabled = False
+                    self.distance_fixed = False
+            else:
+                # Disable other if text is entered here
+                linked_instance.disabled = True
+                self.distance_fixed = True
         else:
             linked_instance.disabled = False
 
@@ -1059,7 +1072,6 @@ class giGUI(F.BoxLayout):
             logger.debug("Collecting all paramters to save...")
             input_parameters = dict()
             for var_name, var_value in self.parameters.iteritems():
-                if var_name in self.parser_info and var_value is not None:
                     var_key = self.parser_info[var_name][0]
                     input_parameters[var_key] = var_value
             # Save at save_input_file_path (=value)
@@ -1410,7 +1422,6 @@ class giGUI(F.BoxLayout):
         if self.parameters['results']['geometry']:
             # Geometry results have been calculated
             distances = self.parameters['results']['geometry']['distances']
-            logger.info(distances)
             for distance_layout in self.ids.distances.children:
                 for widget in distance_layout.children:
                     if 'FloatInput' in str(widget) and widget.id in distances:

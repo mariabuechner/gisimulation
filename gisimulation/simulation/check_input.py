@@ -354,14 +354,15 @@ def general_input(parameters, parser_info):
                                 parameters['distance_source_g2']:
                             logger.warning("Both distance from Source to G1 "
                                            "({0}) AND Source to G2 ({1}) are "
-                                           "defined, choosing  distance from "
-                                           "Source to G2 (total GI length)."
+                                           "defined, choosing last choice of "
+                                           "set distance ({2})."
                                            .format(parser_info
                                                    ['distance_source_g1'][0],
                                                    parser_info
-                                                   ['distance_source_g2'][0]))
-                            parameters['distance_source_g1'] = None
-                            fixed_distance = 'distance_source_g2'
+                                                   ['distance_source_g2'][0]),
+                                                   parameters
+                                                   ['fixed_distance'])
+                            fixed_distance = parameters['fixed_distance']
                         elif parameters['distance_source_g1']:
                             fixed_distance = 'distance_source_g1'
                         elif parameters['distance_source_g2']:
