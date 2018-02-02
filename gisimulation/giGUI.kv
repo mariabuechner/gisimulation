@@ -160,6 +160,13 @@
                         source: 'atlas://data/images/defaulttheme/checkbox%s_%s' % (('_radio' if self.group else ''), ('on' if self.active else 'off'))
                         size: self.size
                         pos: self.pos
+        Button:
+            size_hint_x: None
+            width: 120
+            background_color: dark_red_button
+            text: 'Clear all'
+            on_release: root.reset_widgets()
+
         Widget:
         MenuSpinner:
             size_hint_x: None

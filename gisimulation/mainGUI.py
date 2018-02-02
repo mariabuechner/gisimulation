@@ -1976,6 +1976,55 @@ class giGUI(F.BoxLayout):
             logger.error(error_message)
             raise check_input.InputError(error_message)
 
+    # Reset all widgets
+    def reset_widgets(self):
+        """
+        Reset all widgets to 'empty'.
+
+        Notes
+        =====
+
+        self.parameters [dict]:         widget_parameters[var_name] = value
+        self.parser_link [dict]:        parser_link[var_key] = var_name
+        self.parser_info [dict]:        parser_info[var_name] = [var_key,
+                                                                 var_help]
+        """
+        logger.info("Resetting widget values...")
+
+        for var_name, value in self.ids.iteritems():
+            if 'CheckBox' in str(value):
+                value.active = False
+            elif 'TabbedPanel' in str(value):
+                continue
+            elif 'Layout' in str(value):
+                continue
+            elif 'Distances' in str(value):
+                continue
+            elif 'GeometryGrid' in str(value):
+                continue
+            elif 'MenuSpinner' in str(value):
+                continue
+            elif value.text == '':
+                continue
+            elif 'FloatInput' in str(value):
+                value.text = ""
+            elif 'IntInput' in str(value):
+                value.text = ""
+            elif 'TextInput' in str(value):
+                value.text = ""
+            elif 'Spinner' in str(value):
+                if var_name is 'fixed_grating':
+                    value.text = 'Choose fixed grating...'
+        # Handle distances (not accesible directly via ids)
+        #   ids.distances contains one boxlayout per distance,
+        #   which then contains one label and one FloatInput
+        for distance in self.ids.distances.children:
+            for widget in distance.children:
+                if 'FloatInput' in str(widget):
+                    widget.text == ''
+
+        logger.debug("... done.")
+
     # Utility functions #######################################################
 
     def calc_boxlayout_height(self, childen_height, boxlayout):
