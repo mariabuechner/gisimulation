@@ -743,7 +743,7 @@ def _collect_widgets(parameters, ids):
     If input is empty, stores None. Input parameters will be overwritten.
 
     """
-    logger.debug("Converting all label inputs...")
+    logger.debug("Collecting all widgets...")
     for var_name, value in ids.iteritems():
         if 'CheckBox' in str(value):
             continue
@@ -827,6 +827,35 @@ def _collect_widgets(parameters, ids):
 
     logger.debug("... done.")
 
+def _collect_input(parameters, parser_info):
+    """
+    Selects only input parameters defined in parser from all available
+    parameters.
+
+    Parameters
+    ==========
+
+    parameters [dict]:      dict of already existing parameters
+    parser_info [dict]:     parser keys and variable names
+
+    Returns
+    =======
+
+    input_parameters [dict]
+
+    """
+    # Select input parameters to save
+    logger.debug("Collecting all paramters to save...")
+    input_parameters = dict()
+    for var_name, var_value in parameters.iteritems():
+        if var_name in parser_info and var_value is not None:
+            var_key = parser_info[var_name][0]
+            input_parameters[var_key] = var_value
+    # Save at save_input_file_path (=value)
+    logger.debug('... done.')
+
+    return input_parameters
+
 
 # #############################################################################
 # Handle exceptions # #########################################################
@@ -885,7 +914,7 @@ class giGUI(F.BoxLayout):
             parser_def.get_arguments_info(parser_def.input_parser())
         for var_name, value in self.parser_info.iteritems():
             self.parser_link[value[0]] = var_name
-        # parameters
+        # Update parameters
         _collect_widgets(self.parameters, self.ids)
         self.parameters['spectrum_file'] = None
         self._set_widgets(self.parameters, from_file=False)
@@ -916,7 +945,7 @@ class giGUI(F.BoxLayout):
             4) Reset widget values to include newly calculated parameters
         """
         try:
-            # Convert input
+            # Update parameters
             _collect_widgets(self.parameters, self.ids)
 
             # Check values
@@ -1068,17 +1097,11 @@ class giGUI(F.BoxLayout):
 
         """
         if self.save_input_file_path != '':  # e.g. after reset.
-            # Check input
+            # Update parameters
             _collect_widgets(self.parameters, self.ids)
-            # Select parameters to save
-            logger.debug("Collecting all paramters to save...")
-            input_parameters = dict()
-            for var_name, var_value in self.parameters.iteritems():
-                if var_name in self.parser_info and var_value is not None:
-                    var_key = self.parser_info[var_name][0]
-                    input_parameters[var_key] = var_value
-            # Save at save_input_file_path (=value)
-            logger.debug('... done.')
+
+            input_parameters = _collect_input(self.parameters,
+                                              self.parser_info)
             logger.info("Saving input to file...")
             if os.path.isfile(value):
                 # File exists
