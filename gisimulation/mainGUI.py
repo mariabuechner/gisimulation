@@ -1013,7 +1013,7 @@ class giGUI(F.BoxLayout):
         # Calc geometries
         self.check_general_input()
         try:
-            logger.info("Calculationg geomtry...")
+            logger.info("Calculationg geometry...")
             gi_geometry = geometry.Geometry(self.parameters)  # Calc...
             self.results['geometry'] = gi_geometry.results  # store geom dict
             self.parameters = gi_geometry.update_parameters()  # transf. params
@@ -2001,7 +2001,7 @@ class giGUI(F.BoxLayout):
             elif 'TextInput' in str(value):
                 value.text = ""
             elif 'Spinner' in str(value):
-                if var_name is 'fixed_grating':
+                if var_name == 'fixed_grating':
                     value.text = 'Choose fixed grating...'
         # Handle distances (not accesible directly via ids)
         #   ids.distances contains one boxlayout per distance,
@@ -2010,6 +2010,9 @@ class giGUI(F.BoxLayout):
             for widget in distance.children:
                 if 'FloatInput' in str(widget):
                     widget.text == ''
+
+        # Clear current results (not previous)
+        self.results['geometry'] = dict()
 
         logger.info("... done.")
 
