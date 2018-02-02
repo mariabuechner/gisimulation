@@ -200,7 +200,7 @@ class Distances(F.GridLayout):
                              .format(component, component_list[index+1]))
             distance_label = NonFileBrowserLabel(text=distance_text)
 
-            distance_value = FloatInput(sixe_hint_x=0.2)
+            distance_value = FloatInput(size_hint_x=0.2)
             distance_id = "distance_{0}_{1}".format(component.lower(),
                                                     component_list[index+1]
                                                     .lower())
@@ -242,7 +242,7 @@ class Distances(F.GridLayout):
                 extra_distance_label = \
                     NonFileBrowserLabel(text=extra_distance_text)
 
-                extra_distance_value = FloatInput(sixe_hint_x=0.2)
+                extra_distance_value = FloatInput(size_hint_x=0.2)
                 extra_distance_value.id = extra_distance_id
                 # Connect to only set one (if other is not empty, disabled)
                 distance_value.bind(text=partial(self.on_text,
