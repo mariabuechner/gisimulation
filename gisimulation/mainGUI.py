@@ -727,7 +727,7 @@ def _save_input_file(input_file_path, input_parameters):
                 f.writelines(str(value)+'\n')
 
 
-def _collect_input(parameters, ids):
+def _collect_widgets(parameters, ids):
     """
     Converts self.ids from widget to dict.
 
@@ -754,6 +754,8 @@ def _collect_input(parameters, ids):
         elif 'Distances' in str(value):
             continue
         elif 'GeometryGrid' in str(value):
+            continue
+        elif 'MenuSpinner' in str(value):
             continue
         elif value.text == '':
             parameters[var_name] = None
@@ -884,12 +886,12 @@ class giGUI(F.BoxLayout):
         for var_name, value in self.parser_info.iteritems():
             self.parser_link[value[0]] = var_name
         # parameters
-        _collect_input(self.parameters, self.ids)
+        _collect_widgets(self.parameters, self.ids)
         self.parameters['spectrum_file'] = None
         self._set_widgets(self.parameters, from_file=False)
         # Init geometry result dictionaries
-        self.parameters['results'] = dict()
-        self.parameters['results']['geometry'] = dict()
+        self.results = dict()
+        self.results['geometry'] = dict()
         # Components trackers
         self.setup_components = ['Source', 'Detector']
         # Avail fixed gratings
@@ -915,7 +917,7 @@ class giGUI(F.BoxLayout):
         """
         try:
             # Convert input
-            _collect_input(self.parameters, self.ids)
+            _collect_widgets(self.parameters, self.ids)
 
             # Check values
             logger.info("Checking input parameters...")
@@ -973,19 +975,19 @@ class giGUI(F.BoxLayout):
         Calculate the GI geometry based on the set input parameters.
         """
         # If previous results, store
-        if self.parameters['results']['geometry']:
+        if self.results['geometry']:
             logger.debug("Storing geometry results in "
                          "previous_results['geometry']...")
-            self.previous_results['geometry'] = (self.parameters['results']
-                                                 ['geometry'])
+            self.previous_results['geometry'] = (self.results['geometry'])
             logger.debug("... done.")
 
         # Calc geometries
         self.check_general_input()
         try:
             logger.info("Calculationg geomtry...")
-            gi_geometry = geometry.Geometry(self.parameters)
-            self.parameters = gi_geometry.update_parameters()
+            gi_geometry = geometry.Geometry(self.parameters)  # Calc...
+            self.results['geometry'] = gi_geometry.results  # store geom dict
+            self.parameters = gi_geometry.update_parameters()  # transf. params
             logger.info("... done.")
         except geometry.GeometryError as e:
             ErrorDisplay('Geometry Error', str(e))
@@ -1067,11 +1069,12 @@ class giGUI(F.BoxLayout):
         """
         if self.save_input_file_path != '':  # e.g. after reset.
             # Check input
-            _collect_input(self.parameters, self.ids)
+            _collect_widgets(self.parameters, self.ids)
             # Select parameters to save
             logger.debug("Collecting all paramters to save...")
             input_parameters = dict()
             for var_name, var_value in self.parameters.iteritems():
+                if var_name in self.parser_info and var_value is not None:
                     var_key = self.parser_info[var_name][0]
                     input_parameters[var_key] = var_value
             # Save at save_input_file_path (=value)
@@ -1419,9 +1422,9 @@ class giGUI(F.BoxLayout):
                                   self.ids.beam_geometry.text,
                                   self.ids.gi_geometry.text)
         # Keep calculated distances from previous results
-        if self.parameters['results']['geometry']:
+        if self.results['geometry']:
             # Geometry results have been calculated
-            distances = self.parameters['results']['geometry']['distances']
+            distances = self.results['geometry']['distances']
             for distance_layout in self.ids.distances.children:
                 for widget in distance_layout.children:
                     if 'FloatInput' in str(widget) and widget.id in distances:

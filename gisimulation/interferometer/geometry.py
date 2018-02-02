@@ -29,11 +29,6 @@ class Geometry():
     Changes self._parameters (copy of parameters) to update geometry and GI
     parameters. Returns self._parameters with .update_parameters().
 
-    Adds self._parameters['results']['geometry'] containing summary of
-    geometry. self._parameters['results']['geometry'] is also stored in
-    .results
-    => NECESSARY????
-
     """
     def __init__(self, parameters):
         """
@@ -61,13 +56,12 @@ class Geometry():
             self._calc_inverse()
 
         # Update geometry results
-        self.results = self._get_geometry_results()
+        self._get_geometry_results()
 
     # Set geometry results
     def _get_geometry_results(self):
         """
-        Update self._parameters['results']['geometry'] and return geometry
-        results dict.
+        Adds self.results dict.
 
         Results contain:
             - component_list
@@ -85,20 +79,20 @@ class Geometry():
         self._parameters['results']['geometry'] [dict]
 
         """
+        self.results = dict()
         # To 'Setup'
-        self._parameters['results']['geometry']['Setup'] = dict()
+        self.results['Setup'] = dict()
         # Add component list
-        self._parameters['results']['geometry']['Setup']['component_list'] = \
+        self.results['Setup']['component_list'] = \
             self._parameters['component_list']
 
         # Add geometries
-        self._parameters['results']['geometry']['Setup']['gi_geometry'] = \
-            self._parameters['gi_geometry']
-        self._parameters['results']['geometry']['Setup']['beam_geometry'] = \
+        self.results['Setup']['gi_geometry'] = self._parameters['gi_geometry']
+        self.results['Setup']['beam_geometry'] = \
             self._parameters['beam_geometry']
 
         # To 'distances'
-        self._parameters['results']['geometry']['distances'] = dict()
+        self.results['distances'] = dict()
         # Add distances
         # distances =  [('distance_b', 10), ('distance_a', 10)]
         distances = [(distance_name, distance_value)
@@ -107,31 +101,27 @@ class Geometry():
                      if ('distance_' in distance_name and
                          distance_value is not None)]
         for distance in distances:
-            self._parameters['results']['geometry']['distances'][distance[0]] \
-                = distance[1]
+            self.results['distances'][distance[0]] = distance[1]
 
         # To 'pitches'
-        self._parameters['results']['geometry']['pitches'] = dict()
+        self.results['pitches'] = dict()
         # Add pitches
         pitches = [(pitch_name, pitch_value) for pitch_name, pitch_value
                    in self._parameters.iteritems()
                    if ('pitch_' in pitch_name and pitch_value is not None)]
         for pitch in pitches:
-            self._parameters['results']['geometry']['pitches'][pitch[0]] = \
-                pitch[1]
+            self.results['pitches'][pitch[0]] = pitch[1]
 
         # To 'sample'
-        self._parameters['results']['geometry']['sample'] = dict()
+        self.results['sample'] = dict()
         # Add sample info
         if self._parameters['sample_position']:
-            (self._parameters['results']['geometry']['sample']
-             ['sample_position']) = self._parameters['sample_position']
-            (self._parameters['results']['geometry']['sample']
-             ['sample_distance']) = self._parameters['sample_distance']
+            self.results['sample']['sample_position'] = \
+                self._parameters['sample_position']
+            self.results['sample']['sample_distance'] = \
+                self._parameters['sample_distance']
              # FUTURE
              # Add shape and size
-
-        return self._parameters['results']['geometry']
 
     def update_parameters(self):
         """
