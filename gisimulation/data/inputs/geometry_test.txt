@@ -1,7 +1,5 @@
--sg1
-30.0
 -gi
-conv
+inv
 -fov
 200
 200
