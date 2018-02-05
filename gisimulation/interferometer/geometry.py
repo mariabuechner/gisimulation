@@ -403,11 +403,6 @@ class Geometry():
                         to_g1 = total_length - \
                             self._parameters['distance_g1_g2']  # [mm]
 
-                        logger.info(total_length)
-                        logger.info(self._parameters['distance_g1_g2'])
-                        logger.info(to_g1)
-                        logger.info(self._parameters['distance_g1_g2'])
-
                         # Check if l > dn:
                         if self._parameters['distance_g1_g2'] >= to_g1:
                             error_message = ("{0} too small for chosen talbot "
@@ -445,7 +440,107 @@ class Geometry():
 
                 else:
                     # G0 fixed
-                    pass
+                    if self._parameters['fixed_distance'] == \
+                            'distance_source_g1' or \
+                            self._parameters['fixed_distance'] == \
+                            'distance_g0_g1':
+                        # Distance from Source/G0 to G1 fixed (l)
+                        to_g1 = self._parameters[self._parameters
+                                                 ['fixed_distance']]  # [mm]
+
+                        # distance from G1 to G2 (dn)
+                        # dn = l / (n * p0^2 / (2 * lambda * l) - 1)
+                        # lambda and p2 in um, need to be in mm
+                        wavelength = self._parameters['design_wavelength']  * \
+                            1e-3  # [mm]
+                        p0 = self._parameters['pitch_g0']  * 1e-3  # [mm]
+
+                        self._parameters['distance_g1_g2'] = to_g1 / \
+                            ((self._parameters['talbot_order'] * p0**2) /
+                             (2 * wavelength * to_g1) - 1)  # [mm]
+
+                        # Check if l > dn:
+                        if self._parameters['distance_g1_g2'] >= to_g1:
+                            error_message = ("{0} too small for chosen talbot "
+                                             "order, energy and pitch of G1. "
+                                             "Must be larger than: {1} mm"
+                                             .format(self._parameters
+                                                     ['fixed_distance'],
+                                                     self._parameters
+                                                     ['distance_g1_g2']))
+                            logger.error(error_message)
+                            raise GeometryError(error_message)
+
+                        # Distance from Source/G0 to G2 fixed (s)
+                        total_length = self._parameters['distance_g1_g2'] + \
+                            to_g1  # [mm]
+
+                        # Source/G0 to G2 (s)
+                        total_length = to_g1 + \
+                            self._parameters['distance_g1_g2']
+                        if 'G0' in self._parameters['component_list']:
+                            self._parameters['distance_g0_g2'] = total_length
+                        else:
+                            self._parameters['distance_source_g2'] = \
+                                total_length
+
+                    elif self._parameters['fixed_distance'] == \
+                            'distance_source_g2' or \
+                            self._parameters['fixed_distance'] == \
+                            'distance_g0_g2':
+                        # Distance from Source/G0 to G2 fixed (s)
+                        total_length = self._parameters[self._parameters
+                                                        ['fixed_distance']]
+
+                        # distance from G1 to G2 (dn)
+                        # dn = s / (s * 2 * lambda / (n * p2^2) + 1)
+                        # lambda and p2 in um, need to be in mm
+                        wavelength = self._parameters['design_wavelength']  * \
+                            1e-3  # [mm]
+                        p0 = self._parameters['pitch_g0']  * 1e-3  # [mm]
+
+                        self._parameters['distance_g1_g2'] = total_length / \
+                            ((self._parameters['talbot_order'] * p0**2) /
+                             (2 * wavelength * total_length) + 1)  # [mm]
+
+                        # Distance from Source/G0 to G1 fixed (l)
+                        to_g1 = total_length - \
+                            self._parameters['distance_g1_g2']  # [mm]rs['distance_g1_g2'])
+
+                        # Check if l > dn:
+                        if self._parameters['distance_g1_g2'] >= to_g1:
+                            error_message = ("{0} too small for chosen talbot "
+                                             "order, energy and pitch of G1. "
+                                             "Must be larger than: {1} mm"
+                                             .format(self._parameters
+                                                     ['fixed_distance'],
+                                                     self._parameters
+                                                     ['distance_g1_g2']))
+                            logger.error(error_message)
+                            raise GeometryError(error_message)
+
+                        if 'G0' in self._parameters['component_list']:
+                            self._parameters['distance_g0_g1'] = to_g1
+                        else:
+                            self._parameters['distance_source_g1'] = to_g1
+
+                    # Magnification (s/l)
+                    M = total_length / to_g1
+
+                    # Pitches [um]
+                    self._parameters['pitch_g1'] = \
+                        self._nu * self._parameters['pitch_g2'] / M
+                    if 'G0' in self._parameters['component_list']:
+                        self._parameters['pitch_g0'] = \
+                            (to_g1 / self._parameters['distance_g1_g2']) * \
+                            self._parameters['pitch_g2']
+
+                    # Duty cycles
+                    self._parameters['duty_cycle_g1'] = \
+                        self._parameters['duty_cycle_g2']
+                    if 'G0' in self._parameters['component_list']:
+                        self._parameters['duty_cycle_g0'] = \
+                            self._parameters['duty_cycle_g2']
             else:
                 # Dual phase setup (HERE OR INSIDE CALCS???)
                 logger.warning("Cone, conv and dual phase not possible yet!")
