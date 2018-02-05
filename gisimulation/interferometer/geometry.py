@@ -472,11 +472,11 @@ class Geometry():
                     to_g1 * talbot_distance / \
                     (to_g1 - talbot_distance)
 
-                logger.info(talbot_distance)
-                logger.info(to_g1)
-                logger.info(self._parameters['distance_g1_g2'])
-
                 # Check if valid distance input
+                logger.info('distance_g1_g2')
+                logger.info(self._parameters['distance_g1_g2'])
+                logger.info('to_g1')
+                logger.info(to_g1)
                 if self._parameters['distance_g1_g2'] <= 0:
                     error_message = ("{0} too small for chosen talbot "
                                      "order, energy and pitch of G1. "
@@ -488,12 +488,9 @@ class Geometry():
                     raise GeometryError(error_message)
                 elif self._parameters['distance_g1_g2'] < to_g1:
                     error_message = ("{0} too large for chosen talbot "
-                                     "order, energy and pitch of G1. "
-                                     "Must be smaller than: {1} mm"
+                                     "order, energy and pitch of G1."
                                      .format(self._parameters
-                                             ['fixed_distance'],
-                                             self._parameters
-                                             ['distance_g1_g2']))
+                                             ['fixed_distance']))
                     logger.error(error_message)
                     raise GeometryError(error_message)
 
