@@ -270,12 +270,12 @@ class Distances(F.GridLayout):
             -> if both are already enabled
         """
         if value != '':
-            if self.distance_fixed is False:
+            if not self.distance_fixed:
                 linked_instance.disabled = True
                 linked_instance.text = ''
             if linked_instance.text != '':
                 # Both not empty after results etc.
-                if self.distance_fixed is True:
+                if self.distance_fixed:
                     linked_instance.disabled = False
                     instance.disabled = False
                     self.distance_fixed = False
