@@ -418,17 +418,14 @@ class GeometryGrid(F.GridLayout):
         #  989=1024-line_height
         self.sketch.rectangle.pos = (80, 989-self.height)
 
-    def update_geometry(self, geometry_results, focal_spot_size):
+    def update_geometry(self, geometry_results):
         """
         Update Geometry Sketch according to geometry results.
-
-        TODO: Add round gratings or missmatching gratings!
 
         Parameters
         ==========
 
         geometry_results [dict]
-        focal_spot_size [um]:       is None, if parallel beam
 
         Notes
         =====
@@ -444,13 +441,6 @@ class GeometryGrid(F.GridLayout):
             From source center to detector edges. Either triangel or rectangle.
 
         """
-        # Test
-        focal_spot_size = None
-        geometry_results['Setup']['beam_geometry'] = 'parallel'
-
-#        focal_spot_size = 1
-#        geometry_results['Setup']['beam_geometry'] = 'cone'
-
         # Get (0,0) coordinates of sketch
         frame_x0 = self.sketch.pos[0]
         frame_y0 = self.sketch.pos[1]
@@ -460,21 +450,19 @@ class GeometryGrid(F.GridLayout):
 
         frame_y_center = frame_y0 + frame_height/2
 
-        # Add Source
+        # Add Source if cone beam
         width = 10
         height = 20
         pos_x = frame_x0 + frame_width/20 - width/2
         pos_y = frame_y_center - height/2
-
         self.source = G.Ellipse(pos=(pos_x, pos_y), size=(width, height))
-        self.sketch.geometry_group.add(G.Color(1, 0, 0, 0.5))
-        self.sketch.geometry_group.add(self.source)
-        if not focal_spot_size:
-            self.sketch.geometry_group.remove(self.source)
+        if geometry_results['Setup']['beam_geometry'] == 'cone':
+            self.sketch.geometry_group.add(G.Color(1, 0, 0, 0.5))
+            self.sketch.geometry_group.add(self.source)
 
         # Add Detector
         width = 20
-        height = frame_height*0.8
+        height = frame_height*0.8  # is max height of sketch
         pos_x = frame_x0 + frame_width - frame_width/20 - width/2
         pos_y = frame_y_center - height/2
 
@@ -485,7 +473,6 @@ class GeometryGrid(F.GridLayout):
         # Add beam
         width = frame_width - frame_width/10 - 10
         height = frame_height*0.8
-
         if geometry_results['Setup']['beam_geometry'] == 'parallel':
             pos_x = self.source.pos[0] + self.source.size[0]/2
             pos_y = self.detector.pos[1]
@@ -502,32 +489,39 @@ class GeometryGrid(F.GridLayout):
         self.sketch.geometry_group.add(G.Color(1, 1, 0, 0.1))
         self.sketch.geometry_group.add(self.beam)
 
-        # Get scaling distances
-#        total_setup_length = self.detector.pos[0] - \
-#            self.source.pos[0]  # [points]
+        # Scaling factors
+        # Max width is distance source detector [mm]
+        total_setup_width = self.detector.pos[0] - self.source.pos[0]  # [points]
+        total_setup_height = self.detector.size[1]  # [points]
 
+        width_scaling = total_setup_width / \
+            geometry_results['distance_source_detector']  # [points/]
+        # Angle for scaling height (only cone beam)
+        fan_angle = 2 * np.arctan(total_setup_height / 2 / total_setup_length)
 
-
+        # Add sample
+        if 'Sample' in geometry_results['Setup']['component_list']:
+            if geometry_results['Sample']['sample_shape'] == 'circular':
+                width = geometry_results['Sample']['sample_diameter']  # [mm]
+                width = width *  width_scaling  # [points]
+                pos_x =
+                # Scale size to sketch area
+                pos_y = frame_y_center - height/2
+                self.sample = G.Ellipse(pos=(pos_x, pos_y), size=(width, width))
+                self.sketch.geometry_group.add(G.Color(0, 0, 1, 0.75))
+                self.sketch.geometry_group.add(self.sample)
 
         # Add Gratings
-        # FUTURE
+
+
+
+
+
         # Seperate between bent and straight gratings
         # Bent: Ellipse (or circle) with radius as size and
         # angle_start/angle_end
 
-        # Add sample
-#        if 'Sample' in geometry_results['Setup']['component_list']:
-#            # FUTURE
-#            # Define size and shape
-#            # Now just use blue dot
-#            width = 100  # [mm]
-#            height = 100  # [mm]
-#            pos_x =
-#            # Scale size to sketch area
-#            pos_y = frame_y_center - height/2
-#            self.sample = G.Ellipse(pos=(pos_x, pos_y), size=(width, height))
-#            self.sketch.geometry_group.add(G.Color(0, 0, 1, 0.75))
-#            self.sketch.geometry_group.add(self.sample)
+
 
 
 
