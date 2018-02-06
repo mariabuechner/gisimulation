@@ -782,10 +782,30 @@
                                 height: root.calc_boxlayout_height(line_height, self)
                                 disabled: not add_sample.active
                                 BoxLayout:
-                                    NonFileBrowserLabel:
+                                    LabelHelp:
                                         id: sample_distance_label
+                                        help_message: parser_info['sample_distance'][1]
                                     FloatInput:
                                         id: sample_distance
+                            BoxLayout:
+                                orientation: 'vertical'
+                                size_hint_y: None
+                                height: root.calc_boxlayout_height(line_height, self)
+                                disabled: not add_sample.active
+                                BoxLayout:
+                                    LabelHelp:
+                                        text: 'Shape of sample'
+                                        help_message: parser_info['sample_shape'][1]
+                                    Spinner:
+                                        id: sample_shape
+                                        text: 'circular'
+                                        values: ['circular']
+                                    LabelHelp:
+                                        id: sample_diameter_label
+                                        text: 'Sample diameter [mm]'
+                                        help_message: parser_info['sample_diameter'][1]
+                                    FloatInput:
+                                        id: sample_diameter
 
                             Widget:
                             Widget:

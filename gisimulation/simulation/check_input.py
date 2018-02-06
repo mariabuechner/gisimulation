@@ -130,7 +130,7 @@ def general_input(parameters, parser_info):
                           parameters['spectrum_range'],
                           parameters['spectrum_step'],
                           parameters['design_energy'])
-        # material filter
+        # Material filter
         if parameters['thickness_filter'] and \
                 not parameters['material_filter']:
             error_message = ("Filter material ({0}) must be specified."
@@ -178,7 +178,7 @@ def general_input(parameters, parser_info):
                                .format(parser_info['detector_threshold'][0],
                                        min_energy))
 
-        # material thickness
+        # Material thickness
         if parameters['thickness_detector'] and \
                 not parameters['material_detector']:
             error_message = ("Detector material ({0}) must be specified."
@@ -352,6 +352,8 @@ def general_input(parameters, parser_info):
                             raise InputError(error_message)
                         elif parameters['distance_source_g1'] and \
                                 parameters['distance_source_g2']:
+                            logger.info(parser_info['distance_source_g1'])
+                            logger.info(parser_info['distance_source_g2'])
                             logger.warning("Both distance from Source to G1 "
                                            "({0}) AND Source to G2 ({1}) are "
                                            "defined, choosing last choice of "
@@ -359,9 +361,9 @@ def general_input(parameters, parser_info):
                                            .format(parser_info
                                                    ['distance_source_g1'][0],
                                                    parser_info
-                                                   ['distance_source_g2'][0]),
+                                                   ['distance_source_g2'][0],
                                                    parameters
-                                                   ['fixed_distance'])
+                                                   ['fixed_distance']))
                             fixed_distance = parameters['fixed_distance']
                         elif parameters['distance_source_g1']:
                             fixed_distance = 'distance_source_g1'
@@ -585,13 +587,13 @@ def general_input(parameters, parser_info):
             if parameters['distance_g2_detector'] is None:
                 logger.debug("Setting undefined optional distance "
                              "'distance_g2_detector to: 0")
-                parameters['distance_g2_detector'] = 0
+                parameters['distance_g2_detector'] = 0.0
 
             if 'G0' in parameters['component_list'] and \
                     parameters['distance_source_g0'] is None:
                 logger.debug("Setting undefined optional distance "
                              "'distance_source_g0' to: 0")
-                parameters['distance_source_g0'] = 0
+                parameters['distance_source_g0'] = 0.0
 
 
         # Info
@@ -609,18 +611,6 @@ def general_input(parameters, parser_info):
                 logger.info("Fixed distance is: {0}."
                             .format(fixed_distance))
 
-        # Check remaining components (source and detector already done)
-        # Sample distance, shape, amterial etc.
-        logger.debug("Checking remaining components...")
-        if 'Sample' in parameters['component_list']:
-            logger.debug("Checking sample input...")
-            if not parameters['sample_distance']:
-                error_message = ("Distance from sample to reference component "
-                                 "must be specified.")
-                logger.error(error_message)
-                raise InputError(error_message)
-            logger.debug("... done.")
-        # Gratings
         # Check all selected gratings
         if 'G0' in parameters['component_list']:
             logger.debug("Checking G0...")
@@ -634,6 +624,30 @@ def general_input(parameters, parser_info):
             logger.debug("Checking G2...")
             _check_grating_input('g2', parameters, parser_info)
             logger.debug("... done.")
+
+        # Check remaining components (source and detector already done)
+        # Sample distance, shape, material etc.
+        logger.debug("Checking remaining components...")
+        if 'Sample' in parameters['component_list']:
+            logger.debug("Checking sample input...")
+            if not parameters['sample_distance']:
+                error_message = ("Distance from sample to reference component "
+                                 "must be specified.")
+                logger.error(error_message)
+                raise InputError(error_message)
+            # ########## Temp ########################
+            if not parameters['sample_diameter']:
+                error_message = "Sample diameter must be specified."
+                logger.error(error_message)
+                raise InputError(error_message)
+            elif parameters['sample_diameter'] > parameters['sample_distance']:
+                error_message = ("Sample diameter larger than distance from "
+                                 "sample to reference component.")
+                logger.error(error_message)
+                raise InputError(error_message)
+            # ########## Temp ########################
+            logger.debug("... done.")
+
         if parameters['gi_geometry'] == 'free':
             # Chack all necessary distances
             logger.debug("Checking distances for 'free' input...")

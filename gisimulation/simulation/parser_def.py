@@ -500,8 +500,19 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
     parser.add_argument('-sd', dest='sample_distance',
                         action=_PositiveNumber,
                         type=numerical_type,
-                        help="Distance from sample to reference component "
-                        "[mm].")
+                        help=("Distance from sample to reference component "
+                              "[mm]."))
+    # ########## Temp ########################
+    parser.add_argument('-sdm', dest='sample_diameter',
+                        action=_PositiveNumber,
+                        type=numerical_type,
+                        help=("Sample diameter [mm] (if sample shape is "
+                              "circular)."))
+    parser.add_argument('-ssp', dest='sample_shape',
+                        type=str.lower,
+                        choices=['circular'], metavar='SAMPLE_SHAPE',
+                        help="Choose which shape the sample is.")
+    # ########## Temp ########################
 
     # Return
     return parser

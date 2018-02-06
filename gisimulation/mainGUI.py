@@ -391,7 +391,7 @@ class GeometrySketch(F.Widget):
 
 class GeometryGrid(F.GridLayout):
     """
-    GridLayout, in which has one child, which canvas contains the
+    GridLayout, which has one child, which canvas contains the
     geometry_group of GeometrySketch.
     """
     def __init__(self, **kwargs):
@@ -512,6 +512,8 @@ class GeometryGrid(F.GridLayout):
         # Add Gratings
         # FUTURE
         # Seperate between bent and straight gratings
+        # Bent: Ellipse (or circle) with radius as size and
+        # angle_start/angle_end
 
         # Add sample
 #        if 'Sample' in geometry_results['Setup']['component_list']:
@@ -720,7 +722,7 @@ def _save_input_file(input_file_path, input_parameters):
         for var_key, value in input_parameters.iteritems():
             f.writelines(var_key+'\n')
 
-            if type(value) is np.ndarray:  # For FOV anf Range
+            if type(value) is np.ndarray:  # For FOV and Range
                 f.writelines(str(value[0])+'\n')
                 f.writelines(str(value[1])+'\n')
             else:
@@ -729,7 +731,8 @@ def _save_input_file(input_file_path, input_parameters):
 
 def _collect_widgets(parameters, ids):
     """
-    Converts self.ids from widget to dict.
+    Converts self.ids from widget to dict, thus setting parameters based in
+    widget values.
 
     Parameters
     ==========
@@ -988,9 +991,18 @@ class giGUI(F.BoxLayout):
                                 "('-e')."
                 logger.error(error_message)
                 raise check_input.InputError(error_message)
+
+            # Gratings types defined if selected?
+            for grating in ['g0', 'g1', 'g2']:
+                if self.ids[grating+'_set'].active and \
+                        not self.parameters['type_'+grating]:
+                    error_message = ("Type of {0} not defined."
+                                     .format(grating.upper()))
+                    logger.error(error_message)
+                    raise check_input.InputError(error_message)
+
             # Check rest
-            check_input.general_input(self.parameters,
-                                                        self.parser_info)
+            check_input.general_input(self.parameters, self.parser_info)
             logger.info("... done.")
 
             # Update widget content
@@ -1007,11 +1019,13 @@ class giGUI(F.BoxLayout):
         if self.results['geometry']:
             logger.debug("Storing geometry results in "
                          "previous_results['geometry']...")
-            self.previous_results['geometry'] = (self.results['geometry'])
+            self.previous_results['geometry'] = self.results['geometry']
             logger.debug("... done.")
 
         # Calc geometries
+        logger.info("Checking general input...")
         self.check_general_input()
+        logger.info("... done.")
         try:
             logger.info("Calculationg geometry...")
             gi_geometry = geometry.Geometry(self.parameters)  # Calc...
