@@ -1617,7 +1617,7 @@ class giGUI(F.BoxLayout):
         grating = grating.lower()
         if state:
             # Grating bent
-            self.ids[grating+'_matching'].disabled = False
+            self.ids[grating+'1_matching'].disabled = False
             self.ids[grating+'_matching'].active = True
         else:
             self.ids[grating+'_matching'].disabled = True
@@ -1654,6 +1654,10 @@ class giGUI(F.BoxLayout):
         # Abs grating: reset phase input
         if self.ids['type_'+grating].text == 'abs':
             self.ids['phase_shift_'+grating].text = ''
+
+        # If type is set, activate grating
+        if self.ids['type_'+grating].text != '':
+            self.ids[grating+'_set'].active = True
 
     # Sample
 
