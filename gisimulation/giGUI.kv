@@ -473,6 +473,28 @@
                                                         disabled: not g0_set.active
                                                         BoxLayout:
                                                             LabelHelp:
+                                                                size_hint_x: 0.4
+                                                                text: 'Bent'
+                                                                help_message: parser_info['g0_bent'][1]
+                                                            CheckBox:
+                                                                id: g0_bent
+                                                                on_active: root.on_grating_shape_active(self.active, g0_set_name.text)
+                                                            BoxLayout:
+                                                                LabelHelp:
+                                                                    size_hint_x: 0.4
+                                                                    text: 'Matching'
+                                                                    help_message: parser_info['g0_matching'][1]
+                                                                CheckBox:
+                                                                    id: g0_matching
+                                                                    on_active: root.on_radius_matching_active(self.active, g0_set_name.text)
+                                                        BoxLayout:
+                                                            LabelHelp:
+                                                                text: 'Radius [mm]'
+                                                                help_message: parser_info['radius_g0'][1]
+                                                            FloatInput:
+                                                                id: radius_g0
+                                                        BoxLayout:
+                                                            LabelHelp:
                                                                 text: 'Grating type'
                                                                 help_message: parser_info['type_g0'][1]
                                                             Spinner:
@@ -567,6 +589,28 @@
                                                         disabled: not g1_set.active
                                                         BoxLayout:
                                                             LabelHelp:
+                                                                size_hint_x: 0.4
+                                                                text: 'Bent'
+                                                                help_message: parser_info['g1_bent'][1]
+                                                            CheckBox:
+                                                                id: g1_bent
+                                                                on_active: root.on_grating_shape_active(self.active, g1_set_name.text)
+                                                            BoxLayout:
+                                                                LabelHelp:
+                                                                    size_hint_x: 0.4
+                                                                    text: 'Matching'
+                                                                    help_message: parser_info['g1_matching'][1]
+                                                                CheckBox:
+                                                                    id: g1_matching
+                                                                    on_active: root.on_radius_matching_active(self.active, g1_set_name.text)
+                                                        BoxLayout:
+                                                            LabelHelp:
+                                                                text: 'Radius [mm]'
+                                                                help_message: parser_info['radius_g1'][1]
+                                                            FloatInput:
+                                                                id: radius_g1
+                                                        BoxLayout:
+                                                            LabelHelp:
                                                                 text: 'Grating type'
                                                                 help_message: parser_info['type_g1'][1]
                                                             Spinner:
@@ -659,6 +703,28 @@
                                                         size_hint_y: None
                                                         height: root.calc_boxlayout_height(line_height, self)
                                                         disabled: not g2_set.active
+                                                        BoxLayout:
+                                                            LabelHelp:
+                                                                size_hint_x: 0.4
+                                                                text: 'Bent'
+                                                                help_message: parser_info['g2_bent'][1]
+                                                            CheckBox:
+                                                                id: g2_bent
+                                                                on_active: root.on_grating_shape_active(self.active, g2_set_name.text)
+                                                            BoxLayout:
+                                                                LabelHelp:
+                                                                    size_hint_x: 0.4
+                                                                    text: 'Matching'
+                                                                    help_message: parser_info['g2_matching'][1]
+                                                                CheckBox:
+                                                                    id: g2_matching
+                                                                    on_active: root.on_radius_matching_active(self.active, g2_set_name.text)
+                                                        BoxLayout:
+                                                            LabelHelp:
+                                                                text: 'Radius [mm]'
+                                                                help_message: parser_info['radius_g2'][1]
+                                                            FloatInput:
+                                                                id: radius_g2
                                                         BoxLayout:
                                                             LabelHelp:
                                                                 text: 'Grating type'

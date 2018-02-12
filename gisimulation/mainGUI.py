@@ -1562,7 +1562,7 @@ class giGUI(F.BoxLayout):
         else:
             self.ids['phase_shift_'+grating+'_options'].text = ''
 
-    def on_grating_checkbox_active(self, state, checkbox_name):
+    def on_grating_checkbox_active(self, state, grating):
         """
         Add/remove activate/deactivaded grating to/from component list and
         update distances.
@@ -1571,23 +1571,26 @@ class giGUI(F.BoxLayout):
         ==========
 
         state [boolean]
-        checkbox_name [str
+        grating [str]
 
         """
         if state:
-            self.setup_components.append(checkbox_name)
+            self.setup_components.append(grating)
             self.setup_components.sort()
             # After sort, switch Source and Detector
             self.setup_components[0], self.setup_components[-1] = \
                 self.setup_components[-1], self.setup_components[0]
-            if checkbox_name == 'G0':
+            if grating == 'G0':
                 self.available_gratings = ['G0', 'G1', 'G2']
+            # Update grating shape options
+            grating_bent = self.ids[grating.lower()+'_bent'].active
+            self.on_grating_shape_active(grating_bent, grating)
         else:
-            self.setup_components.remove(checkbox_name)
+            self.setup_components.remove(grating)
             # Also uncheck sample_added
             self.ids.add_sample.active = False
             self.ids.sample_relative_to.text = self.setup_components[0]
-            if checkbox_name == 'G0':
+            if grating == 'G0':
                 self.available_gratings = ['G1', 'G2']
 
         logger.debug("Current setup consists of: {0}"
@@ -1595,6 +1598,34 @@ class giGUI(F.BoxLayout):
         # Update sample_relative_to and sample_relative_position
         self.on_gi_geometry()
         self.on_beam_geometry()  # Includes update distances
+
+    def on_grating_shape_active(self, state, grating):
+        """
+        If grating is set to bent, enable matching option and set to default
+        (True).
+        """
+        grating = grating.lower()
+        if state:
+            # Grating bent
+            self.ids[grating+'_matching'].disabled = False
+            self.ids[grating+'_matching'].active = True
+        else:
+            self.ids[grating+'_matching'].disabled = True
+            self.ids[grating+'_matching'].active = False
+            self.ids['radius_'+grating].disabled = True
+            self.ids['radius_'+grating].text = ""
+
+
+    def on_radius_matching_active(self, state, grating):
+        """
+        """
+        grating = grating.lower()
+        if state:
+            # matching radius
+            self.ids['radius_'+grating].disabled = True
+            self.ids['radius_'+grating].text = ""
+        else:
+            self.ids['radius_'+grating].disabled = False
 
     def on_grating_type(self, grating):
         """
