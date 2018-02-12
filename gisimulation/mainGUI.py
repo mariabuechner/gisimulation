@@ -795,6 +795,16 @@ def _collect_widgets(parameters, ids):
         parameters['photo_only'] = True
     else:
         parameters['photo_only'] = False
+    # Grating shape
+    for grating in ['g0', 'g1', 'g2']:
+        if ids[grating+'_bent'].active:
+            parameters[grating+'_bent'] = True
+        else:
+            parameters[grating+'_bent'] = False
+        if ids[grating+'_matching'].active:
+            parameters[grating+'_matching'] = True
+        else:
+            parameters[grating+'_matching'] = False
 
     # Handel double numeric inputs
     # Spectrum range
@@ -1851,22 +1861,35 @@ class giGUI(F.BoxLayout):
                         logger.debug("Setting text of widget '{0}' to: {1}"
                                      .format(var_name, value_str[0].upper()))
                         self.ids[var_name].text = value_str[0].upper()
-                    elif var_name == 'dual_phase':
-                        if value_str[0] == 'True':
-                            logger.debug("Setting text of widget '{0}' to: {1}"
+#                    elif var_name == 'dual_phase':
+#                        if value_str[0] == 'True':
+#                            logger.debug("Setting widget '{0}' to: {1}"
+#                                         .format(var_name, True))
+#                            self.ids[var_name].active = True
+#                        else:
+#                            logger.debug("Setting widget '{0}' to: {1}"
+#                                         .format(var_name, False))
+#                            self.ids[var_name].active = False
+#                    elif var_name == 'photo_only':
+#                        if value_str[0] == 'True':
+#                            logger.debug("Setting widget '{0}' to: {1}"
+#                                         .format(var_name, True))
+#                            self.ids[var_name].active = True
+#                        else:
+#                            logger.debug("Setting widget '{0}' to: {1}"
+#                                         .format(var_name, False))
+#                            self.ids[var_name].active = False
+                    # Booleans
+                    elif any(phrase in var_name for phrase in ['_bent',
+                                                           '_matching',
+                                                           'photo_only',
+                                                           'dual_phase']):
+                        if value_str[0].lower() == 'true':
+                            logger.debug("Setting widget '{0}' to: {1}"
                                          .format(var_name, True))
                             self.ids[var_name].active = True
                         else:
-                            logger.debug("Setting text of widget '{0}' to: {1}"
-                                         .format(var_name, False))
-                            self.ids[var_name].active = False
-                    elif var_name == 'photo_only':
-                        if value_str[0] == 'True':
-                            logger.debug("Setting text of widget '{0}' to: {1}"
-                                         .format(var_name, True))
-                            self.ids[var_name].active = True
-                        else:
-                            logger.debug("Setting text of widget '{0}' to: {1}"
+                            logger.debug("Setting widget '{0}' to: {1}"
                                          .format(var_name, False))
                             self.ids[var_name].active = False
                     elif var_name == 'spectrum_file':
@@ -1950,12 +1973,19 @@ class giGUI(F.BoxLayout):
                                              .format(var_name,
                                                      str(value).upper()))
                                 self.ids[var_name].text = str(value).upper()
-                        elif var_name == 'dual_phase':
-                            logger.debug("Setting text of widget '{0}' to: {1}"
-                                         .format(var_name, value))
-                            self.ids[var_name].active = value
-                        elif var_name == 'photo_only':
-                            logger.debug("Setting text of widget '{0}' to: {1}"
+#                        elif var_name == 'dual_phase':
+#                            logger.debug("Setting widget '{0}' to: {1}"
+#                                         .format(var_name, value))
+#                            self.ids[var_name].active = value
+#                        elif var_name == 'photo_only':
+#                            logger.debug("Setting widget '{0}' to: {1}"
+#                                         .format(var_name, value))
+#                            self.ids[var_name].active = value
+                        # Booleans
+                        elif any(phrase in var_name for
+                                 phrase in ['_bent', '_matching', 'photo_only',
+                                            'dual_phase']):
+                            logger.debug("Setting widget '{0}' to: {1}"
                                          .format(var_name, value))
                             self.ids[var_name].active = value
                         elif var_name == 'spectrum_file':

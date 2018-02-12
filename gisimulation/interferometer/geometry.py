@@ -1005,6 +1005,12 @@ class Geometry():
         gratings = [grating for grating in self._parameters['component_list'] \
                     if "G" in grating]
 
+        # If radius of first grating is set manually, update
+        # source to first grating distance
+        if not self._parameters[gratings[0].lower()+'_matching']:
+            self._parameters['distance_source_'+gratings[0].lower()] = \
+                self._parameters['radius_'+gratings[0].lower()]
+
         # Set distance from source to grating
         if len(gratings) == 2:
             self._parameters['distance_source_'+gratings[1].lower()] = \
@@ -1026,14 +1032,16 @@ class Geometry():
         # Set grating radius
         for grating in gratings:
             grating = grating.lower()
-            # Check if radius/distance from source is larger 0
-            distance_to_source = self._parameters['distance_source_'+grating]
-            if distance_to_source == 0.0:
-                error_message = ("Radius of {0} is 0. Either set radius "
-                                 "manually or choose larger distance from "
-                                 "source.".format(grating.upper()))
-                logger.error(error_message)
-                raise GeometryError(error_message)
-            if self._parameters[grating+'_bent'] and \
-                    self._parameters[grating+'_matching']:
-                self._parameters['radius_'+grating] = distance_to_source
+
+            if self._parameters[grating+'_bent']:
+                # Check if radius/distance from source is larger 0
+                distance_to_source = \
+                    self._parameters['distance_source_'+grating]
+                if distance_to_source == 0.0:
+                    error_message = ("Radius of {0} is 0. Either set radius "
+                                     "manually or choose larger distance from "
+                                     "source.".format(grating.upper()))
+                    logger.error(error_message)
+                    raise GeometryError(error_message)
+                if self._parameters[grating+'_matching']:
+                    self._parameters['radius_'+grating] = distance_to_source

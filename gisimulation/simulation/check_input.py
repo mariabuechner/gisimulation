@@ -1266,8 +1266,8 @@ def _check_grating_input(grating, parameters, parser_info):
             parameters['radius_'+grating] = None
         elif not parameters[grating+'_matching'] and \
                 not parameters['radius_'+grating]:
-            error_message("Radius of bent {0} is required"
-                          .format(grating.upper()))
+            error_message = ("Radius of bent {0} is required."
+                             .format(grating.upper()))
             logger.error(error_message)
             raise InputError(error_message)
     else:
