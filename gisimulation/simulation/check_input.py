@@ -1247,3 +1247,39 @@ def _check_grating_input(grating, parameters, parser_info):
                                  parser_info['fill_thickness_'+grating][0]))
         logger.error(error_message)
         raise InputError(error_message)
+
+    # Shape of grating
+    if parameters[grating+'_bent']:
+        if parameters['beam_geometry'] == 'parallel':
+            warning_message = ("{0} is bent in a parallel beam geometry. "
+                               "Ignoring bent grating parameters..."
+                               .format(grating.upper()))
+            logger.warning(warning_message)
+            parameters[grating+'_bent'] = False
+            parameters['radius_'+grating] = None
+            parameters[grating+'_matching'] = False
+        elif parameters[grating+'_matching'] and parameters['radius_'+grating]:
+            warning_message = ("{0} is bent with matching radius AND a radius "
+                               "is set. Ignoring set radius..."
+                               .format(grating.upper()))
+            logger.warning(warning_message)
+            parameters['radius_'+grating] = None
+        elif not parameters[grating+'_matching'] and \
+                not parameters['radius_'+grating]:
+            error_message("Radius of bent {0} is required"
+                          .format(grating.upper()))
+            logger.error(error_message)
+            raise InputError(error_message)
+    else:
+        if parameters[grating+'_matching']:
+            warning_message = ("{0} is straight and cannot match its distance "
+                               "from source. Ignoring matching flag..."
+                               .format(grating.upper()))
+            logger.warning(warning_message)
+            parameters[grating+'_matching'] = False
+        if parameters['radius_'+grating]:
+            warning_message = ("{0} is straight and does not have a radius. "
+                               "gnoring set radius..."
+                               .format(grating.upper()))
+            logger.warning(warning_message)
+            parameters['radius_'+grating] = None

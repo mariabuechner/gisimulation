@@ -400,6 +400,21 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         action=_TruePositiveNumber,
                         type=numerical_type,
                         help="Depth of G0 filling [um].")
+    parser.add_argument('--g0_bent',
+                        action='store_true',
+                        help="Option to make G0 bent shaped [bool]. "
+                        "Else, it is straight and perpendicular to the "
+                        "beam (default).")
+    parser.add_argument('--g0_matching',
+                        action='store_true',
+                        help="Option to bent G0 matching to its distance "
+                        " from the source [bool]. If so, radius of G0 will "
+                        "be ignored. Else, radius of G0 needs to be set "
+                        "(default).")
+    parser.add_argument('-r0', dest='radius_g0',
+                        action=_TruePositiveNumber,
+                        type=numerical_type,
+                        help="Radius if bent G0 [mm].")
     # G1
     parser.add_argument('-g1', dest='type_g1',
                         type=str.lower,
@@ -441,6 +456,21 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         action=_TruePositiveNumber,
                         type=numerical_type,
                         help="Depth of G1 filling [um].")
+    parser.add_argument('--g1_bent',
+                        action='store_true',
+                        help="Option to make G1 bent shaped [bool]. "
+                        "Else, it is straight and perpendicular to the "
+                        "beam (default).")
+    parser.add_argument('--g1_matching',
+                        action='store_true',
+                        help="Option to bent G1 matching to its distance "
+                        " from the source [bool]. If so, radius of G1 will "
+                        "be ignored. Else, radius of G1 needs to be set "
+                        "(default).")
+    parser.add_argument('-r1', dest='radius_g1',
+                        action=_TruePositiveNumber,
+                        type=numerical_type,
+                        help="Radius if bent G1 [mm].")
     # G2
     parser.add_argument('-g2', dest='type_g2',
                         type=str.lower,
@@ -482,6 +512,21 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         action=_TruePositiveNumber,
                         type=numerical_type,
                         help="Depth of G2 filling [um].")
+    parser.add_argument('--g2_bent',
+                        action='store_true',
+                        help="Option to make G2 bent shaped [bool]. "
+                        "Else, it is straight and perpendicular to the "
+                        "beam (default).")
+    parser.add_argument('--g2_matching',
+                        action='store_true',
+                        help="Option to bent G2 matching to its distance "
+                        " from the source [bool]. If so, radius of G2 will "
+                        "be ignored. Else, radius of G2 needs to be set "
+                        "(default).")
+    parser.add_argument('-r2', dest='radius_g2',
+                        action=_TruePositiveNumber,
+                        type=numerical_type,
+                        help="Radius if bent G2 [mm].")
 
     # Sample
     parser.add_argument('-sp', dest='sample_position',

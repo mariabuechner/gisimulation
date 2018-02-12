@@ -55,6 +55,9 @@ class Geometry():
         elif self._parameters['gi_geometry'] == 'inv':
             self._calc_inverse()
 
+        # Update grating radii if bent
+        self._update_gratings()
+
         # Update geometry results
         self._get_geometry_results()
 
@@ -68,9 +71,12 @@ class Geometry():
             - gi_geometry
             - beam_geometry
             - distances (not none)
-            - pitches (not none)
             - if sample:
                 - sample info
+            - gratings:
+                - pitches (not none)
+                - if bent gratings:
+                    radius (input or matching distance)
 
         """
         self.results = dict()
@@ -120,14 +126,20 @@ class Geometry():
                     self.results['distances']['distance_g1_g2'] + \
                     self.results['distances']['distance_g2_detector']
 
-        # To 'pitches'
-        self.results['pitches'] = dict()
+        # To 'gratings'
+        self.results['gratings'] = dict()
         # Add pitches
         pitches = [(pitch_name, pitch_value) for pitch_name, pitch_value
                    in self._parameters.iteritems()
                    if ('pitch_' in pitch_name and pitch_value is not None)]
         for pitch in pitches:
-            self.results['pitches'][pitch[0]] = pitch[1]
+            self.results['gratings'][pitch[0]] = pitch[1]
+        # Add grating radii (if bent <=> radius not None)
+        radii = [(radius_name, radius_value) for radius_name, radius_value
+                   in self._parameters.iteritems()
+                   if ('radius_' in radius_name and radius_value is not None)]
+        for radius in radii:
+            self.results['gratings'][radius[0]] = radius[1]
 
         # Add sample info
         if self._parameters['sample_position']:
@@ -141,6 +153,7 @@ class Geometry():
                 self._parameters['sample_shape']
             self.results['sample']['sample_diameter'] = \
                 self._parameters['sample_diameter']
+
 
     def update_parameters(self):
         """
@@ -976,3 +989,51 @@ class Geometry():
                     self._parameters['duty_cycle_g2']
 
         logger.info("... done.")
+
+    def _update_gratings(self):
+        """
+
+        Notes
+        =====
+
+        If only one grating: source to Gi is already set.
+        If 2 gratings, source to first is set, and first to second
+        If 3 gratings, source to first, first to second and second to third are
+        set.
+
+        """
+        gratings = [grating for grating in self._parameters['component_list'] \
+                    if "G" in grating]
+
+        # Set distance from source to grating
+        if len(gratings) == 2:
+            self._parameters['distance_source_'+gratings[1].lower()] = \
+                self._parameters['distance_source_'+gratings[0].lower()] + \
+                self._parameters['distance_'+gratings[0].lower()+
+                                 '_'+gratings[1].lower()]
+        elif len(gratings) == 3:
+            self._parameters['distance_source_'+gratings[1].lower()] = \
+                self._parameters['distance_source_'+gratings[0].lower()] + \
+                self._parameters['distance_'+gratings[0].lower()+
+                                 '_'+gratings[1].lower()]
+            self._parameters['distance_source_'+gratings[2].lower()] = \
+                self._parameters['distance_source_'+gratings[0].lower()] + \
+                self._parameters['distance_'+gratings[0].lower()+
+                                 '_'+gratings[1].lower()] + \
+                self._parameters['distance_'+gratings[1].lower()+
+                                 '_'+gratings[2].lower()]
+
+        # Set grating radius
+        for grating in gratings:
+            grating = grating.lower()
+            # Check if radius/distance from source is larger 0
+            distance_to_source = self._parameters['distance_source_'+grating]
+            if distance_to_source == 0.0:
+                error_message = ("Radius of {0} is 0. Either set radius "
+                                 "manually or choose larger distance from "
+                                 "source.".format(grating.upper()))
+                logger.error(error_message)
+                raise GeometryError(error_message)
+            if self._parameters[grating+'_bent'] and \
+                    self._parameters[grating+'_matching']:
+                self._parameters['radius_'+grating] = distance_to_source
