@@ -300,11 +300,12 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         action=_TruePositiveNumber,
                         type=numerical_type,
                         help="Depth of detector [um].")
-#    parser.add_argument('--curved_detector',
-#                        action='store_true',
-#                        help="Option to have curved detector with same radius "
-#                        "as distance from source [bool]. Else, flat and
-#                        "perpendicular to center of beam (default).")
+    parser.add_argument('--curved_detector',
+                        action='store_true',
+                        help=("Option to have curved detector with same "
+                              "radius as distance from source [bool]. Else, "
+                              "flat and perpendicular to center of beam "
+                              "(default)."))
 
     # Distances
     # From source

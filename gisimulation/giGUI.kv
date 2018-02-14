@@ -379,6 +379,12 @@
                                             height: root.calc_boxlayout_height(line_height, self)
                                             BoxLayout:
                                                 LabelHelp:
+                                                    text: "Curved detector"
+                                                    help_message: parser_info['curved_detector'][1]
+                                                CheckBox:
+                                                    id: curved_detector
+                                            BoxLayout:
+                                                LabelHelp:
                                                     text: 'Detector type'
                                                     help_message: parser_info['detector_type'][1]
                                                 Spinner:
