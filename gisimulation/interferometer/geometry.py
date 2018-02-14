@@ -61,100 +61,6 @@ class Geometry():
         # Update geometry results
         self._get_geometry_results()
 
-    # Set geometry results
-    def _get_geometry_results(self):
-        """
-        Adds self.results dict.
-
-        Results contain:
-            - component_list
-            - gi_geometry
-            - beam_geometry
-            - distances (not none)
-            - if sample:
-                - sample info
-            - gratings:
-                - pitches (not none)
-                - if bent gratings:
-                    radius (input or matching distance)
-
-        """
-        self.results = dict()
-        # To 'Setup'
-        self.results['Setup'] = dict()
-        # Add component list
-        self.results['Setup']['component_list'] = \
-            self._parameters['component_list']
-
-        # Add geometries
-        self.results['Setup']['gi_geometry'] = self._parameters['gi_geometry']
-        self.results['Setup']['beam_geometry'] = \
-            self._parameters['beam_geometry']
-
-        # To 'distances'
-        self.results['distances'] = dict()
-        # Add distances
-        # distances =  [('distance_b', 10), ('distance_a', 10)]
-        distances = [(distance_name, distance_value)
-                     for distance_name, distance_value
-                     in self._parameters.iteritems()
-                     if ('distance_' in distance_name and
-                         distance_value is not None)]
-        for distance in distances:
-            self.results['distances'][distance[0]] = distance[1]
-
-        # Add source to detector distance [mm]
-        if self.results['Setup']['gi_geometry'] == 'free':
-            self.results['distances']['distance_source_detector'] = 0.0  # [mm]
-            for distance, value in self.results['distances'].iteritems():
-                self.results['distances']['distance_source_detector'] = \
-                    self.results['distances']['distance_source_detector'] + \
-                    value
-        elif self.results['Setup']['beam_geometry'] == 'parallel':
-            self.results['distances']['distance_source_detector'] = \
-                self.results['distances']['distance_g1_g2']
-        else:
-            # if cone GI geometry
-            if 'G0' in self._parameters['component_list']:
-                self.results['distances']['distance_source_detector'] = \
-                    self.results['distances']['distance_source_g0'] + \
-                    self.results['distances']['distance_g0_g2'] + \
-                    self.results['distances']['distance_g2_detector']
-            else:
-                self.results['distances']['distance_source_detector'] = \
-                    self.results['distances']['distance_source_g1'] + \
-                    self.results['distances']['distance_g1_g2'] + \
-                    self.results['distances']['distance_g2_detector']
-
-        # To 'gratings'
-        self.results['gratings'] = dict()
-        # Add pitches
-        pitches = [(pitch_name, pitch_value) for pitch_name, pitch_value
-                   in self._parameters.iteritems()
-                   if ('pitch_' in pitch_name and pitch_value is not None)]
-        for pitch in pitches:
-            self.results['gratings'][pitch[0]] = pitch[1]
-        # Add grating radii (if bent <=> radius not None)
-        radii = [(radius_name, radius_value) for radius_name, radius_value
-                   in self._parameters.iteritems()
-                   if ('radius_' in radius_name and radius_value is not None)]
-        for radius in radii:
-            self.results['gratings'][radius[0]] = radius[1]
-
-        # Add sample info
-        if self._parameters['sample_position']:
-            # If sample defined
-            self.results['sample'] = dict()
-            self.results['sample']['sample_position'] = \
-                self._parameters['sample_position']
-            self.results['sample']['sample_distance'] = \
-                self._parameters['sample_distance']
-            self.results['sample']['sample_shape'] = \
-                self._parameters['sample_shape']
-            self.results['sample']['sample_diameter'] = \
-                self._parameters['sample_diameter']
-
-
     def update_parameters(self):
         """
         Return updated parameter dict.
@@ -166,6 +72,7 @@ class Geometry():
 
         """
         return self._parameters
+
 
     def _calc_conventional(self):
         """
@@ -992,6 +899,7 @@ class Geometry():
 
     def _update_gratings(self):
         """
+        Updates grating distances from source and radii if bent.
 
         Notes
         =====
@@ -1007,7 +915,8 @@ class Geometry():
 
         # If radius of first grating is set manually, update
         # source to first grating distance
-        if not self._parameters[gratings[0].lower()+'_matching']:
+        if self._parameters[gratings[0].lower()+'_bent'] and \
+                not self._parameters[gratings[0].lower()+'_matching']:
             self._parameters['distance_source_'+gratings[0].lower()] = \
                 self._parameters['radius_'+gratings[0].lower()]
 
@@ -1018,11 +927,9 @@ class Geometry():
                 self._parameters['distance_'+gratings[0].lower() +
                                  '_'+gratings[1].lower()]
         elif len(gratings) == 3:
-            logger.info("===================")
-            logger.info(gratings)
-            logger.info(gratings[0].lower())
-            logger.info(gratings[1].lower())
-            logger.info(gratings[2].lower())
+            logger.info(['distance_source_'+gratings[0].lower()])
+            logger.info(self._parameters['distance_source_'+gratings[0].lower()])
+
             self._parameters['distance_source_'+gratings[1].lower()] = \
                 self._parameters['distance_source_'+gratings[0].lower()] + \
                 self._parameters['distance_'+gratings[0].lower() +
@@ -1050,3 +957,96 @@ class Geometry():
                     raise GeometryError(error_message)
                 if self._parameters[grating+'_matching']:
                     self._parameters['radius_'+grating] = distance_to_source
+
+    # Set geometry results
+    def _get_geometry_results(self):
+        """
+        Adds self.results dict.
+
+        Results contain:
+            - component_list
+            - gi_geometry
+            - beam_geometry
+            - distances (not none)
+            - if sample:
+                - sample info
+            - gratings:
+                - pitches (not none)
+                - if bent gratings:
+                    radius (input or matching distance)
+
+        """
+        self.results = dict()
+        # To 'Setup'
+        self.results['Setup'] = dict()
+        # Add component list
+        self.results['Setup']['component_list'] = \
+            self._parameters['component_list']
+
+        # Add geometries
+        self.results['Setup']['gi_geometry'] = self._parameters['gi_geometry']
+        self.results['Setup']['beam_geometry'] = \
+            self._parameters['beam_geometry']
+
+        # To 'distances'
+        self.results['distances'] = dict()
+        # Add distances
+        # distances =  [('distance_b', 10), ('distance_a', 10)]
+        distances = [(distance_name, distance_value)
+                     for distance_name, distance_value
+                     in self._parameters.iteritems()
+                     if ('distance_' in distance_name and
+                         distance_value is not None)]
+        for distance in distances:
+            self.results['distances'][distance[0]] = distance[1]
+
+        # Add source to detector distance [mm]
+        if self.results['Setup']['gi_geometry'] == 'free':
+            self.results['distances']['distance_source_detector'] = 0.0  # [mm]
+            for distance, value in self.results['distances'].iteritems():
+                self.results['distances']['distance_source_detector'] = \
+                    self.results['distances']['distance_source_detector'] + \
+                    value
+        elif self.results['Setup']['beam_geometry'] == 'parallel':
+            self.results['distances']['distance_source_detector'] = \
+                self.results['distances']['distance_g1_g2']
+        else:
+            # if cone GI geometry
+            if 'G0' in self._parameters['component_list']:
+                self.results['distances']['distance_source_detector'] = \
+                    self.results['distances']['distance_source_g0'] + \
+                    self.results['distances']['distance_g0_g2'] + \
+                    self.results['distances']['distance_g2_detector']
+            else:
+                self.results['distances']['distance_source_detector'] = \
+                    self.results['distances']['distance_source_g1'] + \
+                    self.results['distances']['distance_g1_g2'] + \
+                    self.results['distances']['distance_g2_detector']
+
+        # To 'gratings'
+        self.results['gratings'] = dict()
+        # Add pitches
+        pitches = [(pitch_name, pitch_value) for pitch_name, pitch_value
+                   in self._parameters.iteritems()
+                   if ('pitch_' in pitch_name and pitch_value is not None)]
+        for pitch in pitches:
+            self.results['gratings'][pitch[0]] = pitch[1]
+        # Add grating radii (if bent <=> radius not None)
+        radii = [(radius_name, radius_value) for radius_name, radius_value
+                   in self._parameters.iteritems()
+                   if ('radius_' in radius_name and radius_value is not None)]
+        for radius in radii:
+            self.results['gratings'][radius[0]] = radius[1]
+
+        # Add sample info
+        if self._parameters['sample_position']:
+            # If sample defined
+            self.results['sample'] = dict()
+            self.results['sample']['sample_position'] = \
+                self._parameters['sample_position']
+            self.results['sample']['sample_distance'] = \
+                self._parameters['sample_distance']
+            self.results['sample']['sample_shape'] = \
+                self._parameters['sample_shape']
+            self.results['sample']['sample_diameter'] = \
+                self._parameters['sample_diameter']
