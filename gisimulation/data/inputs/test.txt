@@ -5,14 +5,10 @@ inv
 200
 -d2
 150.0
---g1_bent
-False
 -d0
 150.0
 -e
 35.0
---g2_bent
-False
 -s1
 3.14159265359
 -t
@@ -24,12 +20,6 @@ False
 -r
 10.0
 80.0
---dual_phase
-False
---photo_only
-False
---g2_matching
-False
 -fg
 g1
 -bg
@@ -46,8 +36,6 @@ abs
 phase
 -g0
 abs
---g0_bent
-False
 -p1
 2.0
 -dt
@@ -60,10 +48,6 @@ photon
 NIST
 -sr
 0.1
---g1_matching
-False
---g0_matching
-False
 -fs
 300.0
 -ssp

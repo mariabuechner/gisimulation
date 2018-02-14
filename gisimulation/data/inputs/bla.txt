@@ -6,11 +6,11 @@ inv
 cone
 -lut
 NIST
--g0g2
-57.0
--ssp
-circular
 -g1
 phase
+-g0
+abs
+-ssp
+circular
 -dt
 photon

@@ -1015,18 +1015,23 @@ class Geometry():
         if len(gratings) == 2:
             self._parameters['distance_source_'+gratings[1].lower()] = \
                 self._parameters['distance_source_'+gratings[0].lower()] + \
-                self._parameters['distance_'+gratings[0].lower()+
+                self._parameters['distance_'+gratings[0].lower() +
                                  '_'+gratings[1].lower()]
         elif len(gratings) == 3:
+            logger.info("===================")
+            logger.info(gratings)
+            logger.info(gratings[0].lower())
+            logger.info(gratings[1].lower())
+            logger.info(gratings[2].lower())
             self._parameters['distance_source_'+gratings[1].lower()] = \
                 self._parameters['distance_source_'+gratings[0].lower()] + \
-                self._parameters['distance_'+gratings[0].lower()+
+                self._parameters['distance_'+gratings[0].lower() +
                                  '_'+gratings[1].lower()]
             self._parameters['distance_source_'+gratings[2].lower()] = \
                 self._parameters['distance_source_'+gratings[0].lower()] + \
-                self._parameters['distance_'+gratings[0].lower()+
+                self._parameters['distance_'+gratings[0].lower() +
                                  '_'+gratings[1].lower()] + \
-                self._parameters['distance_'+gratings[1].lower()+
+                self._parameters['distance_'+gratings[1].lower() +
                                  '_'+gratings[2].lower()]
 
         # Set grating radius

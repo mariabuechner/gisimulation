@@ -675,6 +675,8 @@ def _load_input_file(input_file_path):
 
     var_value is string, var_key is string
 
+    Flags (--) are set without value if true, else not set
+
     """
     input_parameters = dict()
     # Read lines from file
@@ -684,11 +686,14 @@ def _load_input_file(input_file_path):
 
     # Find all keys
     key_indices = [i for i, str_ in enumerate(input_lines) if '-' in str_]
-    # go from key-entry+1 to next-key-entry-1 to get all values in between
+    # go from key-entry+1 to next-key-entry-1 to get all values in between keys
     key_indices.append(len(input_lines))  # Add last entry
     for number_key_index, key_index in enumerate(key_indices[:-1]):
         key = input_lines[key_index]
-        value = input_lines[key_index+1:key_indices[number_key_index+1]]
+        if '--' in key:
+            value = 'True'
+        else:
+            value = input_lines[key_index+1:key_indices[number_key_index+1]]
         input_parameters[key] = value
     return input_parameters
 
@@ -708,16 +713,22 @@ def _save_input_file(input_file_path, input_parameters):
 
     input_parameters [dict]:    input_parameters['var_key'] = var_value
 
+    Notes
+    =====
+
+    Skip false flags (--)
+    Only save var_key if true flags
+
     """
     with open(input_file_path, 'w') as f:
         for var_key, value in input_parameters.iteritems():
-            f.writelines(var_key+'\n')
-
-            if type(value) is np.ndarray:  # For FOV and Range
-                f.writelines(str(value[0])+'\n')
-                f.writelines(str(value[1])+'\n')
-            else:
-                f.writelines(str(value)+'\n')
+            if value is not False:
+                f.writelines(var_key+'\n')
+                if type(value) is np.ndarray:  # For FOV and Range
+                    f.writelines(str(value[0])+'\n')
+                    f.writelines(str(value[1])+'\n')
+                elif value is not True:
+                    f.writelines(str(value)+'\n')
 
 
 def _collect_widgets(parameters, ids):
@@ -738,6 +749,18 @@ def _collect_widgets(parameters, ids):
 
     """
     logger.debug("Collecting all widgets...")
+
+    # Handle distances (not accesible directly via ids)
+    #   ids.distances contains one boxlayout per distance,
+    #   which then contains one label and one FloatInput
+    for distance in ids.distances.children:
+        for widget in distance.children:
+            if 'FloatInput' in str(widget):
+                if widget.text == '':
+                    parameters[widget.id] = None
+                else:
+                    parameters[widget.id] = float(widget.text)
+
     for var_name, value in ids.iteritems():
         if 'CheckBox' in str(value):
             continue
@@ -763,16 +786,6 @@ def _collect_widgets(parameters, ids):
             parameters[var_name] = value.text
 #        logger.debug("var_name is: {0}".format(var_name))
 #        logger.debug("value.text is: {0}".format(value.text))
-    # Handle distances (not accesible directly via ids)
-    #   ids.distances contains one boxlayout per distance,
-    #   which then contains one label and one FloatInput
-    for distance in ids.distances.children:
-        for widget in distance.children:
-            if 'FloatInput' in str(widget):
-                if widget.text == '':
-                    parameters[widget.id] = None
-                else:
-                    parameters[widget.id] = float(widget.text)
 
     # Handle fixed grating
     if parameters['fixed_grating'] == 'Choose fixed grating...':
@@ -830,6 +843,7 @@ def _collect_widgets(parameters, ids):
     del parameters['field_of_view_y']
 
     logger.debug("... done.")
+
 
 def _collect_input(parameters, parser_info):
     """
@@ -1110,6 +1124,8 @@ class giGUI(F.BoxLayout):
                                     self.overwrite_save:    overwrite_finish
                                     self.cancel_save:       cancel_finish
 
+        Reset save_input_file_path to '' to allow next save at same file.
+
         """
         if self.save_input_file_path != '':  # e.g. after reset.
             # Update parameters
@@ -1133,6 +1149,7 @@ class giGUI(F.BoxLayout):
                 _save_input_file(value, input_parameters)
                 logger.info('... done.')
                 self.dismiss_popup()
+                self.save_input_file_path = ''
 
     def overwrite_save(self):
         """
@@ -1596,6 +1613,8 @@ class giGUI(F.BoxLayout):
             grating_bent = self.ids[grating.lower()+'_bent'].active
             self.on_grating_shape_active(grating_bent, grating)
         else:
+            # Reset type
+            self.ids['type_'+grating.lower()].text = ''
             self.setup_components.remove(grating)
             # Also uncheck sample_added
             self.ids.add_sample.active = False
@@ -1611,20 +1630,17 @@ class giGUI(F.BoxLayout):
 
     def on_grating_shape_active(self, state, grating):
         """
-        If grating is set to bent, enable matching option and set to default
-        (True).
+        If grating is set to not bent, reset matching and radius to
+        False/empty.
         """
         grating = grating.lower()
         if state:
-            # Grating bent
-            self.ids[grating+'1_matching'].disabled = False
-            self.ids[grating+'_matching'].active = True
+            self.ids[grating+'_matching'].disabled = False
         else:
             self.ids[grating+'_matching'].disabled = True
             self.ids[grating+'_matching'].active = False
             self.ids['radius_'+grating].disabled = True
             self.ids['radius_'+grating].text = ""
-
 
     def on_radius_matching_active(self, state, grating):
         """
@@ -1639,7 +1655,7 @@ class giGUI(F.BoxLayout):
 
     def on_grating_type(self, grating):
         """
-        Manage phase input option based on set grating type.
+        Manage phase input options based on set grating type.
 
         Parameters
         ==========
@@ -1648,8 +1664,13 @@ class giGUI(F.BoxLayout):
 
         """
         grating = grating.lower()
+        # If wrong type loaded, leave empty
         if self.ids['type_'+grating].text not in \
                 self.ids['type_'+grating].values:
+            warning_message = ("Chosen grating type is not a valid option. "
+                               "Options are {0}."
+                               .format(self.ids['type_'+grating].values))
+            logger.warning(warning_message)
             self.ids['type_'+grating].text = ''
         # Abs grating: reset phase input
         if self.ids['type_'+grating].text == 'abs':
@@ -1747,13 +1768,18 @@ class giGUI(F.BoxLayout):
 
     def on_look_up_table(self):
         """
-        Set photo_only to false it Xh0 and make inout uppercase and default if
+        Set photo_only to false it Xh0 and make input uppercase and default if
         necessary.
         """
         if self.ids.look_up_table.text != 'NIST':
             self.ids.photo_only.active = False
         if self.ids.look_up_table.text.upper() not in \
                 self.ids.look_up_table.values:
+            warning_message = ("Chosen material LUT not a valid option, "
+                               "setting to default ({0}). Options are {1}."
+                               .format('NIST',
+                                       self.ids.look_up_table.values))
+            logger.warning(warning_message)
             self.ids.look_up_table.text = 'NIST'
         else:
             self.ids.look_up_table.text = self.ids.look_up_table.text.upper()
@@ -1817,12 +1843,13 @@ class giGUI(F.BoxLayout):
                                        "Skipping..."
                                        .format(var_key, var_name))
                         continue
+
                     # Set input values to ids.texts
+                    # Make input strings lower caps
                     if 'material' not in var_name and \
                             var_name != 'spectrum_file':
                         value_str = [value_cap.lower() for value_cap in
                                      value_str]
-
                     if 'phase_shift_' in var_name:
                         if value_str[0] == 'pi':
                             value_str[0] = str(np.pi)
@@ -1865,37 +1892,27 @@ class giGUI(F.BoxLayout):
                         logger.debug("Setting text of widget '{0}' to: {1}"
                                      .format(var_name, value_str[0].upper()))
                         self.ids[var_name].text = value_str[0].upper()
-#                    elif var_name == 'dual_phase':
-#                        if value_str[0] == 'True':
-#                            logger.debug("Setting widget '{0}' to: {1}"
-#                                         .format(var_name, True))
-#                            self.ids[var_name].active = True
-#                        else:
-#                            logger.debug("Setting widget '{0}' to: {1}"
-#                                         .format(var_name, False))
-#                            self.ids[var_name].active = False
-#                    elif var_name == 'photo_only':
-#                        if value_str[0] == 'True':
-#                            logger.debug("Setting widget '{0}' to: {1}"
-#                                         .format(var_name, True))
-#                            self.ids[var_name].active = True
-#                        else:
-#                            logger.debug("Setting widget '{0}' to: {1}"
-#                                         .format(var_name, False))
-#                            self.ids[var_name].active = False
                     # Booleans
+                    # From file: in file only of true
                     elif any(phrase in var_name for phrase in ['_bent',
                                                            '_matching',
                                                            'photo_only',
                                                            'dual_phase']):
-                        if value_str[0].lower() == 'true':
-                            logger.debug("Setting widget '{0}' to: {1}"
-                                         .format(var_name, True))
-                            self.ids[var_name].active = True
-                        else:
-                            logger.debug("Setting widget '{0}' to: {1}"
-                                         .format(var_name, False))
-                            self.ids[var_name].active = False
+                        logger.debug("Setting widget '{0}' to: {1}"
+                                     .format(var_name, True))
+                        self.ids[var_name].active = True
+#                    elif any(phrase in var_name for phrase in ['_bent',
+#                                                           '_matching',
+#                                                           'photo_only',
+#                                                           'dual_phase']):
+#                        if value_str[0].lower() == 'true':
+#                            logger.debug("Setting widget '{0}' to: {1}"
+#                                         .format(var_name, True))
+#                            self.ids[var_name].active = True
+#                        else:
+#                            logger.debug("Setting widget '{0}' to: {1}"
+#                                         .format(var_name, False))
+#                            self.ids[var_name].active = False
                     elif var_name == 'spectrum_file':
                         self.spectrum_file_path = value_str[0]
 #                        # Move cursor to front of file name
@@ -1977,14 +1994,6 @@ class giGUI(F.BoxLayout):
                                              .format(var_name,
                                                      str(value).upper()))
                                 self.ids[var_name].text = str(value).upper()
-#                        elif var_name == 'dual_phase':
-#                            logger.debug("Setting widget '{0}' to: {1}"
-#                                         .format(var_name, value))
-#                            self.ids[var_name].active = value
-#                        elif var_name == 'photo_only':
-#                            logger.debug("Setting widget '{0}' to: {1}"
-#                                         .format(var_name, value))
-#                            self.ids[var_name].active = value
                         # Booleans
                         elif any(phrase in var_name for
                                  phrase in ['_bent', '_matching', 'photo_only',
@@ -2049,6 +2058,14 @@ class giGUI(F.BoxLayout):
         """
         logger.info("Resetting widget values...")
 
+        # Handle distances (not accesible directly via ids)
+        #   ids.distances contains one boxlayout per distance,
+        #   which then contains one label and one FloatInput
+        for distance in self.ids.distances.children:
+            for widget in distance.children:
+                if 'FloatInput' in str(widget):
+                    widget.text == ''
+
         for var_name, value in self.ids.iteritems():
             if 'CheckBox' in str(value):
                 value.active = False
@@ -2073,13 +2090,6 @@ class giGUI(F.BoxLayout):
             elif 'Spinner' in str(value):
                 if var_name == 'fixed_grating':
                     value.text = 'Choose fixed grating...'
-        # Handle distances (not accesible directly via ids)
-        #   ids.distances contains one boxlayout per distance,
-        #   which then contains one label and one FloatInput
-        for distance in self.ids.distances.children:
-            for widget in distance.children:
-                if 'FloatInput' in str(widget):
-                    widget.text == ''
 
         # Clear current results (not previous)
         self.results['geometry'] = dict()

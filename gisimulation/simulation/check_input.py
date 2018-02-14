@@ -352,8 +352,6 @@ def general_input(parameters, parser_info):
                             raise InputError(error_message)
                         elif parameters['distance_source_g1'] and \
                                 parameters['distance_source_g2']:
-                            logger.info(parser_info['distance_source_g1'])
-                            logger.info(parser_info['distance_source_g2'])
                             logger.warning("Both distance from Source to G1 "
                                            "({0}) AND Source to G2 ({1}) are "
                                            "defined, choosing last choice of "
@@ -365,6 +363,11 @@ def general_input(parameters, parser_info):
                                                    parameters
                                                    ['fixed_distance']))
                             fixed_distance = parameters['fixed_distance']
+#                            # Reset other
+#                            if fixed_distance == 'distance_source_g1':
+#                                parameters['distance_source_g2'] = None
+#                            else:
+#                                parameters['distance_source_g1'] = None
                         elif parameters['distance_source_g1']:
                             fixed_distance = 'distance_source_g1'
                         elif parameters['distance_source_g2']:
@@ -398,16 +401,22 @@ def general_input(parameters, parser_info):
                             raise InputError(error_message)
                         elif parameters['distance_g0_g1'] and \
                                 parameters['distance_g0_g2']:
-                            logger.warning("Both distance from G0 to G1 ({0}) "
-                                           "AND G0 to G2 ({1}) are defined, "
-                                           "choosing distance from G0 to G2 "
-                                           "(total GI length)."
+                            logger.warning("Both distance from G0 to G1 "
+                                           "({0}) AND G0 to G2 ({1}) are "
+                                           "defined, choosing last choice of "
+                                           "set distance ({2})."
                                            .format(parser_info
                                                    ['distance_g0_g1'][0],
                                                    parser_info
-                                                   ['distance_g0_g2'][0]))
-                            parameters['distance_g0_g1'] = None
-                            fixed_distance = 'distance_g0_g2'
+                                                   ['distance_g0_g2'][0],
+                                                   parameters
+                                                   ['fixed_distance']))
+                            fixed_distance = parameters['fixed_distance']
+#                            # Reset other
+#                            if fixed_distance == 'distance_g0_g1':
+#                                parameters['distance_g0_g2'] = None
+#                            else:
+#                                parameters['distance_g0_g1'] = None
                         elif parameters['distance_g0_g1']:
                             fixed_distance = 'distance_g0_g1'
                         elif parameters['distance_g0_g2']:
