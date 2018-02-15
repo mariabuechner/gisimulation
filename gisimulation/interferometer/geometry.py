@@ -941,6 +941,12 @@ class Geometry():
                 self._parameters['distance_'+gratings[1].lower() +
                                  '_'+gratings[2].lower()]
 
+        # Calc source to detector distance if gratings are in system
+        if gratings:
+            self._parameters['distance_source_detector'] = \
+                self._parameters['distance_source_'+gratings[-1].lower()] + \
+                self._parameters['distance_'+gratings[-1].lower()+'_detector']
+
         # Set grating radius
         for grating in gratings:
             grating = grating.lower()
@@ -999,29 +1005,6 @@ class Geometry():
                          distance_value is not None)]
         for distance in distances:
             self.results['distances'][distance[0]] = distance[1]
-
-        # Add source to detector distance [mm]
-        if self.results['Setup']['gi_geometry'] == 'free':
-            self.results['distances']['distance_source_detector'] = 0.0  # [mm]
-            for distance, value in self.results['distances'].iteritems():
-                self.results['distances']['distance_source_detector'] = \
-                    self.results['distances']['distance_source_detector'] + \
-                    value
-        elif self.results['Setup']['beam_geometry'] == 'parallel':
-            self.results['distances']['distance_source_detector'] = \
-                self.results['distances']['distance_g1_g2']
-        else:
-            # if cone GI geometry
-            if 'G0' in self._parameters['component_list']:
-                self.results['distances']['distance_source_detector'] = \
-                    self.results['distances']['distance_source_g0'] + \
-                    self.results['distances']['distance_g0_g2'] + \
-                    self.results['distances']['distance_g2_detector']
-            else:
-                self.results['distances']['distance_source_detector'] = \
-                    self.results['distances']['distance_source_g1'] + \
-                    self.results['distances']['distance_g1_g2'] + \
-                    self.results['distances']['distance_g2_detector']
 
         # To 'gratings'
         self.results['gratings'] = dict()
