@@ -55,8 +55,11 @@ class Geometry():
         elif self._parameters['gi_geometry'] == 'inv':
             self._calc_inverse()
 
-        # Update grating radii if bent
-        self._update_gratings()
+        # Update source to component distances and grating radii if bent
+        self._update_distances()
+
+        if 'Sample' in self._parameters['component_list']:
+            self._check_sample_position()
 
         # Update geometry results
         self._get_geometry_results()
@@ -897,7 +900,7 @@ class Geometry():
 
         logger.info("... done.")
 
-    def _update_gratings(self):
+    def _update_distances(self):
         """
         Updates grating distances from source and radii if bent.
 
@@ -910,7 +913,7 @@ class Geometry():
         set.
 
         """
-        gratings = [grating for grating in self._parameters['component_list'] \
+        gratings = [grating for grating in self._parameters['component_list']
                     if "G" in grating]
 
         # If radius of first grating is set manually, update
@@ -927,9 +930,6 @@ class Geometry():
                 self._parameters['distance_'+gratings[0].lower() +
                                  '_'+gratings[1].lower()]
         elif len(gratings) == 3:
-            logger.info(['distance_source_'+gratings[0].lower()])
-            logger.info(self._parameters['distance_source_'+gratings[0].lower()])
-
             self._parameters['distance_source_'+gratings[1].lower()] = \
                 self._parameters['distance_source_'+gratings[0].lower()] + \
                 self._parameters['distance_'+gratings[0].lower() +
@@ -963,6 +963,49 @@ class Geometry():
                     raise GeometryError(error_message)
                 if self._parameters[grating+'_matching']:
                     self._parameters['radius_'+grating] = distance_to_source
+
+    def _check_sample_position(self):
+        """
+        Checks whether sample fits inbetween previous and next component and
+        calculates sample distance from source.
+
+        """
+        sample_index = self._parameters['component_list'].index('Sample')
+        previous_component = \
+            self._parameters['component_list'][sample_index-1].lower()
+        next_component = \
+            self._parameters['component_list'][sample_index+1].lower()
+
+        if 'a' in self._parameters['sample_position']:
+            # Sample relative to previous component ('after')
+
+            # Calc source to sample distance
+            self._parameters['distance_source_sample'] = \
+                self._parameters['distance_source_'+previous_component] + \
+                self._parameters['sample_distance']
+            # Check distance of sample to next component
+            if self._parameters['sample_diameter'] > \
+                    (self._parameters['distance_source_'+next_component] -
+                     self._parameters['distance_source_sample']):
+                error_message = ("Sample diameter larger than distance from "
+                                 "sample to next component.")
+                logger.error(error_message)
+                raise GeometryError(error_message)
+        else:
+            # Sample relative to next component ('before')
+
+            # Calc source to sample distance
+            self._parameters['distance_source_sample'] = \
+                self._parameters['distance_source_'+next_component] - \
+                self._parameters['sample_distance']
+            # Check distance of sample to previous component
+            if self._parameters['sample_diameter'] > \
+                    (self._parameters['distance_source_sample'] -
+                     self._parameters['distance_source_'+previous_component]):
+                error_message = ("Sample diameter larger than distance from "
+                                 "sample to previous component.")
+                logger.error(error_message)
+                raise GeometryError(error_message)
 
     # Set geometry results
     def _get_geometry_results(self):
@@ -1022,7 +1065,7 @@ class Geometry():
             self.results['gratings'][radius[0]] = radius[1]
 
         # Add sample info
-        if self._parameters['sample_position']:
+        if 'Sample' in self._parameters['component_list']:
             # If sample defined
             self.results['sample'] = dict()
             self.results['sample']['sample_position'] = \
