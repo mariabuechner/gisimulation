@@ -1027,14 +1027,14 @@ class Geometry():
         """
         self.results = dict()
         # To 'Setup'
-        self.results['Setup'] = dict()
+        self.results['setup'] = dict()
         # Add component list
-        self.results['Setup']['component_list'] = \
+        self.results['setup']['component_list'] = \
             self._parameters['component_list']
 
         # Add geometries
-        self.results['Setup']['gi_geometry'] = self._parameters['gi_geometry']
-        self.results['Setup']['beam_geometry'] = \
+        self.results['setup']['gi_geometry'] = self._parameters['gi_geometry']
+        self.results['setup']['beam_geometry'] = \
             self._parameters['beam_geometry']
 
         # To 'distances'

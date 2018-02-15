@@ -456,7 +456,7 @@ class GeometryGrid(F.GridLayout):
         pos_x = frame_x0 + frame_width/20.0 - width/2.0
         pos_y = frame_y_center - height/2.0
         self.source = G.Ellipse(pos=(pos_x, pos_y), size=(width, height))
-        if geometry_results['Setup']['beam_geometry'] == 'cone':
+        if geometry_results['setup']['beam_geometry'] == 'cone':
             self.sketch.geometry_group.add(G.Color(1, 0, 0, 0.5))
             self.sketch.geometry_group.add(self.source)
 
@@ -473,7 +473,7 @@ class GeometryGrid(F.GridLayout):
         # Add beam
         width = frame_width - frame_width/10.0 - 10.0
         height = frame_height*0.8
-        if geometry_results['Setup']['beam_geometry'] == 'parallel':
+        if geometry_results['setup']['beam_geometry'] == 'parallel':
             pos_x = self.source.pos[0] + self.source.size[0]/2.0
             pos_y = self.detector.pos[1]
             self.beam = G.Rectangle(pos=(pos_x, pos_y), size=(width, height))
@@ -494,29 +494,48 @@ class GeometryGrid(F.GridLayout):
         setup_width = self.detector.pos[0] - self.source.pos[0]  # [points]
         setup_height = self.detector.size[1]  # [points]
         width_scaling = setup_width / \
-            geometry_results['distance_source_detector']  # [points]
+            geometry_results['distances']['distance_source_detector']  # [points]
         # Angle for scaling height (only cone beam)
-        fan_angle = 2.0 * np.arctan(setup_height / 2.0 / setup_length)
+        fan_angle = 2.0 * np.arctan(setup_height / 2.0 / setup_width)
 
+        # NOTE: distances and scaling off...!!!!
 
         # Add Gratings
+        gratings = [grating for grating in
+                    geometry_results['setup']['component_list']
+                    if "G" in grating]
+        for grating in gratings:
 
+            # Straight, full height...
+            width = 2.0  # [points]
+            height = setup_height  # [points]
+            pos_x = geometry_results['distances']['distance_source_'
+                                                  + grating.lower()]
+            pos_x = pos_x * width_scaling  # [points]
+            pos_x = pos_x - width/2.0
+            pos_y = frame_y_center - height/2.0
+            self.grating = G.Rectangle(pos=(pos_x, pos_y),
+                                      size=(width, height))
+            self.sketch.geometry_group.add(G.Color(1, 0, 0, 0.75))
+            self.sketch.geometry_group.add(self.grating)
 
         # Seperate between bent and straight gratings
         # Bent: Ellipse (or circle) with radius as size and
         # angle_start/angle_end
 
-#        # Add sample
-#        if 'Sample' in geometry_results['Setup']['component_list']:
-#            if geometry_results['Sample']['sample_shape'] == 'circular':
-#                width = geometry_results['Sample']['sample_diameter']  # [mm]
-#                width = width *  width_scaling  # [points]
-#                pos_x =
-#                # Scale size to sketch area
-#                pos_y = frame_y_center - height/2.0
-#                self.sample = G.Ellipse(pos=(pos_x, pos_y), size=(width, width))
-#                self.sketch.geometry_group.add(G.Color(0, 0, 1, 0.75))
-#                self.sketch.geometry_group.add(self.sample)
+        # Add sample
+        if 'Sample' in geometry_results['setup']['component_list']:
+            if geometry_results['sample']['sample_shape'] == 'circular':
+                width = geometry_results['sample']['sample_diameter']  # [mm]
+                width = width *  width_scaling  # [points]
+                pos_x = geometry_results['distances']['distance_source_sample']
+                pos_x = pos_x * width_scaling  # [points]
+                pos_x = pos_x - width/2.0
+                pos_y = frame_y_center - width/2.0
+                self.sample = G.Ellipse(pos=(pos_x, pos_y),
+                                        size=(width, width))
+                self.sketch.geometry_group.add(G.Color(0, 1, 0, 0.75))
+                self.sketch.geometry_group.add(self.sample)
 
 
 
