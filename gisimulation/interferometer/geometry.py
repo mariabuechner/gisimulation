@@ -982,7 +982,8 @@ class Geometry():
             # Calc source to sample distance
             self._parameters['distance_source_sample'] = \
                 self._parameters['distance_source_'+previous_component] + \
-                self._parameters['sample_distance']
+                self._parameters['sample_distance'] + \
+                self._parameters['sample_diameter']/2.0
             # Check distance of sample to next component
             if self._parameters['sample_diameter'] > \
                     (self._parameters['distance_source_'+next_component] -
@@ -997,7 +998,8 @@ class Geometry():
             # Calc source to sample distance
             self._parameters['distance_source_sample'] = \
                 self._parameters['distance_source_'+next_component] - \
-                self._parameters['sample_distance']
+                self._parameters['sample_distance'] - \
+                self._parameters['sample_diameter']/2.0
             # Check distance of sample to previous component
             if self._parameters['sample_diameter'] > \
                     (self._parameters['distance_source_sample'] -

@@ -1,3 +1,5 @@
+-sdm
+10.0
 -gi
 inv
 -fov
@@ -11,10 +13,10 @@ inv
 44.9544001684
 -e
 35.0
--t
-1.0
 -s1
 3.14159265359
+-t
+1.0
 -g0g2
 57.0
 -sps
@@ -24,6 +26,8 @@ inv
 80.0
 -fg
 g1
+-bg
+cone
 -m1
 Si
 -m0
@@ -34,8 +38,8 @@ Au
 abs
 -g1
 phase
--fs
-300.0
+-g0
+abs
 -p1
 2.0
 -dt
@@ -48,11 +52,11 @@ photon
 NIST
 -sr
 0.1
--bg
-cone
--g0
-abs
+-sp
+ag1
+-fs
+300.0
 -ssp
 circular
-
-
+-sd
+2.0

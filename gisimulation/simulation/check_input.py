@@ -649,11 +649,6 @@ def general_input(parameters, parser_info):
                 error_message = "Sample diameter must be specified."
                 logger.error(error_message)
                 raise InputError(error_message)
-            elif parameters['sample_diameter'] > parameters['sample_distance']:
-                error_message = ("Sample diameter larger than distance from "
-                                 "sample to reference component.")
-                logger.error(error_message)
-                raise InputError(error_message)
             # ########## Temp ########################
             logger.debug("... done.")
 

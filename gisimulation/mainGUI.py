@@ -416,7 +416,7 @@ class GeometryGrid(F.GridLayout):
         """
         self.sketch.rectangle.size = self.size
         #  989=1024-line_height
-        self.sketch.rectangle.pos = (80.0, 989.0-self.height)
+        self.sketch.rectangle.pos = (0.0, 989.0-self.height)
 
     def update_geometry(self, geometry_results):
         """
@@ -430,9 +430,9 @@ class GeometryGrid(F.GridLayout):
         Notes
         =====
 
-        Source:
+        Source: if cone beam
             Position: in y center and starting at 1/20 of width.
-            Size: max (10, 10); if source size, distorted (10, 20)
+            Size: (10, 20)
 
         Detector:
             Position: in y center and ending at 1/20 of width.
@@ -441,29 +441,30 @@ class GeometryGrid(F.GridLayout):
             From source center to detector edges. Either triangel or rectangle.
 
         """
-        # Get (0,0) coordinates of sketch
+        # (0,0) coordinates of sketch
         frame_x0 = self.sketch.pos[0]
         frame_y0 = self.sketch.pos[1]
-        # Get width and height of sketch (absolut, not from origin)
+        # Width and height of sketch (absolut, not from origin)
         frame_width = self.sketch.width
         frame_height = self.sketch.height
-
         frame_y_center = frame_y0 + frame_height/2.0
+        # Frame absolute offsets
+        x0_offset =  frame_width/20.0
 
         # Add Source if cone beam
         width = 10.0
         height = 20.0
-        pos_x = frame_x0 + frame_width/20.0 - width/2.0
+        pos_x = frame_x0 + x0_offset - width/2.0
         pos_y = frame_y_center - height/2.0
         self.source = G.Ellipse(pos=(pos_x, pos_y), size=(width, height))
         if geometry_results['setup']['beam_geometry'] == 'cone':
-            self.sketch.geometry_group.add(G.Color(1, 0, 0, 0.5))
+            self.sketch.geometry_group.add(G.Color(1, 1, 0, 0.5))
             self.sketch.geometry_group.add(self.source)
 
         # Add Detector
         width = 20.0
         height = frame_height*0.8  # is max height of sketch
-        pos_x = frame_x0 + frame_width - frame_width/20.0 - width/2.0
+        pos_x = frame_x0 + frame_width - x0_offset - width/2.0
         pos_y = frame_y_center - height/2.0
 
         self.detector = G.Rectangle(pos=(pos_x, pos_y), size=(width, height))
@@ -490,17 +491,17 @@ class GeometryGrid(F.GridLayout):
         self.sketch.geometry_group.add(self.beam)
 
         # Scaling factors
-        # Max width is distance source detector [mm]
-        setup_width = self.detector.pos[0] - self.source.pos[0]  # [points]
+        # Max width is distance source detector [mm] (inner edges)
+        setup_width = self.detector.pos[0] - self.detector.size[0]/2.0 - \
+            (self.source.pos[0] + self.source.size[0]/2.0)  # [points]
         setup_height = self.detector.size[1]  # [points]
         width_scaling = setup_width / \
             geometry_results['distances']['distance_source_detector']  # [points]
+        x0_offset = x0_offset + self.source.size[0]/2.0  # [points]
         # Angle for scaling height (only cone beam)
         fan_angle = 2.0 * np.arctan(setup_height / 2.0 / setup_width)
 
-        # NOTE: distances and scaling off...!!!!
-
-        # Add Gratings
+         # Add Gratings
         gratings = [grating for grating in
                     geometry_results['setup']['component_list']
                     if "G" in grating]
@@ -512,12 +513,16 @@ class GeometryGrid(F.GridLayout):
             pos_x = geometry_results['distances']['distance_source_'
                                                   + grating.lower()]
             pos_x = pos_x * width_scaling  # [points]
-            pos_x = pos_x - width/2.0
+            pos_x = pos_x - width/2.0 + x0_offset
             pos_y = frame_y_center - height/2.0
             self.grating = G.Rectangle(pos=(pos_x, pos_y),
-                                      size=(width, height))
+                                       size=(width, height))
             self.sketch.geometry_group.add(G.Color(1, 0, 0, 0.75))
             self.sketch.geometry_group.add(self.grating)
+
+            logger.info('pos_x')
+            logger.info(grating)
+            logger.info(pos_x)
 
         # Seperate between bent and straight gratings
         # Bent: Ellipse (or circle) with radius as size and
@@ -526,11 +531,11 @@ class GeometryGrid(F.GridLayout):
         # Add sample
         if 'Sample' in geometry_results['setup']['component_list']:
             if geometry_results['sample']['sample_shape'] == 'circular':
-                width = geometry_results['sample']['sample_diameter']  # [mm]
-                width = width *  width_scaling  # [points]
+                width = geometry_results['sample']['sample_diameter']
+                width = width * width_scaling  # [points]
                 pos_x = geometry_results['distances']['distance_source_sample']
                 pos_x = pos_x * width_scaling  # [points]
-                pos_x = pos_x - width/2.0
+                pos_x = pos_x - width/2.0 + x0_offset
                 pos_y = frame_y_center - width/2.0
                 self.sample = G.Ellipse(pos=(pos_x, pos_y),
                                         size=(width, width))
@@ -775,7 +780,7 @@ def _collect_widgets(parameters, ids):
     for distance in ids.distances.children:
         for widget in distance.children:
             if 'FloatInput' in str(widget):
-                if widget.text == '':
+                if not widget.text:
                     parameters[widget.id] = None
                 else:
                     parameters[widget.id] = float(widget.text)
@@ -793,7 +798,7 @@ def _collect_widgets(parameters, ids):
             continue
         elif 'MenuSpinner' in str(value):
             continue
-        elif value.text == '':
+        elif not value.text:
             parameters[var_name] = None
         elif 'FloatInput' in str(value):
             parameters[var_name] = float(value.text)
@@ -1838,6 +1843,9 @@ class giGUI(F.BoxLayout):
         try:
             if from_file:
                 logger.info("Setting widget values from file...")
+
+                sample_position = None  # See below
+
                 for var_key, value_str in input_parameters.iteritems():
                     logger.debug("var_key is {0}".format(var_key))
                     logger.debug("value_str is {0}".format(value_str))
@@ -1911,6 +1919,26 @@ class giGUI(F.BoxLayout):
                         logger.debug("Setting text of widget '{0}' to: {1}"
                                      .format(var_name, value_str[0].upper()))
                         self.ids[var_name].text = value_str[0].upper()
+                    elif var_name == 'sample_position':
+                        # Set later, since component list must be updated first
+                        sample_position = value_str[0]
+#                        # if a in var set sample_relative_position to after,
+#                        # else (if b in) to before
+#                        if 'a' in value_str[0]:
+#                            self.ids.sample_relative_position.text = 'after'
+#                        else:
+#                            self.ids.sample_relative_position.text = 'before'
+#                        # filter letters and set sample_relative_to accordingly
+#                        if 's' in value_str[0]:
+#                            reference_component = 'Source'
+#                        elif 'd' in value_str[0]:
+#                            reference_component = 'Detector'
+#                        else:
+#                            # g0, g1 or g2
+#                            reference_component = value_str[0][1:].upper()
+#                        self.ids.sample_relative_to.text = reference_component
+#                        # make samples as added
+#                        self.ids.add_sample.active = True
                     # Booleans
                     # From file: in file only of true
                     elif any(phrase in var_name for phrase in ['_bent',
@@ -1920,18 +1948,6 @@ class giGUI(F.BoxLayout):
                         logger.debug("Setting widget '{0}' to: {1}"
                                      .format(var_name, True))
                         self.ids[var_name].active = True
-#                    elif any(phrase in var_name for phrase in ['_bent',
-#                                                           '_matching',
-#                                                           'photo_only',
-#                                                           'dual_phase']):
-#                        if value_str[0].lower() == 'true':
-#                            logger.debug("Setting widget '{0}' to: {1}"
-#                                         .format(var_name, True))
-#                            self.ids[var_name].active = True
-#                        else:
-#                            logger.debug("Setting widget '{0}' to: {1}"
-#                                         .format(var_name, False))
-#                            self.ids[var_name].active = False
                     elif var_name == 'spectrum_file':
                         self.spectrum_file_path = value_str[0]
 #                        # Move cursor to front of file name
@@ -1941,6 +1957,25 @@ class giGUI(F.BoxLayout):
                         logger.debug("Setting text of widget '{0}' to: {1}"
                                      .format(var_name, value_str[0]))
                         self.ids[var_name].text = value_str[0]
+
+                # Set sample info
+                if sample_position is not None:
+                    # if a in var set sample_relative_position to after,
+                    if 'a' in value_str[0]:
+                        self.ids.sample_relative_position.text = 'after'
+                    else:
+                        self.ids.sample_relative_position.text = 'before'
+                    # filter letters and set sample_relative_to accordingly
+                    if 's' in value_str[0]:
+                        reference_component = 'Source'
+                    elif 'd' in value_str[0]:
+                        reference_component = 'Detector'
+                    else:
+                        # g0, g1 or g2
+                        reference_component = value_str[0][1:].upper()
+                    self.ids.sample_relative_to.text = reference_component
+                    # make samples as added
+                    self.ids.add_sample.active = True
             else:
                 logger.info("Setting widget values from parameters...")
                 for var_name, value in input_parameters.iteritems():
@@ -1986,10 +2021,10 @@ class giGUI(F.BoxLayout):
                         elif var_name == 'field_of_view':
                             if value == '':
                                 logger.debug("Setting text of widget '{0}' "
-                                             "to: [{1}, {2}]"
-                                             .format(var_name, value, value))
-                                self.ids['field_of_view_x'].text = str(value)
-                                self.ids['field_of_view_y'].text = str(value)
+                                             "to: ['', '']"
+                                             .format(var_name))
+                                self.ids['field_of_view_x'].text = ''
+                                self.ids['field_of_view_y'].text = ''
                             else:
                                 logger.debug("Setting text of widget '{0}' "
                                              "to: [{1}, {2}]"
@@ -2001,12 +2036,12 @@ class giGUI(F.BoxLayout):
                                     str(int(value[1]))
                         elif var_name == 'fixed_grating':
                             # Make upper case for GUI
-                            if value == '':
+                            if not value:
                                 value = 'Choose fixed grating...'
                                 logger.debug("Setting text of widget '{0}' "
-                                             "to: {1}"
-                                             .format(var_name, str(value)))
-                                self.ids[var_name].text = str(value)
+                                             "to: ''"
+                                             .format(var_name))
+                                self.ids[var_name].text = ''
                             else:
                                 logger.debug("Setting text of widget '{0}' "
                                              "to: {1}"
@@ -2016,7 +2051,7 @@ class giGUI(F.BoxLayout):
                         # Booleans
                         elif any(phrase in var_name for
                                  phrase in ['_bent', '_matching', 'photo_only',
-                                            'dual_phase']):
+                                            'dual_phase', 'add_sample']):
                             logger.debug("Setting widget '{0}' to: {1}"
                                          .format(var_name, value))
                             self.ids[var_name].active = value
@@ -2054,6 +2089,7 @@ class giGUI(F.BoxLayout):
                                 widget.text = distances[widget.id]
                                 # Move cursor to front of text input
                                 widget.do_cursor_movement('cursor_home')
+
             logger.info("...done.")
         except IndexError:
             error_message = ("Input argument '{0}' ({1}) is invalid. "
@@ -2083,7 +2119,7 @@ class giGUI(F.BoxLayout):
         for distance in self.ids.distances.children:
             for widget in distance.children:
                 if 'FloatInput' in str(widget):
-                    widget.text == ''
+                    widget.text = ''
 
         for var_name, value in self.ids.iteritems():
             if 'CheckBox' in str(value):
@@ -2098,7 +2134,7 @@ class giGUI(F.BoxLayout):
                 continue
             elif 'MenuSpinner' in str(value):
                 continue
-            elif value.text == '':
+            elif not value.text:
                 continue
             elif 'FloatInput' in str(value):
                 value.text = ""
