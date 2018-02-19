@@ -472,29 +472,48 @@ class GeometryGrid(F.GridLayout):
             self.sketch.geometry_group.add(self.source)
 
         # Add Detector
-        width = 20.0
-        height = frame_height*0.8  # is max height of sketch
-        pos_x = frame_x0 + frame_width - x0_offset - width/2.0
-        pos_y = frame_y_center - height/2.0
+        detector_width = 20.0
+        detector_height = frame_height*0.8  # is max height of sketch
+        detector_pos_x = frame_x0 + frame_width - x0_offset - detector_width/2.0
+        detector_pos_y = frame_y_center - detector_height/2.0
 
-        self.detector = G.Rectangle(pos=(pos_x, pos_y), size=(width, height))
-        self.sketch.geometry_group.add(G.Color(1, 1, 1, 0.5))
+        if not geometry_results['detector']['curved']:
+            # straight
+            self.detector = G.Rectangle(pos=(detector_pos_x, detector_pos_y),
+                                        size=(detector_width, detector_height))
+        else:
+            # Curved detector
+            line_width = detector_width / 2.0
+            # from Source to Detector
+            radius = detector_pos_x - self.source.pos[0]
+            # Circle center at source center
+            pos_x = self.source.pos[0] + self.source.size[0]/2.0 #- line_width/2.0
+            pos_y = self.source.pos[1] + self.source.size[1]/2.0
+            half_angle = np.rad2deg(np.arctan(0.5 * detector_height / radius))
+
+            self.detector = G.Line(circle=(pos_x, pos_y,
+                                           radius,
+                                           90.0 - half_angle,
+                                           90.0 + half_angle),
+                                   width=line_width)
+
+        self.sketch.geometry_group.add(G.Color(0.75, 0.75, 0.75, 1))
         self.sketch.geometry_group.add(self.detector)
 
         # Add beam
         width = frame_width - frame_width/10.0 - 10.0
-        height = frame_height*0.8
+        height = detector_height
         if geometry_results['setup']['beam_geometry'] == 'parallel':
             pos_x = self.source.pos[0] + self.source.size[0]/2.0
-            pos_y = self.detector.pos[1]
+            pos_y = detector_pos_y
             self.beam = G.Rectangle(pos=(pos_x, pos_y), size=(width, height))
         else:
             x1 = self.source.pos[0] + self.source.size[0]/2.0
             y1 = self.source.pos[1] + self.source.size[1]/2.0
             x2 = x1 + width
-            y2 = self.detector.pos[1] + height
+            y2 = detector_pos_y + height
             x3 = x1 + width
-            y3 = self.detector.pos[1]
+            y3 = detector_pos_y
             self.beam = G.Triangle(points=[x1, y1, x2, y2, x3, y3])
 
         self.sketch.geometry_group.add(G.Color(1, 1, 0, 0.1))
@@ -502,9 +521,9 @@ class GeometryGrid(F.GridLayout):
 
         # Scaling factors
         # Max width is distance source detector [mm] (inner edges)
-        setup_width = self.detector.pos[0] - self.detector.size[0]/2.0 - \
+        setup_width = detector_pos_x - detector_width/2.0 - \
             (self.source.pos[0] + self.source.size[0]/2.0)  # [points]
-        setup_height = self.detector.size[1]  # [points]
+        setup_height = detector_height  # [points]
         width_scaling = setup_width / \
             geometry_results['distances']['distance_source_detector']  # [points]
         x0_offset = x0_offset + self.source.size[0]/2.0  # [points]
@@ -522,17 +541,35 @@ class GeometryGrid(F.GridLayout):
             radius = geometry_results['gratings']['radius_'+grating.lower()]
             if radius:
                 # Bent
-                pos_x = radius * width_scaling  # [points]
-                pos_x = pos_x - width/2.0 + x0_offset
-                # Height not exactly correct, since calcualted as straight line
-                height = (pos_x + width/2.0) * np.tan(fan_angle)  # [points]
-                pos_y = frame_y_center - height/2.0
+                radius = radius * width_scaling  # [points]
+
+                pos_x = self.source.pos[0] + self.source.size[0]/2.0 - width/2.0
+                pos_y = self.source.pos[1] + self.source.size[1]/2.0
+                # add distance from source-radius to source pos x
+                distance_from_source = \
+                    geometry_results['distances']['distance_source_'
+                                                  + grating.lower()] * \
+                    width_scaling  # [points]
+                pos_x = pos_x + (distance_from_source - radius)
+                half_angle = np.rad2deg(fan_angle)/2.0
+                # Scale with ratio of radius to distance from source (approx.)
+                half_angle = half_angle * (distance_from_source / radius)
+                if half_angle > 90.0:
+                    warning_message = ("Radius of {0} too small to display."
+                                       .format(grating))
+                    logger.warning(warning_message)
+                    half_angle = 90.0
+
                 # circle=(center_x, center_y, radius, angle_start, angle_end)
-                self.grating = G.Line(circle=(pos_x, pos_y, radius,
-                                              180.0 - np.rad2deg(fan_angle),
-                                              180.0 + np.rad2deg(fan_angle)))
+                self.grating = G.Line(circle=(pos_x, pos_y,
+                                              radius,
+                                              90.0 - half_angle,
+                                              90.0 + half_angle),
+                                      width=width)
             else:
                 # Straight
+                width = width * 2.0
+
                 pos_x = geometry_results['distances']['distance_source_'
                                                       + grating.lower()]
                 pos_x = pos_x * width_scaling  # [points]
@@ -560,7 +597,7 @@ class GeometryGrid(F.GridLayout):
                 pos_y = frame_y_center - width/2.0
                 self.sample = G.Ellipse(pos=(pos_x, pos_y),
                                         size=(width, width))
-                self.sketch.geometry_group.add(G.Color(0, 1, 0, 0.75))
+                self.sketch.geometry_group.add(G.Color(0, 0, 1, 0.5))
                 self.sketch.geometry_group.add(self.sample)
 
 
@@ -855,6 +892,10 @@ def _collect_widgets(parameters, ids):
         parameters['photo_only'] = True
     else:
         parameters['photo_only'] = False
+    if ids.curved_detector.active:
+        parameters['curved_detector'] = True
+    else:
+        parameters['curved_detector'] = False
     # Grating shape
     for grating in ['g0', 'g1', 'g2']:
         if ids[grating+'_bent'].active:
@@ -1683,6 +1724,7 @@ class giGUI(F.BoxLayout):
         grating = grating.lower()
         if state:
             self.ids[grating+'_matching'].disabled = False
+            self.ids['radius_'+grating].disabled = False
         else:
             self.ids[grating+'_matching'].disabled = True
             self.ids[grating+'_matching'].active = False
@@ -1945,29 +1987,13 @@ class giGUI(F.BoxLayout):
                     elif var_name == 'sample_position':
                         # Set later, since component list must be updated first
                         sample_position = value_str[0]
-#                        # if a in var set sample_relative_position to after,
-#                        # else (if b in) to before
-#                        if 'a' in value_str[0]:
-#                            self.ids.sample_relative_position.text = 'after'
-#                        else:
-#                            self.ids.sample_relative_position.text = 'before'
-#                        # filter letters and set sample_relative_to accordingly
-#                        if 's' in value_str[0]:
-#                            reference_component = 'Source'
-#                        elif 'd' in value_str[0]:
-#                            reference_component = 'Detector'
-#                        else:
-#                            # g0, g1 or g2
-#                            reference_component = value_str[0][1:].upper()
-#                        self.ids.sample_relative_to.text = reference_component
-#                        # make samples as added
-#                        self.ids.add_sample.active = True
                     # Booleans
                     # From file: in file only of true
                     elif any(phrase in var_name for phrase in ['_bent',
                                                            '_matching',
                                                            'photo_only',
-                                                           'dual_phase']):
+                                                           'dual_phase',
+                                                           'curved_detector']):
                         logger.debug("Setting widget '{0}' to: {1}"
                                      .format(var_name, True))
                         self.ids[var_name].active = True
@@ -2080,7 +2106,8 @@ class giGUI(F.BoxLayout):
                         # Booleans
                         elif any(phrase in var_name for
                                  phrase in ['_bent', '_matching', 'photo_only',
-                                            'dual_phase', 'add_sample']):
+                                            'dual_phase', 'add_sample',
+                                            'curved_detector']):
                             logger.debug("Setting widget '{0}' to: {1}"
                                          .format(var_name, value))
                             self.ids[var_name].active = value

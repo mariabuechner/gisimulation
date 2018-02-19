@@ -1015,16 +1015,22 @@ class Geometry():
         Adds self.results dict.
 
         Results contain:
-            - component_list
-            - gi_geometry
-            - beam_geometry
-            - distances (not none)
+            - setup
+                - component_list
+                - gi_geometry
+                - beam_geometry
+            - distances (not none) [mm]
             - if sample:
                 - sample info
             - gratings:
-                - pitches (not none)
+                - pitches (not none) [um]
                 - if bent gratings:
-                    radius (input or matching distance)
+                    radius (input or matching distance) [mm]
+            - detector:
+                - curved (bool)
+                - size (x, y) [mm]
+                - fan/cone angles [rad]
+
 
         """
         self.results = dict()
@@ -1079,3 +1085,20 @@ class Geometry():
                 self._parameters['sample_shape']
             self.results['sample']['sample_diameter'] = \
                 self._parameters['sample_diameter']
+
+        # Detector
+        self.results['detector'] = dict()
+        self.results['detector']['curved'] = self._parameters['curved_detector']
+        if self._parameters['field_of_view'] is None:
+            self.results['detector']['width'] = \
+                self._parameters['field_of_view'][0] * \
+                self._parameters['pixel_size'] * 1e-3  # [mm]
+            self.results['detector']['height'] = \
+                self._parameters['field_of_view'][1] * \
+                self._parameters['pixel_size'] * 1e-3  # [mm]
+            self.results['detector']['fan_angle'] = 2.0 * \
+                np.arctan(self.results['detector']['width'] / (2.0 *
+                          self.results['distances']['distance_source_detector']))
+            self.results['detector']['cone_angle'] = 2.0 * \
+                np.arctan(self.results['detector']['height'] / (2.0 *
+                          self.results['distances']['distance_source_detector']))

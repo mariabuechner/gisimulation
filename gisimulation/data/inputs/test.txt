@@ -1,7 +1,5 @@
 -sdm
 10.0
--gi
-inv
 -fov
 200
 200
@@ -24,6 +22,9 @@ inv
 -r
 10.0
 80.0
+-gi
+inv
+--curved_detector
 -fg
 g1
 -bg
