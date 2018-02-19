@@ -384,6 +384,10 @@ class GeometrySketch(F.Widget):
         """
         super(GeometrySketch, self).__init__(**kwargs)
         self.geometry_group = G.InstructionGroup()
+
+        self.reset()
+
+    def reset(self):
         self.rectangle = G.Rectangle()
         self.geometry_group.add(G.Color(0, 0, 0, 0.75))
         self.geometry_group.add(self.rectangle)
@@ -441,6 +445,12 @@ class GeometryGrid(F.GridLayout):
             From source center to detector edges. Either triangel or rectangle.
 
         """
+        # Clear previous
+        self.sketch.geometry_group.clear()
+        self.sketch.reset()
+        # Update to parents size and position
+        kivy.clock.Clock.schedule_once(self.set_attributes)
+
         # (0,0) coordinates of sketch
         frame_x0 = self.sketch.pos[0]
         frame_y0 = self.sketch.pos[1]
@@ -498,7 +508,7 @@ class GeometryGrid(F.GridLayout):
         width_scaling = setup_width / \
             geometry_results['distances']['distance_source_detector']  # [points]
         x0_offset = x0_offset + self.source.size[0]/2.0  # [points]
-        # Angle for scaling height (only cone beam)
+        # Angle for scaling height (only cone beam) (complete angle)
         fan_angle = 2.0 * np.arctan(setup_height / 2.0 / setup_width)
 
          # Add Gratings
@@ -507,22 +517,33 @@ class GeometryGrid(F.GridLayout):
                     if "G" in grating]
         for grating in gratings:
 
-            # Straight, full height...
             width = 2.0  # [points]
-            height = setup_height  # [points]
-            pos_x = geometry_results['distances']['distance_source_'
-                                                  + grating.lower()]
-            pos_x = pos_x * width_scaling  # [points]
-            pos_x = pos_x - width/2.0 + x0_offset
-            pos_y = frame_y_center - height/2.0
-            self.grating = G.Rectangle(pos=(pos_x, pos_y),
-                                       size=(width, height))
+
+            radius = geometry_results['gratings']['radius_'+grating.lower()]
+            if radius:
+                # Bent
+                pos_x = radius * width_scaling  # [points]
+                pos_x = pos_x - width/2.0 + x0_offset
+                # Height not exactly correct, since calcualted as straight line
+                height = (pos_x + width/2.0) * np.tan(fan_angle)  # [points]
+                pos_y = frame_y_center - height/2.0
+                # circle=(center_x, center_y, radius, angle_start, angle_end)
+                self.grating = G.Line(circle=(pos_x, pos_y, radius,
+                                              180.0 - np.rad2deg(fan_angle),
+                                              180.0 + np.rad2deg(fan_angle)))
+            else:
+                # Straight
+                pos_x = geometry_results['distances']['distance_source_'
+                                                      + grating.lower()]
+                pos_x = pos_x * width_scaling  # [points]
+                pos_x = pos_x - width/2.0 + x0_offset
+                height = (pos_x + width/2.0) * np.tan(fan_angle)  # [points]
+                pos_y = frame_y_center - height/2.0
+                self.grating = G.Rectangle(pos=(pos_x, pos_y),
+                                           size=(width, height))
+
             self.sketch.geometry_group.add(G.Color(1, 0, 0, 0.75))
             self.sketch.geometry_group.add(self.grating)
-
-            logger.info('pos_x')
-            logger.info(grating)
-            logger.info(pos_x)
 
         # Seperate between bent and straight gratings
         # Bent: Ellipse (or circle) with radius as size and
@@ -714,11 +735,13 @@ def _load_input_file(input_file_path):
     key_indices.append(len(input_lines))  # Add last entry
     for number_key_index, key_index in enumerate(key_indices[:-1]):
         key = input_lines[key_index]
+        logger.debug('Reading {0} ...'.format(key))
         if '--' in key:
             value = 'True'
         else:
             value = input_lines[key_index+1:key_indices[number_key_index+1]]
         input_parameters[key] = value
+        logger.debug('Storing {0}.'.format(value))
     return input_parameters
 
 
@@ -1960,19 +1983,25 @@ class giGUI(F.BoxLayout):
 
                 # Set sample info
                 if sample_position is not None:
-                    # if a in var set sample_relative_position to after,
-                    if 'a' in value_str[0]:
+                    # if a in var set sample_relative_position to after
+                    logger.debug("Sample position is set to {0}"
+                                 .format(sample_position))
+                    if 'a' in sample_position:
                         self.ids.sample_relative_position.text = 'after'
                     else:
                         self.ids.sample_relative_position.text = 'before'
+                    logger.debug("Set 'sample_relative_position' to {0}"
+                                 .format(self.ids.sample_relative_position.text))
                     # filter letters and set sample_relative_to accordingly
-                    if 's' in value_str[0]:
+                    if 's' in sample_position:
                         reference_component = 'Source'
-                    elif 'd' in value_str[0]:
+                    elif 'd' in sample_position:
                         reference_component = 'Detector'
                     else:
                         # g0, g1 or g2
-                        reference_component = value_str[0][1:].upper()
+                        reference_component = sample_position[1:].upper()
+                    logger.debug("Setting 'sample_relative_to' to {0}"
+                                 .format(reference_component))
                     self.ids.sample_relative_to.text = reference_component
                     # make samples as added
                     self.ids.add_sample.active = True
@@ -2145,6 +2174,8 @@ class giGUI(F.BoxLayout):
             elif 'Spinner' in str(value):
                 if var_name == 'fixed_grating':
                     value.text = 'Choose fixed grating...'
+                elif var_name == 'sample_shape':
+                    value.text = ''
 
         # Clear current results (not previous)
         self.results['geometry'] = dict()

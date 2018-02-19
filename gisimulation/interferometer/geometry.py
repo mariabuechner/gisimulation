@@ -1059,10 +1059,11 @@ class Geometry():
                    if ('pitch_' in pitch_name and pitch_value is not None)]
         for pitch in pitches:
             self.results['gratings'][pitch[0]] = pitch[1]
-        # Add grating radii (if bent <=> radius not None)
+        # Add grating radii
+        # if bent: radius not None <=> if straight: radius None
         radii = [(radius_name, radius_value) for radius_name, radius_value
                    in self._parameters.iteritems()
-                   if ('radius_' in radius_name and radius_value is not None)]
+                   if 'radius_' in radius_name]
         for radius in radii:
             self.results['gratings'][radius[0]] = radius[1]
 

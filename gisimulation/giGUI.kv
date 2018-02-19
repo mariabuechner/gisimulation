@@ -870,9 +870,9 @@
                                         help_message: parser_info['sample_shape'][1]
                                     Spinner:
                                         id: sample_shape
-                                        text: 'circular'
+                                        text: ''
                                         values: ['circular']
-                                        on_text: self.text = 'circular' if self.text not in self.values else self.text
+                                        on_text: self.text = '' if self.text not in self.values else self.text
                                     LabelHelp:
                                         id: sample_diameter_label
                                         text: 'Sample diameter [mm]'
