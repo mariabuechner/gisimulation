@@ -979,7 +979,7 @@ class Geometry():
         if 'a' in self._parameters['sample_position']:
             # Sample relative to previous component ('after')
 
-            # Calc source to sample distance
+            # Calc source to sample center distance
             self._parameters['distance_source_sample'] = \
                 self._parameters['distance_source_'+previous_component] + \
                 self._parameters['sample_distance'] + \
@@ -995,7 +995,7 @@ class Geometry():
         else:
             # Sample relative to next component ('before')
 
-            # Calc source to sample distance
+            # Calc source to sample center distance
             self._parameters['distance_source_sample'] = \
                 self._parameters['distance_source_'+next_component] - \
                 self._parameters['sample_distance'] - \
@@ -1065,6 +1065,14 @@ class Geometry():
                    if ('pitch_' in pitch_name and pitch_value is not None)]
         for pitch in pitches:
             self.results['gratings'][pitch[0]] = pitch[1]
+        # Add duty cycles
+        duty_cycles = [(duty_cycle_name, duty_cycle_value)
+                       for duty_cycle_name, duty_cycle_value
+                       in self._parameters.iteritems()
+                       if ('duty_cycle_' in duty_cycle_name and
+                           duty_cycle_value is not None)]
+        for duty_cycle in duty_cycles:
+            self.results['gratings'][duty_cycle[0]] = duty_cycle[1]
         # Add grating radii
         # if bent: radius not None <=> if straight: radius None
         radii = [(radius_name, radius_value) for radius_name, radius_value

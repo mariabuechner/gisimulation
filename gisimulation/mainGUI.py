@@ -54,6 +54,7 @@ Window.maximize()  # NOTE: On desktop platforms only
 ERROR_MESSAGE_SIZE = (600, 450)  # absolute
 FILE_BROWSER_SIZE = (0.9, 0.9)  # relative
 LINE_HEIGHT = 35
+TAB_HEIGHT = 1200
 
 # %% Custom Widgets
 
@@ -419,8 +420,8 @@ class GeometryGrid(F.GridLayout):
         Set size and position after app has started.
         """
         self.sketch.rectangle.size = self.size
-        #  989=1024-line_height
-        self.sketch.rectangle.pos = (0.0, 989.0-self.height)
+        #  1165=1200-line_height with tab height = 1200
+        self.sketch.rectangle.pos = (0.0, 1165.0-self.height)
 
     def update_geometry(self, geometry_results):
         """
@@ -1138,11 +1139,176 @@ class giGUI(F.BoxLayout):
         except geometry.GeometryError as e:
             ErrorDisplay('Geometry Error', str(e))
 
-        # Update widget content
+        # Update geom results
         self._set_widgets(self.parameters, from_file=False)
+        self.show_geometry()
+        # Switch tabs
+        self.ids.result_tabs.switch_to(self.ids.geometry_results)
 
-#        # Switch tabs
-#        self.ids.result_tabs.switch_to(self.ids.geometry_results)
+    def show_geometry(self):
+        """
+        Display the GI geometry results. Updates sketch and updates
+        distances and gratings result info.
+        """
+        self.ids.geometry_sketch.update_geometry(self.results['geometry'])
+
+        component_list = self.results['geometry']['setup']['component_list']
+
+        # Show gratings results
+        grating_results = self.results['geometry']['gratings'].copy()
+        gratings = [gratings for gratings
+                    in component_list if 'G' in gratings]
+        for grating in gratings:
+            boxlayout = F.BoxLayout()
+
+            boxlayout.add_widget(F.NonFileBrowserLabel(text=grating))
+
+            pitch = grating_results['pitch_'+grating.lower()]
+            pitch = str(round(pitch, 3))
+            boxlayout.add_widget(F.NonFileBrowserLabel(text=pitch))
+
+            duty_cycle = grating_results['duty_cycle_'+grating.lower()]
+            duty_cycle = str(round(duty_cycle, 3))
+            boxlayout.add_widget(F.NonFileBrowserLabel(text=duty_cycle))
+
+            radius = grating_results['radius_'+grating.lower()]
+            if radius is None:
+                radius = '-'
+            else:
+                radius = str(round(radius, 3))
+            boxlayout.add_widget(F.NonFileBrowserLabel(text=radius))
+
+            self.ids.grating_results.add_widget(boxlayout)
+
+            # Update height of 'grating_results'
+            self.ids.grating_results.height = \
+                self.calc_boxlayout_height(LINE_HEIGHT,
+                                           self.ids.grating_results)
+
+        logger.info("==================")
+        # Show distances
+        distances_results = self.results['geometry']['distances'].copy()
+
+        if self.results['geometry']['setup']['gi_geometry'] != 'free':
+            # Show d, l, s first
+            if 'G0' in component_list:
+                start_from = 'G0'
+            else:
+                start_from = 'Source'
+            # l
+            boxlayout = F.BoxLayout()
+            boxlayout.add_widget(F.NonFileBrowserLabel(text=(start_from +
+                                                             ' to G1')))
+            distance = distances_results.pop('distance_'+start_from.lower() +
+                                             '_g1')
+            distance = str(round(distance, 3))
+            boxlayout.add_widget(F.NonFileBrowserLabel(text=distance))
+            self.ids.distances_results.add_widget(boxlayout)
+
+            # d
+            boxlayout = F.BoxLayout()
+            boxlayout.add_widget(F.NonFileBrowserLabel(text='G1 to G2'))
+            distance = distances_results.pop('distance_g1_g2')
+            distance = str(round(distance, 3))
+            boxlayout.add_widget(F.NonFileBrowserLabel(text=distance))
+            self.ids.distances_results.add_widget(boxlayout)
+
+            # s
+            boxlayout = F.BoxLayout()
+            boxlayout.add_widget(F.NonFileBrowserLabel(text=(start_from +
+                                                             ' to G2')))
+            distance = distances_results.pop('distance_'+start_from.lower() +
+                                             '_g2')
+            distance = str(round(distance, 3))
+            boxlayout.add_widget(F.NonFileBrowserLabel(text=distance))
+            self.ids.distances_results.add_widget(boxlayout)
+
+        # Add total system length and if necessary source to sample
+        boxlayout = F.BoxLayout()
+        boxlayout.add_widget(F.NonFileBrowserLabel(text='Source to detector'))
+        distance = distances_results.pop('distance_source_detector')
+        distance = str(round(distance, 3))
+        boxlayout.add_widget(F.NonFileBrowserLabel(text=distance))
+        self.ids.distances_results.add_widget(boxlayout)
+
+        if 'Sample' in component_list:
+            boxlayout = F.BoxLayout()
+            boxlayout.add_widget(F.NonFileBrowserLabel(text='Source to sample'))
+            distance = distances_results.pop('distance_source_sample')
+            distance = str(round(distance, 3))
+            boxlayout.add_widget(F.NonFileBrowserLabel(text=distance))
+            self.ids.distances_results.add_widget(boxlayout)
+
+        # Add remaining intergrating distances
+        distance_keys = [key for key in distances_results.keys()
+                     if 'distance_g' in key]
+        if distance_keys:
+            boxlayout = F.BoxLayout()
+            boxlayout.add_widget(F.NonFileBrowserLabel(text='----------'))
+            self.ids.distances_results.add_widget(boxlayout)
+            for distance_key in distance_keys:
+                label_text = (distance_key.split('_')[1].upper()+' to ' +
+                              distance_key.split('_')[2])
+                boxlayout = F.BoxLayout()
+                boxlayout.add_widget(F.NonFileBrowserLabel(text=label_text))
+                distance = distances_results.pop(distance_key)
+                distance = str(round(distance, 3))
+                boxlayout.add_widget(F.NonFileBrowserLabel(text=distance))
+                self.ids.distances_results.add_widget(boxlayout)
+
+        # Add remaining source to distances
+        distance_keys = [key for key in distances_results.keys()
+                     if 'distance_source' in key]
+        if distance_keys:
+            boxlayout = F.BoxLayout()
+            boxlayout.add_widget(F.NonFileBrowserLabel(text='----------'))
+            self.ids.distances_results.add_widget(boxlayout)
+            for distance_key in distance_keys:
+                label_text = ('Source to ' +
+                              distance_key.split('_')[2].upper())
+                boxlayout = F.BoxLayout()
+                boxlayout.add_widget(F.NonFileBrowserLabel(text=label_text))
+                distance = distances_results.pop(distance_key)
+                distance = str(round(distance, 3))
+                boxlayout.add_widget(F.NonFileBrowserLabel(text=distance))
+                self.ids.distances_results.add_widget(boxlayout)
+
+        # Add remaining sample relative to distance
+        if 'Sample' in component_list:
+            # Find reference component
+            sample_index = component_list.index('Sample')
+            if 'a' in self.results['geometry']['sample']['sample_position']:
+                reference = component_list[sample_index-1]
+            else:
+                reference = component_list[sample_index+1]
+
+            boxlayout = F.BoxLayout()
+            boxlayout.add_widget(F.NonFileBrowserLabel(text='----------'))
+            self.ids.distances_results.add_widget(boxlayout)
+            boxlayout = F.BoxLayout()
+            boxlayout.add_widget(F.NonFileBrowserLabel(text=(reference +
+                                                             ' to sample')))
+            distance = self.results['geometry']['sample']['sample_distance']
+            distance = str(round(distance, 3))
+            boxlayout.add_widget(F.NonFileBrowserLabel(text=distance))
+            self.ids.distances_results.add_widget(boxlayout)
+
+        # Update height of 'grating_results'
+        self.ids.distances_results.height = \
+            self.calc_boxlayout_height(LINE_HEIGHT,
+                                       self.ids.distances_results)
+
+
+
+
+#        sorted_distances_keys = \
+#            sorted(distances_results.iterkeys())
+#        # Show distances
+#        for distance_key in sorted_distances_keys:
+#            distance = distances_results[distance_key]
+#            logger.info(distance_key)
+#            logger.info(distance)
+#            first_component = distance.split('_')[1]
 
     def calculate_visibility(self):
         """
