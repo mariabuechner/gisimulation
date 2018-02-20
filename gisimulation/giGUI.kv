@@ -2,13 +2,14 @@
 #:import np numpy
 #:import ntpath ntpath
 #:import parser_def simulation.parser_def
+#:import main mainGUI  # To load constants
 
 #:set parser_info parser_def.get_arguments_info(parser_def.input_parser())
 #:set num_input_size 0.3
 #:set default_font_size 18
-#:set line_height 35
+#:set line_height main.LINE_HEIGHT # 35
 #:set menu_button_width 100
-#:set tab_height 1200
+#:set tab_height main.TAB_HEIGHT  # 1200
 #:set dark_grey np.divide([88, 88, 88, 50],[255., 255., 255., 100.])
 #:set dark_red_button np.divide([255, 50, 50, 100],[255., 255., 255., 100.])
 #:set dark_red_menu np.divide([154, 31, 31, 100],[255., 255., 255., 100.])
