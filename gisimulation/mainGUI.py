@@ -997,8 +997,12 @@ class giGUI(F.BoxLayout):
 
     File loading and saving based on
     "https://kivy.org/docs/api-kivy.uix.filechooser.html" (23.10.2017)
+
+    Kivy properties necessary if check if changed or access at .kv is
+    necessary.
+
     """
-    # Global variables
+    # "Global" variables
     parameters = F.DictProperty()  # Will be params[var_name] = value
     parser_info = F.DictProperty()  # Will be params[var_name]
                                     #           = [var_key, var_help]
@@ -1011,7 +1015,7 @@ class giGUI(F.BoxLayout):
     load_input_file_paths = F.ListProperty()
     save_input_file_path = F.StringProperty()
 
-    setup_components = F.ListProperty()  # Lsit of all components in the setup
+    setup_components = F.ListProperty()  # List of all components in the setup
     sample_added = False
     available_gratings = F.ListProperty()
 
@@ -1021,21 +1025,27 @@ class giGUI(F.BoxLayout):
             parser_def.get_arguments_info(parser_def.input_parser())
         for var_name, value in self.parser_info.iteritems():
             self.parser_link[value[0]] = var_name
+
         # Update parameters
         _collect_widgets(self.parameters, self.ids)
         self.parameters['spectrum_file'] = None
         self._set_widgets(self.parameters, from_file=False)
+
         # Init geometry result dictionaries
         self.results = dict()
         self.results['geometry'] = dict()
-        # Components trackers
+
+        # Components trackers (needed for immediate update in GUI, since
+        # parameters...components... is set later)
         self.setup_components = ['Source', 'Detector']
+
         # Avail fixed gratings
         self.ids.g0_set.disabled = True
         if self.ids.beam_geometry.text == 'parallel':
             self.available_gratings = ['G1', 'G2']
         else:
             self.available_gratings = ['G0', 'G1', 'G2']
+
         # Sample
         self.update_sample_distance_label()
         self.parameters['sample_position'] = None
@@ -1043,12 +1053,12 @@ class giGUI(F.BoxLayout):
     # #########################################################################
     # General simulation functions ############################################
 
-    def check_general_input(self):
+    def check_all_input(self):
         """
         Check general input, by
             1) load values from all widgets,
             2) Check manually the required parameters from parser
-            3) Check values with check_input.general_input(...)
+            3) Check values with check_input.geometry_input(...)
             4) Reset widget values to include newly calculated parameters
         """
         try:
@@ -1060,7 +1070,7 @@ class giGUI(F.BoxLayout):
 
             if self.parameters['spectrum_file']:
                 # Check spectrum file (done in parser, but extra here)
-                # Normaliye for OS
+                # Normally for OS
                 self.parameters['spectrum_file'] = \
                     os.path.normpath(self.parameters['spectrum_file'])
                 # if main path missing, add, then check
@@ -1106,7 +1116,48 @@ class giGUI(F.BoxLayout):
                     raise check_input.InputError(error_message)
 
             # Check rest
-            check_input.general_input(self.parameters, self.parser_info)
+            check_input.all_input(self.parameters, self.parser_info)
+            logger.info("... done.")
+
+            # Update widget content
+            self._set_widgets(self.parameters, from_file=False)
+
+        except check_input.InputError as e:
+            ErrorDisplay('Input Error', str(e))
+
+    def check_geometry_input(self):
+        """
+        Check general input, by
+            1) load values from all widgets,
+            2) Check manually the required parameters from parser
+            3) Check values with check_input.geometry_input(...)
+            4) Reset widget values to include newly calculated parameters
+        """
+        try:
+            # Update parameters
+            _collect_widgets(self.parameters, self.ids)
+
+            # Check values
+            logger.info("Checking geometry input parameters...")
+
+            # Are required (in parser) defined?
+            if not self.parameters['design_energy']:
+                error_message = "Input argument missing: 'design_energy' " \
+                                "('-e')."
+                logger.error(error_message)
+                raise check_input.InputError(error_message)
+
+            # Gratings types defined if selected?
+            for grating in ['g0', 'g1', 'g2']:
+                if self.ids[grating+'_set'].active and \
+                        not self.parameters['type_'+grating]:
+                    error_message = ("Type of {0} not defined."
+                                     .format(grating.upper()))
+                    logger.error(error_message)
+                    raise check_input.InputError(error_message)
+
+            # Check rest
+            check_input.geometry_input(self.parameters, self.parser_info)
             logger.info("... done.")
 
             # Update widget content
@@ -1128,8 +1179,9 @@ class giGUI(F.BoxLayout):
 
         # Calc geometries
         logger.info("Checking general input...")
-        self.check_general_input()
+        self.check_geometry_input()
         logger.info("... done.")
+
         try:
             logger.info("Calculationg geometry...")
             gi_geometry = geometry.Geometry(self.parameters)  # Calc...

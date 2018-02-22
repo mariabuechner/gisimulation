@@ -278,12 +278,12 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         type=numerical_type,
                         help="Point spread function (PSF) [um]: "
                         "FWHM (Full width at half maximum) of gaussian shape.")
-    parser.add_argument('-pxs', dest='pixel_size', required=True,
+    parser.add_argument('-pxs', dest='pixel_size', #required=True,
                         action=_TruePositiveNumber,
                         type=numerical_type,
                         help="Pixel size (square) [um].")
     parser.add_argument('-fov', dest='field_of_view', nargs=2,
-                        required=True,
+                        #required=True,
                         action=_StoreNpArray,
                         metavar='FIELD_OF_VIEW',
                         type=np.int,

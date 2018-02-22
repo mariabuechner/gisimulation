@@ -2,7 +2,7 @@
 #:import np numpy
 #:import ntpath ntpath
 #:import parser_def simulation.parser_def
-#:import main mainGUI  # To load constants
+#:import main mainGUI
 
 #:set parser_info parser_def.get_arguments_info(parser_def.input_parser())
 #:set num_input_size 0.3
@@ -824,7 +824,7 @@
                                 Button:
                                     pos_hint: {'top': 0.04}
                                     text: 'Check input'
-                                    on_press: root.check_general_input()
+                                    on_press: root.check_geometry_input()
 
                     # Sample
                     TabbedPanelItem:
@@ -990,4 +990,4 @@
                         text: 'bla'
                     Button:
                         text: 'Raise error and display'
-                        on_press: root.check_general_input()
+                        on_press: root.check_geometry_input()

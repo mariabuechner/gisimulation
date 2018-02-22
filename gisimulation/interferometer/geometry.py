@@ -34,8 +34,6 @@ class Geometry():
         """
         Calculates the geometries and missing GI parameters.
 
-        ALSO: Check sample position!!! (GeometryError)
-
         Parameters
         ==========
 

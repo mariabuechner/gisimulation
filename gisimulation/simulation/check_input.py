@@ -37,7 +37,7 @@ class InputError(Exception):
 
 def check_parser(parameters):
     """
-    checking all input (parser)
+    checking all input (from parser).
 
     Parameters
     ==========
@@ -50,16 +50,16 @@ def check_parser(parameters):
 
     logger.info("Checking general input...")
     # % Minimal required input for all scenarios
-    parameters = general_input(parameters, parser_info)
+    parameters = all_input(parameters, parser_info)
     logger.info("... done.")
 
     # % Scenario specific requirements
     # General and connected parameters (calculated geom., Metrices, ct, ...)
 
 
-def general_input(parameters, parser_info):
+def all_input(parameters, parser_info):
     """
-    checking general input (everything to calculate the geometries)
+    Checking all input necessary after geometries.
 
     Parameters
     ==========
@@ -67,18 +67,14 @@ def general_input(parameters, parser_info):
     parameters [dict]
     parser_info [dict]:         parser_info[var_name] = [var_key, var_help]
 
-    Notes
-    =====
-
-    If an parser argument is required, it can be None from the GUI. Thus,
-    check it the first time it is called.
     """
     try:
         # % Minimal required input for 'free', 'parallel', no gatings
         logger.debug("Checking general input...")
 
-        # General and GI Design:
-        logger.debug("Checking GI input...")
+        # General input:
+        logger.debug("Checking simulation input...")
+
         if not parameters['sampling_rate']:
             logger.debug("Sampling rate ({0}) is not specified, "
                          "set to pixel size * 1e-3."
@@ -88,29 +84,12 @@ def general_input(parameters, parser_info):
             logger.debug("Sampling rate is {0} um, with pixel size {1} "
                          "um..".format(parameters['sampling_rate'],
                                        parameters['pixel_size']))
-        if parameters['gi_geometry'] != 'free':
-            # If GI, talbot order necessary
-            if not parameters['talbot_order']:
-                error_message = ("Input argument missing: 'talbot_order' "
-                                 "({0})."
-                                 .format(parser_info['talbot_order'][0]))
-                logger.error(error_message)
-                raise InputError(error_message)
-        if parameters['dual_phase'] and parameters['gi_geometry'] != 'conv':
-            error_message = ("Dual phase setup can only be calculated for "
-                             "conventional geometry. Geometry is '{0}'."
-                             .format(parameters['gi_geometry']))
-            logger.error(error_message)
-            raise InputError(error_message)
         if parameters['look_up_table'] == 'x0h' and \
                 parameters['photo_only']:
             warning_message = ("With X0h material LUT cannot consider only "
                                "photo-absorption, resetting to 'False'.")
             logger.warn(warning_message)
             parameters['photo_only'] = False
-        # Store design wavelength
-        parameters['design_wavelength'] = \
-            materials.energy_to_wavelength(parameters['design_energy'])
 
         logger.debug("... done.")
 
@@ -191,6 +170,86 @@ def general_input(parameters, parser_info):
                              .format(parser_info['thickness_detector'][0]))
             logger.error(error_message)
             raise InputError(error_message)
+        logger.debug("... done.")
+
+
+        # Check all selected gratings (materials and phase/absorption)
+        if 'G0' in parameters['component_list']:
+            logger.debug("Checking G0...")
+            _check_grating_input('g0', parameters, parser_info)
+            logger.debug("... done.")
+        if 'G1' in parameters['component_list']:
+            logger.debug("Checking G1...")
+            _check_grating_input('g1', parameters, parser_info)
+            logger.debug("... done.")
+        if 'G2' in parameters['component_list']:
+            logger.debug("Checking G2...")
+            _check_grating_input('g2', parameters, parser_info)
+            logger.debug("... done.")
+
+        # Check all materials if exist
+        try:
+            for var_name, value in parameters.iteritems():
+                if 'material' in var_name and value:
+                    materials.test_material(value, parameters['design_energy'],
+                                            parameters['look_up_table'])
+        except materials.MaterialError as e:
+            error_message = ("Invalid material name in '{0}' ({1}): {2}"
+                             .format(var_name,
+                                     parser_info[var_name][0],
+                                     str(e)))
+            logger.error(error_message)
+            raise InputError(error_message)
+
+        logger.debug("... done.")  # General checking
+
+#        # Re-Init geometry result dictionaries (overwrites previous results,
+#        # which need to be stored before)
+#        parameters['results'] = dict()
+#        parameters['results']['geometry'] = dict()
+
+    except AttributeError as e:
+        error_message = "Input arguments missing: {}." \
+                        .format(str(e).split()[-1])
+        logger.error(error_message)
+        raise InputError(error_message)
+
+
+def geometry_input(parameters, parser_info):
+    """
+    Checking geometry input (everything to calculate the geometries).
+
+    Parameters
+    ==========
+
+    parameters [dict]
+    parser_info [dict]:         parser_info[var_name] = [var_key, var_help]
+
+    """
+    try:
+        # % Minimal required input for 'free', 'parallel', no gatings
+        logger.debug("Checking geometry input...")
+
+        # GI Design:
+        logger.debug("Checking GI input...")
+        if parameters['gi_geometry'] != 'free':
+            # If GI, talbot order necessary
+            if not parameters['talbot_order']:
+                error_message = ("Input argument missing: 'talbot_order' "
+                                 "({0})."
+                                 .format(parser_info['talbot_order'][0]))
+                logger.error(error_message)
+                raise InputError(error_message)
+        if parameters['dual_phase'] and parameters['gi_geometry'] != 'conv':
+            error_message = ("Dual phase setup can only be calculated for "
+                             "conventional geometry. Geometry is '{0}'."
+                             .format(parameters['gi_geometry']))
+            logger.error(error_message)
+            raise InputError(error_message)
+        # Store design wavelength
+        parameters['design_wavelength'] = \
+            materials.energy_to_wavelength(parameters['design_energy'])
+
         logger.debug("... done.")
 
         # Special scenarios:
@@ -363,11 +422,6 @@ def general_input(parameters, parser_info):
                                                    parameters
                                                    ['fixed_distance']))
                             fixed_distance = parameters['fixed_distance']
-#                            # Reset other
-#                            if fixed_distance == 'distance_source_g1':
-#                                parameters['distance_source_g2'] = None
-#                            else:
-#                                parameters['distance_source_g1'] = None
                         elif parameters['distance_source_g1']:
                             fixed_distance = 'distance_source_g1'
                         elif parameters['distance_source_g2']:
@@ -412,11 +466,6 @@ def general_input(parameters, parser_info):
                                                    parameters
                                                    ['fixed_distance']))
                             fixed_distance = parameters['fixed_distance']
-#                            # Reset other
-#                            if fixed_distance == 'distance_g0_g1':
-#                                parameters['distance_g0_g2'] = None
-#                            else:
-#                                parameters['distance_g0_g1'] = None
                         elif parameters['distance_g0_g1']:
                             fixed_distance = 'distance_g0_g1'
                         elif parameters['distance_g0_g2']:
@@ -620,21 +669,36 @@ def general_input(parameters, parser_info):
                 logger.info("Fixed distance is: {0}."
                             .format(fixed_distance))
 
-        # Check all selected gratings
-        if 'G0' in parameters['component_list']:
-            logger.debug("Checking G0...")
-            _check_grating_input('g0', parameters, parser_info)
-            logger.debug("... done.")
-        if 'G1' in parameters['component_list']:
-            logger.debug("Checking G1...")
-            _check_grating_input('g1', parameters, parser_info)
-            logger.debug("... done.")
-        if 'G2' in parameters['component_list']:
-            logger.debug("Checking G2...")
-            _check_grating_input('g2', parameters, parser_info)
-            logger.debug("... done.")
+        # Check pitch and DC of fixed grating
+        grating = parameters['fixed_grating'].lower()
+        # Is defined?
+        if not parameters['type_'+grating]:
+            error_message = ("Type of {0} ({1}) not defined."
+                             .format(grating.upper(),
+                                     parser_info['type_'+grating][0]))
+            logger.error(error_message)
+            raise InputError(error_message)
+        if not parameters['pitch_'+grating]:
+            error_message = ("Pitch of {0} ({1}) must be defined."
+                             .format(grating.upper(),
+                                     parser_info['pitch_'+grating][0]))
+            logger.error(error_message)
+            raise InputError(error_message)
+        if not parameters['duty_cycle_'+grating]:
+            error_message = ("Duty cycle of {0} ({1}) must be defined."
+                             .format(grating.upper(),
+                                     parser_info['duty_cycle_'+grating][0]))
+            logger.error(error_message)
+            raise InputError(error_message)
+        elif parameters['duty_cycle_'+grating] <= 0 or \
+                parameters['duty_cycle_'+grating] >= 1:
+            error_message = ("Duty cycle of {0} ({1}) must be within ]0...1[."
+                             .format(grating.upper(),
+                                     parser_info['duty_cycle_'+grating][0]))
+            logger.error(error_message)
+            raise InputError(error_message)
 
-        # Check remaining components (source and detector already done)
+        # Check remaining components
         # Sample distance, shape, material etc.
         logger.debug("Checking remaining components...")
         if 'Sample' in parameters['component_list']:
@@ -673,25 +737,13 @@ def general_input(parameters, parser_info):
 
         logger.debug("... done.")  # Scenarios done
 
-        # Check all materials if exist
-        try:
-            for var_name, value in parameters.iteritems():
-                if 'material' in var_name and value:
-                    materials.test_material(value, parameters['design_energy'],
-                                            parameters['look_up_table'])
-        except materials.MaterialError as e:
-            error_message = ("Invalid material name in '{0}' ({1}): {2}"
-                             .format(var_name,
-                                     parser_info[var_name][0],
-                                     str(e)))
-            logger.error(error_message)
-            raise InputError(error_message)
 
         logger.debug("... done.")  # General checking
 
-        # Re-Init geometry result dictionaries
-        parameters['results'] = dict()
-        parameters['results']['geometry'] = dict()
+#        # Re-Init geometry result dictionaries (overwrites previous results,
+#        # which need to be stored before)
+#        parameters['results'] = dict()
+#        parameters['results']['geometry'] = dict()
 
     except AttributeError as e:
         error_message = "Input arguments missing: {}." \
@@ -971,6 +1023,31 @@ def _check_grating_input(grating, parameters, parser_info):
         logger.error(error_message)
         raise InputError(error_message)
 
+    # Basic required input
+    # If fixed grating (for none-free input) or free input
+    if (parameters['gi_geometry'] != 'free' and
+            grating == parameters['fixed_grating']) or \
+            parameters['gi_geometry'] == 'free':
+        if not parameters['pitch_'+grating]:
+            error_message = ("Pitch of {0} ({1}) must be defined."
+                             .format(grating.upper(),
+                                     parser_info['pitch_'+grating][0]))
+            logger.error(error_message)
+            raise InputError(error_message)
+        if not parameters['duty_cycle_'+grating]:
+            error_message = ("Duty cycle of {0} ({1}) must be defined."
+                             .format(grating.upper(),
+                                     parser_info['duty_cycle_'+grating][0]))
+            logger.error(error_message)
+            raise InputError(error_message)
+        elif parameters['duty_cycle_'+grating] <= 0 or \
+                parameters['duty_cycle_'+grating] >= 1:
+            error_message = ("Duty cycle of {0} ({1}) must be within ]0...1[."
+                             .format(grating.upper(),
+                                     parser_info['duty_cycle_'+grating][0]))
+            logger.error(error_message)
+            raise InputError(error_message)
+
     # Check grating types for GI setups
     if parameters['gi_geometry'] != 'free':
         # G0 (abs or mix)
@@ -999,30 +1076,6 @@ def _check_grating_input(grating, parameters, parser_info):
             logger.error(error_message)
             raise InputError(error_message)
 
-    # Basic required input
-    # If fixed grating (for none-free input) or free input
-    if (parameters['gi_geometry'] != 'free' and
-            grating == parameters['fixed_grating']) or \
-            parameters['gi_geometry'] == 'free':
-        if not parameters['pitch_'+grating]:
-            error_message = ("Pitch of {0} ({1}) must be defined."
-                             .format(grating.upper(),
-                                     parser_info['pitch_'+grating][0]))
-            logger.error(error_message)
-            raise InputError(error_message)
-        if not parameters['duty_cycle_'+grating]:
-            error_message = ("Duty cycle of {0} ({1}) must be defined."
-                             .format(grating.upper(),
-                                     parser_info['duty_cycle_'+grating][0]))
-            logger.error(error_message)
-            raise InputError(error_message)
-        elif parameters['duty_cycle_'+grating] <= 0 or \
-                parameters['duty_cycle_'+grating] >= 1:
-            error_message = ("Duty cycle of {0} ({1}) must be within ]0...1[."
-                             .format(grating.upper(),
-                                     parser_info['duty_cycle_'+grating][0]))
-            logger.error(error_message)
-            raise InputError(error_message)
     # Always required
     if not parameters['material_'+grating]:
         error_message = ("Material of {0} ({1}) must be defined."
@@ -1032,7 +1085,6 @@ def _check_grating_input(grating, parameters, parser_info):
         raise InputError(error_message)
 
     # Phase and/or thickness and/or absorption
-
     if parameters['type_'+grating] == 'abs':
         # Absorption grating
         if not parameters['thickness_'+grating]:
