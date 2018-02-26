@@ -165,6 +165,12 @@
             size_hint_x: None
             width: 120
             background_color: dark_red_button
+            text: 'Clear input'
+            on_release: root.reset_input()
+        Button:
+            size_hint_x: None
+            width: 120
+            background_color: dark_red_button
             text: 'Clear all'
             on_release: root.reset_widgets()
 
@@ -323,6 +329,7 @@
                                                 TextInput:
                                                     id: spectrum_file_name
                                                     text: ntpath.basename(root.spectrum_file_path)
+                                                    on_text: root.spectrum_file_path = '' if self.text == '' else root.spectrum_file_path
                                                     background_disabled_normal: self.background_normal
                                                     disabled_foreground_color: self.foreground_color
                                                     disabled: True

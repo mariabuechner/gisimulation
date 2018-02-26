@@ -825,8 +825,8 @@ def _collect_widgets(parameters, ids):
     Parameters
     ==========
 
-    parameters [dict]:      dict of already existing parameters
-    ids [widget.ids]
+    parameters [dict]:      parameters[var_name] = value
+    ids [dict]:             ids[var_name] = var_value
 
     Notes
     =====
@@ -935,7 +935,7 @@ def _collect_widgets(parameters, ids):
     logger.debug("... done.")
 
 
-def _collect_input(parameters, parser_info):
+def _collect_input(parameters, ids, parser_info):
     """
     Selects only input parameters defined in parser from all available
     parameters.
@@ -943,22 +943,28 @@ def _collect_input(parameters, parser_info):
     Parameters
     ==========
 
-    parameters [dict]:      dict of already existing parameters
-    parser_info [dict]:     parser keys and variable names
+    parameters [dict]:      parameters[var_name] = value
+    ids [dict]:             ids[var_name] = var_value
+    parser_info [dict]:     parser_info[var_name] = [var_key, var_help]
 
     Returns
     =======
 
-    input_parameters [dict]
+    input_parameters [dict]:    input_parameters[var_key] = var_value
 
     """
+    # Update parameters
+    _collect_widgets(parameters, ids)
+
     # Select input parameters to save
     logger.debug("Collecting all paramters to save...")
     input_parameters = dict()
-    for var_name, var_value in parameters.iteritems():
-        if var_name in parser_info and var_value is not None:
-            var_key = parser_info[var_name][0]
-            input_parameters[var_key] = var_value
+    variables = [(var_name, var_value) for var_name, var_value
+                 in parameters.iteritems()
+                 if (var_name in parser_info and var_value is not None)]
+    for var_name, var_value in variables:
+        var_key = parser_info[var_name][0]
+        input_parameters[var_key] = var_value
     # Save at save_input_file_path (=value)
     logger.debug('... done.')
 
@@ -1453,10 +1459,7 @@ class giGUI(F.BoxLayout):
 
         """
         if self.save_input_file_path != '':  # e.g. after reset.
-            # Update parameters
-            _collect_widgets(self.parameters, self.ids)
-
-            input_parameters = _collect_input(self.parameters,
+            input_parameters = _collect_input(self.parameters, self.ids,
                                               self.parser_info)
             logger.info("Saving input to file...")
             if os.path.isfile(value):
@@ -2391,18 +2394,85 @@ class giGUI(F.BoxLayout):
             logger.error(error_message)
             raise check_input.InputError(error_message)
 
-    # Reset all widgets
-    def reset_widgets(self):
+    # Clear widgets
+    def reset_input(self):
         """
-        Reset all widgets to 'empty'.
+        Reset all input widgets to 'empty'.
 
         Notes
         =====
 
-        self.parameters [dict]:         widget_parameters[var_name] = value
-        self.parser_link [dict]:        parser_link[var_key] = var_name
-        self.parser_info [dict]:        parser_info[var_name] = [var_key,
-                                                                 var_help]
+        self.parameters [dict]:     parameters[var_name] = var_value
+        self.parser_info [dict]:    parser_info[var_name] = [var_key, var_help]
+        input_parameters [dict]:    input_parameters[var_key] = var_value
+        self.ids [dict]:            self.ids[var_name] = var_value
+
+        """
+        input_parameters = _collect_input(self.parameters, self.ids,
+                                          self.parser_info)
+
+        logger.info("Resetting input widget values...")
+
+        # Handle distances (not accesible directly via ids)
+        #   ids.distances contains one boxlayout per distance,
+        #   which then contains one label and one FloatInput
+        for distance in self.ids.distances.children:
+            for widget in distance.children:
+                if 'FloatInput' in str(widget):
+                    widget.text = ''
+
+        variables = [(var_name, var_value) for var_name, var_value
+                     in self.ids.iteritems()
+                     if (var_name in self.parser_info and
+                         self.parser_info[var_name][0] in input_parameters)]
+        for var_name, value in variables:
+            if var_name not in self.parser_info:
+                continue
+            elif self.parser_info[var_name][0] not in input_parameters:
+                continue
+            if 'CheckBox' in str(value):
+                value.active = False
+            elif 'TabbedPanel' in str(value):
+                continue
+            elif 'Layout' in str(value):
+                continue
+            elif 'Distances' in str(value):
+                continue
+            elif 'GeometryGrid' in str(value):
+                continue
+            elif 'MenuSpinner' in str(value):
+                continue
+            elif not value.text:
+                continue
+            elif 'FloatInput' in str(value):
+                value.text = ""
+            elif 'IntInput' in str(value):
+                value.text = ""
+            elif 'TextInput' in str(value):
+                value.text = ""
+            elif 'Spinner' in str(value):
+                if var_name == 'fixed_grating':
+                    value.text = 'Choose fixed grating...'
+                elif var_name == 'sample_shape':
+                    value.text = ''
+
+        # Remove spectrum
+        self.ids.spectrum_file_name.text = ''
+
+        # Handle special checkboxes
+        self.ids.g0_set = False
+        self.ids.add_sample = False
+        self.ids.spectrum_range_set = False
+        self.ids.spectrum_range_min = ''
+        self.ids.spectrum_range_max = ''
+        self.ids.field_of_view_x = ''
+        self.ids.field_of_view_y = ''
+
+        logger.info("... done.")
+
+    def reset_widgets(self):
+        """
+        Reset all widgets to 'empty'.
         """
         logger.info("Resetting widget values...")
 
@@ -2440,6 +2510,9 @@ class giGUI(F.BoxLayout):
                     value.text = 'Choose fixed grating...'
                 elif var_name == 'sample_shape':
                     value.text = ''
+
+        # Remove spectrum
+        self.ids.spectrum_file_name.text = ''
 
         # Clear current results (not previous)
         self.results['geometry'] = dict()
