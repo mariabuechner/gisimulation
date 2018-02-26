@@ -26,6 +26,7 @@ kivy.require('1.10.0')  # Checks kivy version
 from kivy.base import ExceptionHandler, ExceptionManager
 from kivy.logger import Logger
 from kivy.app import App
+from kivy.clock import Clock
 from kivy.garden.filebrowser import FileBrowser
 from kivy.core.window import Window
 from kivy.factory import Factory as F  # Widgets etc. (UIX)
@@ -1060,7 +1061,15 @@ class giGUI(F.BoxLayout):
             2) Check manually the required parameters from parser
             3) Check values with check_input.geometry_input(...)
             4) Reset widget values to include newly calculated parameters
+
+        Notes
+        =====
+
+        Needs to return if successful or not, to avoid scheduling conflicts
+        with followup function (which need results)
+
         """
+        success = True
         try:
             # Update parameters
             _collect_widgets(self.parameters, self.ids)
@@ -1123,16 +1132,27 @@ class giGUI(F.BoxLayout):
             self._set_widgets(self.parameters, from_file=False)
 
         except check_input.InputError as e:
+            success = False
             ErrorDisplay('Input Error', str(e))
+        finally:
+            return success
 
-    def check_geometry_input(self):
+    def check_geometry_input(self, *args):
         """
         Check general input, by
             1) load values from all widgets,
             2) Check manually the required parameters from parser
             3) Check values with check_input.geometry_input(...)
             4) Reset widget values to include newly calculated parameters
+
+        Notes
+        =====
+
+        Needs to return if successful or not, to avoid scheduling conflicts
+        with followup function (which need results)
+
         """
+        success = True
         try:
             # Update parameters
             _collect_widgets(self.parameters, self.ids)
@@ -1161,41 +1181,41 @@ class giGUI(F.BoxLayout):
             logger.info("... done.")
 
             # Update widget content
-            self._set_widgets(self.parameters, from_file=False)
+            self._set_widgets(self.parameters, from_file=False)  # next frame
 
         except check_input.InputError as e:
+            success = False
             ErrorDisplay('Input Error', str(e))
+        finally:
+            return success
 
     def calculate_geometry(self):
         """
         Calculate the GI geometry based on the set input parameters.
         """
-        # If previous results, store
-        if self.results['geometry']:
-            logger.debug("Storing geometry results in "
-                         "previous_results['geometry']...")
-            self.previous_results['geometry'] = self.results['geometry']
-            logger.debug("... done.")
+        if self.check_geometry_input():
+            # If previous results, store
+            if self.results['geometry']:
+                logger.debug("Storing geometry results in "
+                             "previous_results['geometry']...")
+                self.previous_results['geometry'] = self.results['geometry']
+                logger.debug("... done.")
 
-        # Calc geometries
-        logger.info("Checking general input...")
-        self.check_geometry_input()
-        logger.info("... done.")
+            try:
+                logger.info("Calculationg geometry...")
+                gi_geometry = geometry.Geometry(self.parameters)  # Calc...
+                self.results['geometry'] = gi_geometry.results  # store geom dict
+                self.parameters = gi_geometry.update_parameters()  # transf. params
+                logger.info("... done.")
+            except geometry.GeometryError as e:
+                ErrorDisplay('Geometry Error', str(e))
 
-        try:
-            logger.info("Calculationg geometry...")
-            gi_geometry = geometry.Geometry(self.parameters)  # Calc...
-            self.results['geometry'] = gi_geometry.results  # store geom dict
-            self.parameters = gi_geometry.update_parameters()  # transf. params
-            logger.info("... done.")
-        except geometry.GeometryError as e:
-            ErrorDisplay('Geometry Error', str(e))
+            # Update geom results
+            self._set_widgets(self.parameters, from_file=False)
+            self.show_geometry()
+            # Switch tabs
+            self.ids.result_tabs.switch_to(self.ids.geometry_results)
 
-        # Update geom results
-        self._set_widgets(self.parameters, from_file=False)
-        self.show_geometry()
-        # Switch tabs
-        self.ids.result_tabs.switch_to(self.ids.geometry_results)
 
     def show_geometry(self):
         """
@@ -1237,7 +1257,6 @@ class giGUI(F.BoxLayout):
                 self.calc_boxlayout_height(LINE_HEIGHT,
                                            self.ids.grating_results)
 
-        logger.info("==================")
         # Show distances
         distances_results = self.results['geometry']['distances'].copy()
 
@@ -1399,7 +1418,7 @@ class giGUI(F.BoxLayout):
         """
         if value:
             # Do for all files in load_input_file_paths and merge results.
-            # Later fiels overwrite first files.
+            # Later files overwrite first files.
             for input_file in value:
                 logger.info("Loading input from file at: {0}"
                             .format(input_file))

@@ -41,9 +41,11 @@ class Geometry():
 
         """
         self._parameters = parameters.copy()
-        # nu = 2 if pi shift, nu = 1 if pi-half shift
-        self._nu = round(self._parameters['phase_shift_g1'] * 2/np.pi)
-        logger.debug("self._nu: {0}".format(self._nu))
+
+        if self._parameters['gi_geometry'] != 'free':
+            # nu = 2 if pi shift, nu = 1 if pi-half shift
+            self._nu = round(self._parameters['phase_shift_g1'] * 2/np.pi)
+            logger.debug("self._nu: {0}".format(self._nu))
 
         # Calculate geometries
         if self._parameters['gi_geometry'] == 'conv':
@@ -1095,7 +1097,8 @@ class Geometry():
         # Detector
         self.results['detector'] = dict()
         self.results['detector']['curved'] = self._parameters['curved_detector']
-        if self._parameters['field_of_view'] is None:
+        if self._parameters['field_of_view'] is not None and \
+                self._parameters['pixel_size'] is not None:
             self.results['detector']['width'] = \
                 self._parameters['field_of_view'][0] * \
                 self._parameters['pixel_size'] * 1e-3  # [mm]
