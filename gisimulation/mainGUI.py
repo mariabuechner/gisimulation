@@ -2472,7 +2472,7 @@ class giGUI(F.BoxLayout):
 
     def reset_widgets(self):
         """
-        Reset all widgets to 'empty'.
+        Reset all widgets to 'empty'/False.
         """
         logger.info("Resetting widget values...")
 
