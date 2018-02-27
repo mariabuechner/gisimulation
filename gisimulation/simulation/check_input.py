@@ -1010,6 +1010,7 @@ def _check_grating_input(grating, parameters, parser_info, geometry):
                                  parser_info['type_'+grating][0]))
         logger.error(error_message)
         raise InputError(error_message)
+
     # Check grating types for GI setups (optional for geometry calc)
     if parameters['gi_geometry'] != 'free' and not geometry:
         # G0 (abs or mix)
@@ -1126,10 +1127,11 @@ def _check_grating_input(grating, parameters, parser_info, geometry):
                                               parameters['look_up_table'])
         else:
             # GI setup
-            # Either phase G1 or phase G2 (for dual phase)
+            # Either phase G1 (normal and dual phase) or
+            # phase G2 (for dual phase)
             if not parameters['phase_shift_'+grating]:
                 error_message = ("Phase shift ({0}) of {1} "
-                                 "must be defined."
+                                 "must be defined as pi or pi/2."
                                  .format(parser_info['phase_shift_'+grating]
                                          [0],
                                          grating.upper()))
@@ -1219,6 +1221,12 @@ def _check_grating_input(grating, parameters, parser_info, geometry):
                                              grating.upper()))
                     logger.error(error_message)
                     raise InputError(error_message)
+                if parameters['phase_shift_'+grating]:
+                    # Phase as well
+                    warning_message = ("Thickness AND phase shift of {0} are "
+                                       "defined. Basing calculations on "
+                                       "thickness.".format(grating.upper()))
+                    logger.warn(warning_message)
                 # Calc phase shift
                 parameters['phase_shift_'+grating] = \
                     materials.height_to_shift(parameters
@@ -1231,7 +1239,7 @@ def _check_grating_input(grating, parameters, parser_info, geometry):
                                               source=
                                               parameters['look_up_table'])
             else:
-                # G1 or G2 if dual phase
+                # G1 (normal and dual phase) or G2 if dual phase
                 if not parameters['phase_shift_'+grating]:
                     error_message = ("Phase shift ({0}) of {1} "
                                      "must be defined."
@@ -1240,6 +1248,12 @@ def _check_grating_input(grating, parameters, parser_info, geometry):
                                              grating.upper()))
                     logger.error(error_message)
                     raise InputError(error_message)
+                if parameters['phase_shift_'+grating]:
+                    # Phase as well
+                    warning_message = ("Thickness AND phase shift of {0} are "
+                                       "defined. Basing calculations on "
+                                       "thickness.".format(grating.upper()))
+                    logger.warn(warning_message)
                 # Calc thickness
                 parameters['thickness_'+grating] = \
                     materials.shift_to_height(parameters

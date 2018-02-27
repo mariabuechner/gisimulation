@@ -1984,7 +1984,8 @@ class giGUI(F.BoxLayout):
 
     def on_grating_type(self, grating):
         """
-        Manage phase input options based on set grating type.
+        Manage phase/thickness input options based on set grating type and
+        selected geometries.
 
         Parameters
         ==========
@@ -2001,9 +2002,15 @@ class giGUI(F.BoxLayout):
                                .format(self.ids['type_'+grating].values))
             logger.warning(warning_message)
             self.ids['type_'+grating].text = ''
+
         # Abs grating: reset phase input
         if self.ids['type_'+grating].text == 'abs':
             self.ids['phase_shift_'+grating].text = ''
+            self.ids['phase_shift_'+grating+'_options'].text = ''
+#        # Phase gratings
+#        if self.ids['type_'+grating].text == 'phase':
+#            if grating == 'g0':
+
 
         # If type is set, activate grating
         if self.ids['type_'+grating].text != '':

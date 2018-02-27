@@ -541,7 +541,7 @@
                                                                 help_message: parser_info['thickness_g0'][1]
                                                             FloatInput:
                                                                 id: thickness_g0
-                                                                disabled: phase_shift_g0.text or gi_geometry.text != 'free'
+                                                                disabled: phase_shift_g0.text
                                                                 on_text: root.on_grating_thickness('g0')
                                                         BoxLayout:
                                                             LabelHelp:
@@ -552,11 +552,11 @@
                                                                 size_hint_x: num_input_size*1.2
                                                                 values: ['pi', 'pi/2']
                                                                 on_text: root.on_phase_shift_spinner('g0')
-                                                                disabled: type_g0.text == 'abs'
+                                                                disabled: type_g0.text == 'abs' or thickness_g0.text or (type_g0.text == 'mix' and gi_geometry.text != 'free')
                                                             FloatInput:
                                                                 id: phase_shift_g0
                                                                 size_hint_x: num_input_size*1.35
-                                                                disabled: thickness_g0.text or type_g0.text == 'abs' or gi_geometry.text != 'free'
+                                                                disabled: type_g0.text == 'abs' or thickness_g0.text or (type_g0.text == 'mix' and gi_geometry.text != 'free')
                                                                 on_text: root.on_phase_shift('g0')
                                                         BoxLayout:
                                                             LabelHelp:
@@ -657,7 +657,7 @@
                                                                 help_message: parser_info['thickness_g1'][1]
                                                             FloatInput:
                                                                 id: thickness_g1
-                                                                disabled: phase_shift_g1.text or gi_geometry.text != 'free'
+                                                                disabled: phase_shift_g1.text or (type_g1.text in ['mix', 'phase'] and gi_geometry.text != 'free')
                                                                 on_text: root.on_grating_thickness('g1')
                                                         BoxLayout:
                                                             LabelHelp:
@@ -668,11 +668,11 @@
                                                                 size_hint_x: num_input_size*1.2
                                                                 values: ['pi', 'pi/2']
                                                                 on_text: root.on_phase_shift_spinner('g1')
-                                                                disabled: type_g1.text == 'abs'
+                                                                disabled: type_g1.text == 'abs' or thickness_g1.text
                                                             FloatInput:
                                                                 id: phase_shift_g1
                                                                 size_hint_x: num_input_size*1.35
-                                                                disabled: thickness_g1.text or type_g1.text == 'abs' or gi_geometry.text != 'free'
+                                                                disabled: type_g1.text == 'abs' or thickness_g1.text or (type_g1.text in ['mix', 'phase'] and gi_geometry.text != 'free')
                                                                 on_text: root.on_phase_shift('g1')
                                                         BoxLayout:
                                                             LabelHelp:
@@ -773,7 +773,7 @@
                                                                 help_message: parser_info['thickness_g2'][1]
                                                             FloatInput:
                                                                 id: thickness_g2
-                                                                disabled: phase_shift_g2.text or gi_geometry.text != 'free'
+                                                                disabled: phase_shift_g2.text or dual_phase.active
                                                                 on_text: root.on_grating_thickness('g2')
                                                         BoxLayout:
                                                             LabelHelp:
@@ -784,11 +784,11 @@
                                                                 size_hint_x: num_input_size*1.2
                                                                 values: ['pi', 'pi/2']
                                                                 on_text: root.on_phase_shift_spinner('g2')
-                                                                disabled: type_g2.text == 'abs'
+                                                                disabled: type_g2.text == 'abs' or thickness_g2.text or (type_g2.text == 'mix' and gi_geometry.text != 'free' and not dual_phase.active)
                                                             FloatInput:
                                                                 id: phase_shift_g2
                                                                 size_hint_x: num_input_size*1.35
-                                                                disabled: thickness_g2.text or type_g2.text == 'abs' or gi_geometry.text != 'free'
+                                                                disabled: type_g2.text == 'abs' or thickness_g2.text or (type_g2.text == 'mix' and gi_geometry.text != 'free') or dual_phase.active
                                                                 on_text: root.on_phase_shift('g2')
                                                         BoxLayout:
                                                             LabelHelp:
