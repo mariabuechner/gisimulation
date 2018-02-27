@@ -75,9 +75,9 @@
 
 # All FloatInputs and IntInputs cannot accept 0 values
 <FloatInput>:
-    on_text: self.text = '' if self.text == '0' else self.text
+    on_text: if self.text == '0': self.text = ''
 <IntInput>:
-    on_text: self.text = '' if self.text == '0' else self.text
+    on_text: if self.text == '0': self.text = ''
 
 <MenuSpinnerButton>:
     background_color: dark_red_button
@@ -329,7 +329,7 @@
                                                 TextInput:
                                                     id: spectrum_file_name
                                                     text: ntpath.basename(root.spectrum_file_path)
-                                                    on_text: root.spectrum_file_path = '' if self.text == '' else root.spectrum_file_path
+                                                    on_text: if self.text == '': root.spectrum_file_path = ''
                                                     background_disabled_normal: self.background_normal
                                                     disabled_foreground_color: self.foreground_color
                                                     disabled: True
@@ -399,7 +399,7 @@
                                                     id: detector_type
                                                     text: 'photon'
                                                     values: ['photon', 'conv']
-                                                    on_text: self.text = 'photon' if self.text not in self.values else self.text
+                                                    on_text: if self.text not in self.values: self.text = 'photon'
                                             BoxLayout:
                                                 disabled: detector_type.text == 'photon'
                                                 LabelHelp:
@@ -461,7 +461,7 @@
                                                 id: fixed_grating
                                                 text: 'Choose fixed grating...'
                                                 values: root.available_gratings
-                                                on_text: self.text = 'Choose fixed grating...' if (self.text not in self.values and self.text != 'Choose fixed grating...') else self.text
+                                                on_text: if (self.text not in self.values and self.text != 'Choose fixed grating...'): self.text = 'Choose fixed grating...'
                                         BoxLayout:
                                             orientation: 'vertical'
                                             size_hint_y: None
@@ -880,7 +880,7 @@
                                         id: sample_shape
                                         text: ''
                                         values: ['circular']
-                                        on_text: self.text = '' if self.text not in self.values else self.text
+                                        on_text: if self.text not in self.values: self.text = ''
                                     LabelHelp:
                                         id: sample_diameter_label
                                         text: 'Sample diameter [mm]'
