@@ -1,111 +1,12 @@
 """
 Module to run grating interferometer simulation and metrics calculation
 
-    System geometry
-    ==========
-
-    (0, 0, 0) point at source, detector center in (0, 0, z_d) ...
-
-    Parameters
-    ==========
-
-    General:
-        '--verbose', '-v':              flag for verbosity level of logger
-        beam_geometry [string]:         'cone' (default), 'parallel'
-        geometry [string]:              'sym' (default), 'conv', 'inv', 'free'
-        @file.txt                       parse from txt file.
-                                        Can use multiple files, in case of
-                                        double entries, the last file
-                                        overwrites the previous one(s).
-                                        be overwritten afterwards in command
-                                        line.
-                                        File layout:
-                                        ArgName1
-                                        ArgValue1
-                                        ArgName2
-                                        ArgValue2
-                                            .
-                                            .
-                                            .
-                                        Example:
-                                        -sr
-                                        100
-                                        -p0
-                                        2.4
-                                         .
-                                         .
-                                         .
-
-    Grating interferometer:
-        G0:
-            type_g0 [string]
-            pitch_g0 [um]
-            material_g0 [string]
-            thickness_g0 [um]
-            phase_shift_g0 [rad]
-            wafer_material_g0 [string]
-            wafer_thickness_g0 [um]
-            fill_material_g0 [string]
-            fill_thickness_g0 [um]
-        G1:
-            type_g1 [string]:           'mix' (default), 'phase', 'abs'
-            pitch_g1 [um]
-            material_g1 [string]
-            thickness_g1 [um]
-            phase_shift_g1 [rad]        PI (default)
-            wafer_material_g1 [string]
-            wafer_thickness_g1 [um]
-            fill_material_g1 [string]
-            fill_thickness_g1 [um]
-        G2:
-            type_g2 [string]:           'mix' (default), 'phase', 'abs'
-            pitch_g2 [um]
-            material_g2 [string]
-            thickness_g2 [um]
-            phase_shift_g2 [rad]
-            wafer_material_g2 [string]
-            wafer_thickness_g2 [um]
-            fill_material_g2 [string]
-            fill_thickness_g2 [um]
-        Talbot order
-
-        distance_source2grating [mm]
-            (to G1 or G0, if defined)
-        distance_G2_detector [mm]
-
-    Detector:
-        pixel_size [um] (square)
-        detector_size [#x-pixel, #y-pixel] [int, int]
-            (FOV)
-        detector_material [string]
-            (if not defined, assume 100% efficiency)
-        detector_thickness [um]
-
-    Source:
-        focal_spot_size [um]:           0 (default)
-            (if 0, infinite source size)
-
-    Spectrum:
-        design_energy [keV]
-        spectrum [string]:              path to file
-
-    Calculations:
-        sampling_rate [um]:             0 (default)
-            (if 0, pixel_size * 1e1-4)
-
-    Returns
-    =======
-
-    Notes
-    =====
-
-    0 or '' indicated not-defined or non-existent component
-
 @author: buechner_m <maria.buechner@gmail.com>
 """
 import logging
 import numpy as np
 import sys
+import os
 # gisimulation modules
 import simulation.utilities as utilities
 import simulation.parser_def as parser_def
@@ -119,8 +20,124 @@ logger = logging.getLogger(__name__)
 # %% Constants
 NUMERICAL_TYPE = np.float
 
-# %% Main
+# %% Functions
 
+def collect_input(parameters, parser_info):
+    """
+    Selects only input parameters defined in parser from all available
+    parameters.
+
+    Parameters
+    ==========
+
+    parameters [dict]:      parameters[var_name] = value
+    ids [dict]:             ids[var_name] = var_value
+    parser_info [dict]:     parser_info[var_name] = [var_key, var_help]
+
+    Returns
+    =======
+
+    input_parameters [dict]:    input_parameters[var_key] = var_value
+
+    """
+    # Select input parameters to save
+    logger.debug("Collecting all paramters to save...")
+    input_parameters = dict()
+    variables = [(var_name, var_value) for var_name, var_value
+                 in parameters.iteritems()
+                 if (var_name in parser_info and var_value is not None)]
+    for var_name, var_value in variables:
+        var_key = parser_info[var_name][0]
+        input_parameters[var_key] = var_value
+    # Save at save_input_file_path (=value)
+    logger.debug('... done.')
+
+    return input_parameters
+
+
+def save_input(input_file_path, input_parameters, overwrite=False):
+    """
+    Save string parameter keys and values (as strings) to input file.
+
+    Parameters
+    ==========
+
+    input_file_path [str]:      file path to (nes) input file, including name.
+    input_parameters [dict]:    input_parameters['var_key'] = var_value
+    overwrite [boolean]:        force overwrite without promt (when called
+                                from GUI)
+
+    Notes
+    =====
+
+    Skip false flags (--)
+    Only save var_key if true flags
+
+    """
+    continue_ = True
+    if os.path.isfile(input_file_path) and not overwrite:
+        # File exists, promt decision
+        logger.warning("File '{0}' already exists!".format(input_file_path))
+        continue_ = _overwrite_file("File '{0}' already exists! Do you want "
+                                    "to overwrite it?".format(input_file_path))
+    if continue_ or overwrite:
+        logger.info("Overwriting file...")
+        with open(input_file_path, 'w') as f:
+            for var_key, value in input_parameters.iteritems():
+                if value is not False:
+                    f.writelines(var_key+'\n')
+                    if type(value) is np.ndarray:  # For FOV and Range
+                        f.writelines(str(value[0])+'\n')
+                        f.writelines(str(value[1])+'\n')
+                    elif value is not True:
+                        f.writelines(str(value)+'\n')
+        logger.info("... done.")
+    else:
+        logger.info("Do not overwrite, abort save.")
+        logger.warning("Input paramters are NOT saved.")
+
+def _overwrite_file(message, default_answer='n'):
+    """
+    Promt user to enter y [yes] or n [n] when potentially overwriting a file.
+    Default answer is n [no]. Returns bool to continue or not.
+
+    Parameters
+    ==========
+
+    message [str]
+    default_answer [str] (default: n [no], if user hits enter)
+
+    Returns
+    =======
+
+    [boolean]:      True if continue and overwrite
+
+    """
+    valid = {"y": True, "n": False}
+    if default_answer is None:
+        prompt = " [y/n] "
+    elif default_answer == "y":
+        prompt = " [Y/n] "
+    elif default_answer == "n":
+        prompt = " [y/N] "
+    else:
+        default_answer = 'n'
+        prompt = " [y/N] "
+        logger.warning("Invalid default answer, setting to 'n' [no].")
+
+    while True:
+        sys.stdout.write(message + prompt)
+        answer = raw_input().lower()
+        if default_answer is not None and answer == '':
+            return valid[default_answer]
+        elif answer in valid:
+            return valid[answer]
+        else:
+            sys.stdout.write("Please choose 'y' [yes] or 'n' [no].\n")
+
+
+
+# %% Main
 
 if __name__ == '__main__':
     # Parse from command line
@@ -154,9 +171,6 @@ if __name__ == '__main__':
     parser_info = parser_def.get_arguments_info(parser)
 
     # Check input
-#    for key, value in sorted(parameters.iteritems()):
-#        print key, value
-
     try:
         logger.info("Checking parsed arguments...")
         parameters = check_input.check_parser(parameters)
@@ -169,13 +183,5 @@ if __name__ == '__main__':
     gi_geometry = geometry.Geometry(parameters)
     parameters = gi_geometry.update_parameters()
 
-#    # Check sample position
-#    try:
-#        logger.info("Checking sample position...")
-#        parameters = check_input.check_sample(geometry)
-#        logger.info("... done.")
-#    except check_input.InputError:
-#        logger.info("Sample conflict, exiting...")
-#        sys.exit(2)  # 2: command line syntax errors
 
 

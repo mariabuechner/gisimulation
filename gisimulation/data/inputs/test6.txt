@@ -1,4 +1,10 @@
--gi
-sym
+-bg
+parallel
+-lut
+NIST
 -sps
 1.0
+-gi
+free
+-dt
+photon

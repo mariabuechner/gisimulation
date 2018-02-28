@@ -41,6 +41,7 @@ logging.Logger.manager.root = Logger  # Makes Kivy Logger root for all
 logger = logging.getLogger(__name__)
 
 # gisimulation imports
+from main import collect_input, save_input
 import simulation.parser_def as parser_def
 import simulation.utilities as utilities
 import simulation.check_input as check_input
@@ -739,7 +740,9 @@ class _ContinueCancelPopupWindow():
 
 
 # #############################################################################
-# Input management # ##########################################################
+# Input and results management ################################################
+
+# Input
 def _load_input_file(input_file_path):
     """
     Load string parameter keys and string values from input file.
@@ -783,40 +786,21 @@ def _load_input_file(input_file_path):
         logger.debug('Storing {0}.'.format(value))
     return input_parameters
 
-
-def _save_input_file(input_file_path, input_parameters):
+# Results
+def _load_results_file(results_file_path):
     """
-    Save string parameter keys and values (as strings) to input file.
-
-    Parameters
-    ==========
-
-    input_file_path [str]:      file path to (nes) input file, including name.
-    input_parameters [dict]:    input_parameters['var_key'] = var_value
-
-    Returns
-    =======
-
-    input_parameters [dict]:    input_parameters['var_key'] = var_value
-
-    Notes
-    =====
-
-    Skip false flags (--)
-    Only save var_key if true flags
-
     """
-    with open(input_file_path, 'w') as f:
-        for var_key, value in input_parameters.iteritems():
-            if value is not False:
-                f.writelines(var_key+'\n')
-                if type(value) is np.ndarray:  # For FOV and Range
-                    f.writelines(str(value[0])+'\n')
-                    f.writelines(str(value[1])+'\n')
-                elif value is not True:
-                    f.writelines(str(value)+'\n')
+    logger.info('LOADING RESULTS!!!')
+    logger.info(results_file_path)
 
+def _save_results_file(results_file_path, results):
+    """
+    """
+    logger.info('SAVING RESULTS!!!')
+    logger.info(results_file_path)
 
+# #############################################################################
+# Collect widgets #############################################################
 def _collect_widgets(parameters, ids):
     """
     Converts self.ids from widget to dict, thus setting parameters based in
@@ -937,8 +921,7 @@ def _collect_widgets(parameters, ids):
 
 def _collect_input(parameters, ids, parser_info):
     """
-    Selects only input parameters defined in parser from all available
-    parameters.
+    Collects input after updating parameters.
 
     Parameters
     ==========
@@ -956,17 +939,7 @@ def _collect_input(parameters, ids, parser_info):
     # Update parameters
     _collect_widgets(parameters, ids)
 
-    # Select input parameters to save
-    logger.debug("Collecting all paramters to save...")
-    input_parameters = dict()
-    variables = [(var_name, var_value) for var_name, var_value
-                 in parameters.iteritems()
-                 if (var_name in parser_info and var_value is not None)]
-    for var_name, var_value in variables:
-        var_key = parser_info[var_name][0]
-        input_parameters[var_key] = var_value
-    # Save at save_input_file_path (=value)
-    logger.debug('... done.')
+    input_parameters = collect_input(parameters, parser_info)
 
     return input_parameters
 
@@ -1021,6 +994,8 @@ class giGUI(F.BoxLayout):
     spectrum_file_loaded = F.BooleanProperty(defaultvalue=False)
     load_input_file_paths = F.ListProperty()
     save_input_file_path = F.StringProperty()
+    load_results_file_path = F.ListProperty()
+    save_results_file_path = F.StringProperty()
 
     setup_components = F.ListProperty()  # List of all components in the setup
     sample_added = False
@@ -1041,6 +1016,7 @@ class giGUI(F.BoxLayout):
         # Init geometry result dictionaries
         self.results = dict()
         self.results['geometry'] = dict()
+        self.results['input'] = dict()
 
         # Components trackers (needed for immediate update in GUI, since
         # parameters...components... is set later)
@@ -1398,6 +1374,7 @@ class giGUI(F.BoxLayout):
 
     # File I/O ################################################################
 
+    # Spectrum
     def on_spectrum_file_path(self, instance, value):
         """
         When spectrum_file_path changes, set parameters and update load status.
@@ -1410,6 +1387,7 @@ class giGUI(F.BoxLayout):
             self.spectrum_file_loaded = False
             self.parameters['spectrum_file'] = None
 
+    # Input
     def on_load_input_file_paths(self, instance, value):
         """
         When load_input_file_paths changes, laod keys and values from all files
@@ -1451,7 +1429,7 @@ class giGUI(F.BoxLayout):
 
         If file exists:             Popup to ask to 'continue' or 'cancel',
                                     give following functions to popup:
-                                    _save_input_file:       overwrite
+                                    save_input:             overwrite
                                     self.overwrite_save:    overwrite_finish
                                     self.cancel_save:       cancel_finish
 
@@ -1467,21 +1445,22 @@ class giGUI(F.BoxLayout):
                 logger.warning("File '{0}' already exists!".format(value))
                 WarningDisplay("File already exists!",
                                "Do you want to overwrite it?",
-                               partial(_save_input_file,
+                               partial(save_input,
                                        value,
-                                       input_parameters),
-                               self.overwrite_save,
-                               self.cancel_save)
+                                       input_parameters,
+                                       True),
+                               self.overwrite_input_save,
+                               self.cancel_input_save)
             else:
                 # File new
-                _save_input_file(value, input_parameters)
+                save_input(value, input_parameters, True)
                 logger.info('... done.')
                 self.dismiss_popup()
                 self.save_input_file_path = ''
 
-    def overwrite_save(self):
+    def overwrite_input_save(self):
         """
-        Finish action if file is overwritten.
+        Finish action if input is overwritten.
 
         Notes
         =====
@@ -1492,9 +1471,9 @@ class giGUI(F.BoxLayout):
         self.dismiss_popup()
         self.save_input_file_path = ''
 
-    def cancel_save(self):
+    def cancel_input_save(self):
         """
-        Finish action if file saving is canceled (do not overwrite).
+        Finish action if input saving is canceled (do not overwrite).
 
         Notes
         =====
@@ -1504,6 +1483,87 @@ class giGUI(F.BoxLayout):
         """
         self.save_input_file_path = ''
 
+    # Results
+    def on_load_results_file_path(self, instance, value):
+        """
+        When load_results_file_path changes, ... .
+        Update widget content accordingly.
+
+        """
+        if value:
+            logger.info("Loading results file...")
+            self.results = _load_results_file(value)
+            # Set widget content (TODO)
+            # inputs and results, via _set_widgets??? (like load input)???
+            logger.info('... done.')
+
+        # Reset load_results_file_path to allow loading of same file
+        self.load_results_file_path = ''
+
+    def on_save_results_file_path(self, instance, value):
+        """
+        When save_results_file_path changes, ... .
+
+        Notes
+        =====
+
+        If file exists:             Popup to ask to 'continue' or 'cancel',
+                                    give following functions to popup:
+                                    _save_results_file:
+                                        overwrite
+                                    self.overwrite_results_save:
+                                        overwrite_finish
+                                    self.cancel_results_save:
+                                        cancel_finish
+
+        Reset save_results_file_path to '' to allow next save at same file.
+
+        """
+        if self.save_results_file_path != '':  # e.g. after reset.
+            logger.info("Saving results to file...")
+            if os.path.isfile(value):
+                # File exists
+                logger.warning("File '{0}' already exists!".format(value))
+                WarningDisplay("File already exists!",
+                               "Do you want to overwrite it?",
+                               partial(_save_results_file,
+                                       value,
+                                       self.results),
+                               self.overwrite_results_save,
+                               self.cancel_results_save)
+            else:
+                # File new
+                _save_results_file(value, self.results)
+                logger.info('... done.')
+                self.dismiss_popup()
+                self.save_results_file_path = ''
+
+    def overwrite_results_save(self):
+        """
+        Finish action if file is overwritten.
+
+        Notes
+        =====
+
+        Reset sav_results_file_path to '' to allow next save at same file.
+
+        """
+        self.dismiss_popup()
+        self.save_results_file_path = ''
+
+    def cancel_results_save(self):
+        """
+        Finish action if results saving is canceled (do not overwrite).
+
+        Notes
+        =====
+
+        Reset save_results_file_path to '' to allow next save at same file.
+
+        """
+        self.save_results_file_path = ''
+
+    # General
     def dismiss_popup(self):
         """
         Dismisses current self._popup.
@@ -1518,7 +1578,6 @@ class giGUI(F.BoxLayout):
         self.dismiss_popup()
 
     # Spectrum
-
     def show_spectrum_load(self):
         """
         Open popup with FileBrowser to load spectrum_file_path.
@@ -1556,9 +1615,10 @@ class giGUI(F.BoxLayout):
 
     # Input file
 
+    # Loading
     def show_input_load(self):
         """
-        Open popup with file browser to load input file location.
+        Open popup with file browser to select input file location.
 
         Notes
         =====
@@ -1592,21 +1652,22 @@ class giGUI(F.BoxLayout):
                      .format(len(self.load_input_file_paths)))
         self.dismiss_popup()
 
+    # Saving
     def show_input_save(self):
         """
-        Open popup with file browser to save input file.
+        Open popup with file browser to select save input file path.
 
         Notes
         =====
 
-        Default path:               ./data/
+        Default path:               ./data/inputs/
         Available file extentions:  [*.txt']
 
         """
         # Define browser
         input_path = os.path.join(os.path.dirname(os.path.
                                                   realpath(__file__)),
-                                  'data')
+                                  'data', 'inputs')
         browser = FileBrowser(select_string='Save',
                               path=input_path,  # Folder to open at start
                               filters=['*.txt'])
@@ -1647,11 +1708,96 @@ class giGUI(F.BoxLayout):
 
     # Results
 
-    def load_results(self):
-        logger.info("Loading results...")
+    # Loading
+    def show_results_load(self):
+        """
+        Open popup with file browser to select results file location.
 
-    def save_results(self):
-        logger.info("Saving results...")
+        Notes
+        =====
+
+        Default path:               ./data/results/
+        Available file extentions:  [*.mat']
+
+        Accept only one file!
+
+        """
+        # Define browser
+        results_path = os.path.join(os.path.dirname(os.path.
+                                                   realpath(__file__)),
+                                    'data', 'results')
+        browser = FileBrowser(select_string='Select',
+                              multiselect=False,
+                              path=results_path,  # Folder to open at start
+                              filters=['*.mat'])
+        browser.bind(on_success=self._results_load_fbrowser_success,
+                     on_canceled=self._fbrowser_canceled)
+
+        # Add to popup
+        self._popup = F.Popup(title="Load results file", content=browser,
+                              size_hint=FILE_BROWSER_SIZE)
+        self._popup.open()
+
+    def _results_load_fbrowser_success(self, instance):
+        """
+        On results file path selection, store and close FileBrowser.
+        """
+        self.load_results_file_path = instance.selection
+        self.dismiss_popup()
+
+    # Saving
+    def show_results_save(self):
+        """
+        Open popup with file browser to select save results file path.
+
+        Notes
+        =====
+
+        Default path:               ./data/results/
+        Available file extentions:  [*.mat']
+
+        """
+        # Define browser
+        results_path = os.path.join(os.path.dirname(os.path.
+                                                    realpath(__file__)),
+                                  'data', 'results')
+        browser = FileBrowser(select_string='Save',
+                              path=results_path,  # Folder to open at start
+                              filters=['*.mat'])
+        browser.bind(on_success=self._results_save_fbrowser_success,
+                     on_canceled=self._fbrowser_canceled)
+
+        # Add to popup
+        self._popup = F.Popup(title="Save results file", content=browser,
+                              size_hint=FILE_BROWSER_SIZE)
+        self._popup.open()
+
+    def _results_save_fbrowser_success(self, instance):
+        """
+        On results file path selection, save to file and close FileBrowser.
+        """
+        filename = instance.filename
+        # Check extension
+        if filename.split('.')[-1] == instance.filters[0].split('.')[-1]:
+            # Correct extention
+            file_path = os.path.join(instance.path, filename)
+        elif filename.split('.')[-1] == '':
+            # Just '.' set
+            file_path = os.path.join(instance.path, filename+'mat')
+        elif filename.split('.')[-1] == filename:
+            # Not extention set
+            file_path = os.path.join(instance.path, filename+'.mat')
+        else:
+            # Wrong file extention
+            error_message = ("results file must be of type '{0}'"
+                             .format(instance.filters[0]))
+            logger.error(error_message)
+            ErrorDisplay('Saving results file: Wrong file extention.',
+                         error_message)
+            return
+        logger.debug("Save results to file: {0}"
+                     .format(file_path))
+        self.save_results_file_path = file_path
 
     # Menu spinners ###########################################################
 
@@ -1665,7 +1811,7 @@ class giGUI(F.BoxLayout):
         if selected == 'Input file...':
             self.show_input_load()
         elif selected == 'Results...':
-            self.load_results()
+            self.show_results_load()
     def on_save_spinner(self, spinner):
         """
         On save_spinner change, keep text the same and call respective
@@ -1676,7 +1822,7 @@ class giGUI(F.BoxLayout):
         if selected == 'Input file...':
             self.show_input_save()
         elif selected == 'Results...':
-            self.save_results()
+            self.show_results_save()
 
     def on_help_spinner(self, spinner):
         """
