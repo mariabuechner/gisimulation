@@ -1647,11 +1647,25 @@ class giGUI(F.BoxLayout):
 
     # Results
 
+    def load_results(self):
+        logger.info("Loading results...")
+
     def save_results(self):
         logger.info("Saving results...")
 
     # Menu spinners ###########################################################
 
+    def on_load_spinner(self, spinner):
+        """
+        On load_spinner change, keep text the same and call respective
+        functions to execute.
+        """
+        selected = spinner.text
+        spinner.text = 'Load...'
+        if selected == 'Input file...':
+            self.show_input_load()
+        elif selected == 'Results...':
+            self.load_results()
     def on_save_spinner(self, spinner):
         """
         On save_spinner change, keep text the same and call respective
