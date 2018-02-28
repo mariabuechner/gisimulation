@@ -41,7 +41,7 @@ logging.Logger.manager.root = Logger  # Makes Kivy Logger root for all
 logger = logging.getLogger(__name__)
 
 # gisimulation imports
-from main import collect_input, save_input
+from main import collect_input, save_input, save_results
 import simulation.parser_def as parser_def
 import simulation.utilities as utilities
 import simulation.check_input as check_input
@@ -793,9 +793,7 @@ def _load_results_dir(results_dir_path):
 def _save_results_dir(results_dir_path, results, bool_):
     """
     """
-    logger.info('SAVING RESULTS!!!')
-    logger.info(results_dir_path)
-
+    save_results(results_dir_path, results, overwrite=True)
 
 # #############################################################################
 # Collect widgets #############################################################
@@ -1393,6 +1391,7 @@ class giGUI(F.BoxLayout):
             # Do for all files in load_input_file_paths and merge results.
             # Later files overwrite first files.
             for input_file in value:
+                input_file = os.path.normpath(input_file)
                 logger.info("Loading input from file at: {0}"
                             .format(input_file))
                 input_parameters = _load_input_file(input_file)
@@ -1697,7 +1696,7 @@ class giGUI(F.BoxLayout):
             return
         logger.debug("Save input to file: {0}"
                      .format(file_path))
-        self.save_input_file_path = file_path
+        self.save_input_file_path = os.path.normpath(file_path)
 
     # Results
 
@@ -1776,7 +1775,7 @@ class giGUI(F.BoxLayout):
         """
         foldername = instance.filename
         folder_path = os.path.join(instance.path, foldername)
-        self.save_results_dir_path = folder_path
+        self.save_results_dir_path = os.path.normpath(folder_path)
 
     def _list_directories(self, directory, filename):
         return os.path.isdir(os.path.join(directory, filename))

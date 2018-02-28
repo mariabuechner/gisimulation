@@ -5,8 +5,10 @@ Module to run grating interferometer simulation and metrics calculation
 """
 import logging
 import numpy as np
+import scipy.io
 import sys
-import os
+import os.path
+import shutil
 # gisimulation modules
 import simulation.utilities as utilities
 import simulation.parser_def as parser_def
@@ -19,6 +21,10 @@ logger = logging.getLogger(__name__)
 
 # %% Constants
 NUMERICAL_TYPE = np.float
+
+# %% Global variable
+complete_dictionary = dict()  # for unnesting dictionaries in dictionary
+
 
 # %% Functions
 
@@ -81,7 +87,7 @@ def save_input(input_file_path, input_parameters, overwrite=False):
         continue_ = _overwrite_file("File '{0}' already exists! Do you want "
                                     "to overwrite it?".format(input_file_path))
     if continue_ or overwrite:
-        logger.info("Overwriting file...")
+        logger.info("Writing input file...")
         with open(input_file_path, 'w') as f:
             for var_key, value in input_parameters.iteritems():
                 if value is not False:
@@ -96,56 +102,84 @@ def save_input(input_file_path, input_parameters, overwrite=False):
         logger.info("Do not overwrite, abort save.")
         logger.warning("Input paramters are NOT saved.")
 
-#def save_results(results_dir_path, results, overwrite=False):
-#    """
-#    Save results dict to results .mat file.
-#
-#    Parameters
-#    ==========
-#
-#    results_dir_path [str]:    file path to results file, including name and
-#                                .mat
-#    results [dict]
-#    overwrite [boolean]:        force overwrite without promt (when called
-#                                from GUI)
-#
-#    Notes
-#    =====
-#
-#    results_dir_path:  path/file_name.mat
-#
-#    Structure results:
-#        results['input'] = dict of input parameters
-#        results['geometry'] = dict of geom dicts or parameters
-#        results[...] = dict of ...
-#
-#    Save as:
-#
-#
-#
-#    """
-#    continue_ = True
-#    if os.path.isdir(results_dir_path) and not overwrite:
-#        # File exists, promt decision
-#        logger.warning("File '{0}' already exists!".format(results_file_path))
-#        continue_ = _overwrite_file("Folder '{0}' already exists! Do you want "
-#                                    "to overwrite it?"
-#                                    .format(results_file_path))
-#    if continue_ or overwrite:
-#        logger.info("Overwriting file...")
-##        with open(results_file_path, 'w') as f:
-##            for var_key, value in input_parameters.iteritems():
-##                if value is not False:
-##                    f.writelines(var_key+'\n')
-##                    if type(value) is np.ndarray:  # For FOV and Range
-##                        f.writelines(str(value[0])+'\n')
-##                        f.writelines(str(value[1])+'\n')
-##                    elif value is not True:
-##                        f.writelines(str(value)+'\n')
-#        logger.info("... done.")
-#    else:
-#        logger.info("Do not overwrite, abort save.")
-#        logger.warning("Results paramters are NOT saved.")
+
+def save_results(results_dir_path, results, overwrite=False):
+    """
+    Save results dict to folder.
+
+    Parameters
+    ==========
+
+    results_dir_path [str]:    folder path to store /mat files in
+    results [dict]
+    overwrite [boolean]:        force overwrite without promt (when called
+                                from GUI)
+
+    Notes
+    =====
+
+    results_dir_path:  path/folder_name
+
+    Structure results:
+        results['input'] = dict of input parameters
+        results['geometry'] = dict of geom dicts or parameters
+        results[...] = dict of ...
+
+    Save as: at path/
+        - folder name
+            - input dict as foldername.text (via save_input)
+            - geometry.mat: all keys/values from all sub dicts (here: geometry)
+
+
+
+    """
+    continue_ = True
+    if os.path.isdir(results_dir_path) and not overwrite:
+        # File exists, promt decision
+        logger.warning("Folder '{0}' already exists!".format(results_dir_path))
+        continue_ = _overwrite_file("Folder '{0}' already exists! Do you want "
+                                    "to overwrite it?"
+                                    .format(results_dir_path))
+    if continue_ or overwrite:
+        # Delete existing folder
+        shutil.rmtree(results_dir_path, ignore_errors=True)
+
+        logger.info("Writing results folder...")
+        os.makedirs(results_dir_path)
+
+        global complete_dictionary
+        for sub_dict_name in results.keys():
+            logger.info('===============')
+            logger.info(sub_dict_name)
+            if sub_dict_name == 'input':
+                logger.info(results['input'])
+
+                # Save input
+                input_file = os.path.basename(results_dir_path)+'_input.txt'
+                input_file_path = os.path.join(results_dir_path, input_file)
+                save_input(input_file_path, results['input'])
+            else:
+                # Save sub dictionaries in single .mat (from single dict)
+
+                # Fill complete_dictionary with all key/value pairs in nested
+                # dictionaries
+                _unnest_dictionaries(results[sub_dict_name])
+
+                logger.info(complete_dictionary)
+
+                file_path = os.path.join(results_dir_path,
+                                         sub_dict_name+'.mat')
+                scipy.io.savemat(file_path, complete_dictionary)
+
+                # Reset global complete_dictionary
+                complete_dictionary = dict()
+
+
+        logger.info("... done.")
+    else:
+        logger.info("Do not overwrite, abort save.")
+        logger.warning("Results paramters are NOT saved.")
+
 
 def _overwrite_file(message, default_answer='n'):
     """
@@ -187,6 +221,15 @@ def _overwrite_file(message, default_answer='n'):
             sys.stdout.write("Please choose 'y' [yes] or 'n' [no].\n")
 
 
+def _unnest_dictionaries(dictionary):
+    """
+    """
+    global complete_dictionary
+    for key, value in dictionary.iteritems():
+        if isinstance(value, dict):
+            _unnest_dictionaries(value)
+        elif value is not None:  # ignore Nones
+            complete_dictionary[key] = value
 
 # %% Main
 
