@@ -147,7 +147,7 @@ def save_results(results_dir_path, results, overwrite=False):
                 # Save input
                 input_file = os.path.basename(results_dir_path)+'_input.txt'
                 input_file_path = os.path.join(results_dir_path, input_file)
-                save_input(input_file_path, results['input'])
+                save_input(input_file_path, results['input'], True)
             else:
                 # Save sub dictionaries in single .mat (from single dict)
                 file_path = os.path.join(results_dir_path,
