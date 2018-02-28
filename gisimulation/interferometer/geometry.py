@@ -1033,20 +1033,15 @@ class Geometry():
 
         """
         self.results = dict()
-        # To 'Setup'
-        self.results['setup'] = dict()
+
+        # Setup
         # Add component list
-        self.results['setup']['component_list'] = \
-            self._parameters['component_list']
-
+        self.results['component_list'] = self._parameters['component_list']
         # Add geometries
-        self.results['setup']['gi_geometry'] = self._parameters['gi_geometry']
-        self.results['setup']['beam_geometry'] = \
-            self._parameters['beam_geometry']
+        self.results['gi_geometry'] = self._parameters['gi_geometry']
+        self.results['beam_geometry'] = self._parameters['beam_geometry']
 
-        # To 'distances'
-        self.results['distances'] = dict()
-        # Add distances
+        # Distances
         # distances =  [('distance_b', 10), ('distance_a', 10)]
         distances = [(distance_name, distance_value)
                      for distance_name, distance_value
@@ -1054,16 +1049,15 @@ class Geometry():
                      if ('distance_' in distance_name and
                          distance_value is not None)]
         for distance in distances:
-            self.results['distances'][distance[0]] = distance[1]
+            self.results[distance[0]] = distance[1]
 
-        # To 'gratings'
-        self.results['gratings'] = dict()
+        # Gratings
         # Add pitches
         pitches = [(pitch_name, pitch_value) for pitch_name, pitch_value
                    in self._parameters.iteritems()
                    if ('pitch_' in pitch_name and pitch_value is not None)]
         for pitch in pitches:
-            self.results['gratings'][pitch[0]] = pitch[1]
+            self.results[pitch[0]] = pitch[1]
         # Add duty cycles
         duty_cycles = [(duty_cycle_name, duty_cycle_value)
                        for duty_cycle_name, duty_cycle_value
@@ -1071,43 +1065,37 @@ class Geometry():
                        if ('duty_cycle_' in duty_cycle_name and
                            duty_cycle_value is not None)]
         for duty_cycle in duty_cycles:
-            self.results['gratings'][duty_cycle[0]] = duty_cycle[1]
+            self.results[duty_cycle[0]] = duty_cycle[1]
         # Add grating radii
         # if bent: radius not None <=> if straight: radius None
         radii = [(radius_name, radius_value) for radius_name, radius_value
                  in self._parameters.iteritems()
                  if 'radius_' in radius_name]
         for radius in radii:
-            self.results['gratings'][radius[0]] = radius[1]
+            self.results[radius[0]] = radius[1]
 
         # Add sample info
         if 'Sample' in self._parameters['component_list']:
             # If sample defined
-            self.results['sample'] = dict()
-            self.results['sample']['sample_position'] = \
+            self.results['sample_position'] = \
                 self._parameters['sample_position']
-            self.results['sample']['sample_distance'] = \
+            self.results['sample_distance'] = \
                 self._parameters['sample_distance']
-            self.results['sample']['sample_shape'] = \
-                self._parameters['sample_shape']
-            self.results['sample']['sample_diameter'] = \
+            self.results['sample_shape'] = self._parameters['sample_shape']
+            self.results['sample_diameter'] = \
                 self._parameters['sample_diameter']
 
         # Detector
-        self.results['detector'] = dict()
-        self.results['detector']['curved'] = \
-            self._parameters['curved_detector']
+        self.results['curved'] = self._parameters['curved_detector']
         if self._parameters['field_of_view'] is not None and \
                 self._parameters['pixel_size'] is not None:
-            self.results['detector']['width'] = \
-                self._parameters['field_of_view'][0] * \
+            self.results['width'] = self._parameters['field_of_view'][0] * \
                 self._parameters['pixel_size'] * 1e-3  # [mm]
-            self.results['detector']['height'] = \
-                self._parameters['field_of_view'][1] * \
+            self.results['height'] = self._parameters['field_of_view'][1] * \
                 self._parameters['pixel_size'] * 1e-3  # [mm]
-            self.results['detector']['fan_angle'] = 2.0 * \
-                np.arctan(self.results['detector']['width'] / (2.0 *
-                          self.results['distances']['distance_source_detector']))
-            self.results['detector']['cone_angle'] = 2.0 * \
-                np.arctan(self.results['detector']['height'] / (2.0 *
-                          self.results['distances']['distance_source_detector']))
+            self.results['fan_angle'] = 2.0 * \
+                np.arctan(self.results['width'] / (2.0 *
+                          self.results['distance_source_detector']))
+            self.results['cone_angle'] = 2.0 * \
+                np.arctan(self.results['height'] / (2.0 *
+                          self.results['distance_source_detector']))

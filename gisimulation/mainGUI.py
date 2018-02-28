@@ -470,7 +470,7 @@ class GeometryGrid(F.GridLayout):
         pos_x = frame_x0 + x0_offset - width/2.0
         pos_y = frame_y_center - height/2.0
         self.source = G.Ellipse(pos=(pos_x, pos_y), size=(width, height))
-        if geometry_results['setup']['beam_geometry'] == 'cone':
+        if geometry_results['beam_geometry'] == 'cone':
             self.sketch.geometry_group.add(G.Color(1, 1, 0, 0.5))
             self.sketch.geometry_group.add(self.source)
 
@@ -481,7 +481,7 @@ class GeometryGrid(F.GridLayout):
             detector_width/2.0
         detector_pos_y = frame_y_center - detector_height/2.0
 
-        if not geometry_results['detector']['curved']:
+        if not geometry_results['curved']:
             # straight
             self.detector = G.Rectangle(pos=(detector_pos_x, detector_pos_y),
                                         size=(detector_width, detector_height))
@@ -507,7 +507,7 @@ class GeometryGrid(F.GridLayout):
         # Add beam
         width = frame_width - frame_width/10.0 - 10.0
         height = detector_height
-        if geometry_results['setup']['beam_geometry'] == 'parallel':
+        if geometry_results['beam_geometry'] == 'parallel':
             pos_x = self.source.pos[0] + self.source.size[0]/2.0
             pos_y = detector_pos_y
             self.beam = G.Rectangle(pos=(pos_x, pos_y), size=(width, height))
@@ -529,20 +529,20 @@ class GeometryGrid(F.GridLayout):
             (self.source.pos[0] + self.source.size[0]/2.0)  # [points]
         setup_height = detector_height  # [points]
         width_scaling = setup_width / \
-            geometry_results['distances']['distance_source_detector']  # [points]
+            geometry_results['distance_source_detector']  # [points]
         x0_offset = x0_offset + self.source.size[0]/2.0  # [points]
         # Angle for scaling height (only cone beam) (complete angle)
         fan_angle = 2.0 * np.arctan(setup_height / 2.0 / setup_width)
 
         # Add Gratings
         gratings = [grating for grating in
-                    geometry_results['setup']['component_list']
+                    geometry_results['component_list']
                     if "G" in grating]
         for grating in gratings:
 
             width = 2.0  # [points]
 
-            radius = geometry_results['gratings']['radius_'+grating.lower()]
+            radius = geometry_results['radius_'+grating.lower()]
             if radius:
                 # Bent
                 radius = radius * width_scaling  # [points]
@@ -552,7 +552,7 @@ class GeometryGrid(F.GridLayout):
                 pos_y = self.source.pos[1] + self.source.size[1]/2.0
                 # add distance from source-radius to source pos x
                 distance_from_source = \
-                    geometry_results['distances']['distance_source_' +
+                    geometry_results['distance_source_' +
                                                   grating.lower()] * \
                     width_scaling  # [points]
                 pos_x = pos_x + (distance_from_source - radius)
@@ -575,7 +575,7 @@ class GeometryGrid(F.GridLayout):
                 # Straight
                 width = width * 2.0
 
-                pos_x = geometry_results['distances']['distance_source_' +
+                pos_x = geometry_results['distance_source_' +
                                                       grating.lower()]
                 pos_x = pos_x * width_scaling  # [points]
                 pos_x = pos_x - width/2.0 + x0_offset
@@ -592,11 +592,11 @@ class GeometryGrid(F.GridLayout):
         # angle_start/angle_end
 
         # Add sample
-        if 'Sample' in geometry_results['setup']['component_list']:
-            if geometry_results['sample']['sample_shape'] == 'circular':
-                width = geometry_results['sample']['sample_diameter']
+        if 'Sample' in geometry_results['component_list']:
+            if geometry_results['sample_shape'] == 'circular':
+                width = geometry_results['sample_diameter']
                 width = width * width_scaling  # [points]
-                pos_x = geometry_results['distances']['distance_source_sample']
+                pos_x = geometry_results['distance_source_sample']
                 pos_x = pos_x * width_scaling  # [points]
                 pos_x = pos_x - width/2.0 + x0_offset
                 pos_y = frame_y_center - width/2.0
@@ -1205,10 +1205,10 @@ class giGUI(F.BoxLayout):
         """
         self.ids.geometry_sketch.update_geometry(self.results['geometry'])
 
-        component_list = self.results['geometry']['setup']['component_list']
+        component_list = self.results['geometry']['component_list']
 
         # Show gratings results
-        grating_results = self.results['geometry']['gratings'].copy()
+        grating_results = self.results['geometry'].copy()
         gratings = [gratings for gratings
                     in component_list if 'G' in gratings]
         for grating in gratings:
@@ -1239,9 +1239,9 @@ class giGUI(F.BoxLayout):
                                            self.ids.grating_results)
 
         # Show distances
-        distances_results = self.results['geometry']['distances'].copy()
+        distances_results = self.results['geometry'].copy()
 
-        if self.results['geometry']['setup']['gi_geometry'] != 'free':
+        if self.results['geometry']['gi_geometry'] != 'free':
             # Show d, l, s first
             if 'G0' in component_list:
                 start_from = 'G0'
@@ -1329,7 +1329,7 @@ class giGUI(F.BoxLayout):
         if 'Sample' in component_list:
             # Find reference component
             sample_index = component_list.index('Sample')
-            if 'a' in self.results['geometry']['sample']['sample_position']:
+            if 'a' in self.results['geometry']['sample_position']:
                 reference = component_list[sample_index-1]
             else:
                 reference = component_list[sample_index+1]
@@ -1340,7 +1340,7 @@ class giGUI(F.BoxLayout):
             boxlayout = F.BoxLayout()
             boxlayout.add_widget(F.NonFileBrowserLabel(text=(reference +
                                                              ' to sample')))
-            distance = self.results['geometry']['sample']['sample_distance']
+            distance = self.results['geometry']['sample_distance']
             distance = str(round(distance, 3))
             boxlayout.add_widget(F.NonFileBrowserLabel(text=distance))
             self.ids.distances_results.add_widget(boxlayout)
@@ -1952,7 +1952,7 @@ class giGUI(F.BoxLayout):
         # Keep calculated distances from previous results
         if self.results['geometry']:
             # Geometry results have been calculated
-            distances = self.results['geometry']['distances']
+            distances = self.results['geometry']
             for distance_layout in self.ids.distances.children:
                 for widget in distance_layout.children:
                     if 'FloatInput' in str(widget) and widget.id in distances:

@@ -22,9 +22,6 @@ logger = logging.getLogger(__name__)
 # %% Constants
 NUMERICAL_TYPE = np.float
 
-# %% Global variable
-complete_dictionary = dict()  # for unnesting dictionaries in dictionary
-
 
 # %% Functions
 
@@ -147,33 +144,20 @@ def save_results(results_dir_path, results, overwrite=False):
         logger.info("Writing results folder...")
         os.makedirs(results_dir_path)
 
-        global complete_dictionary
         for sub_dict_name in results.keys():
-            logger.info('===============')
-            logger.info(sub_dict_name)
             if sub_dict_name == 'input':
-                logger.info(results['input'])
-
                 # Save input
                 input_file = os.path.basename(results_dir_path)+'_input.txt'
                 input_file_path = os.path.join(results_dir_path, input_file)
                 save_input(input_file_path, results['input'])
             else:
                 # Save sub dictionaries in single .mat (from single dict)
-
-                # Fill complete_dictionary with all key/value pairs in nested
-                # dictionaries
-                _unnest_dictionaries(results[sub_dict_name])
-
-                logger.info(complete_dictionary)
-
                 file_path = os.path.join(results_dir_path,
                                          sub_dict_name+'.mat')
-                scipy.io.savemat(file_path, complete_dictionary)
-
-                # Reset global complete_dictionary
-                complete_dictionary = dict()
-
+                result_dict = {key: value for key, value
+                               in results[sub_dict_name].iteritems()
+                               if value is not None}
+                scipy.io.savemat(file_path, result_dict)
 
         logger.info("... done.")
     else:
@@ -219,17 +203,6 @@ def _overwrite_file(message, default_answer='n'):
             return valid[answer]
         else:
             sys.stdout.write("Please choose 'y' [yes] or 'n' [no].\n")
-
-
-def _unnest_dictionaries(dictionary):
-    """
-    """
-    global complete_dictionary
-    for key, value in dictionary.iteritems():
-        if isinstance(value, dict):
-            _unnest_dictionaries(value)
-        elif value is not None:  # ignore Nones
-            complete_dictionary[key] = value
 
 # %% Main
 
