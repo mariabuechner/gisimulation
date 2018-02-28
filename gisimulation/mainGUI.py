@@ -1200,12 +1200,12 @@ class giGUI(F.BoxLayout):
         Calculate the GI geometry based on the set input parameters.
         """
         if self.check_geometry_input():
-            # If previous results, store
-            if self.results['geometry']:
-                logger.debug("Storing geometry results in "
-                             "previous_results['geometry']...")
-                self.previous_results['geometry'] = self.results['geometry']
-                logger.debug("... done.")
+#            # If previous results, store
+#            if self.results['geometry']:
+#                logger.debug("Storing geometry results in "
+#                             "previous_results['geometry']...")
+#                self.previous_results['geometry'] = self.results['geometry']
+#                logger.debug("... done.")
 
             try:
                 logger.info("Calculationg geometry...")
@@ -1804,6 +1804,20 @@ class giGUI(F.BoxLayout):
         self.ids.distances.update(self.setup_components,
                                   self.ids.beam_geometry.text,
                                   self.ids.gi_geometry.text)
+
+        # Always keeping previous distance results prevents distances to be
+        # reset, so that when switch to free the previous distances remain
+        # Keep calculated distances from previous results
+        if self.results['geometry']:
+            # Geometry results have been calculated
+            distances = self.results['geometry']['distances']
+            for distance_layout in self.ids.distances.children:
+                for widget in distance_layout.children:
+                    if 'FloatInput' in str(widget) and widget.id in distances:
+                        # If distance from results can be set now
+                        widget.text = str(distances[widget.id])
+                        # Move cursor to front of text input
+                        widget.do_cursor_movement('cursor_home')
 
         # Reset fixed grating input
         self.ids.fixed_grating.text = 'Choose fixed grating...'
@@ -2474,6 +2488,19 @@ class giGUI(F.BoxLayout):
         self.ids.spectrum_range_max = ''
         self.ids.field_of_view_x = ''
         self.ids.field_of_view_y = ''
+
+        logger.info("... done.")
+
+    def reset_distances(self):
+        """
+        Reset all distances to 'empty'.
+        """
+        logger.info("Resetting distances...")
+
+        for distance in self.ids.distances.children:
+            for widget in distance.children:
+                if 'FloatInput' in str(widget):
+                    widget.text = ''
 
         logger.info("... done.")
 
