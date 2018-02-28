@@ -790,10 +790,6 @@ def _load_results_dir(results_dir_path):
     logger.info(results_dir_path)
 
 
-def _save_results_dir(results_dir_path, results, bool_):
-    """
-    """
-    save_results(results_dir_path, results, overwrite=True)
 
 # #############################################################################
 # Collect widgets #############################################################
@@ -1517,7 +1513,7 @@ class giGUI(F.BoxLayout):
                 logger.warning("Folder '{0}' already exists!".format(value))
                 WarningDisplay("File already exists!",
                                "Do you want to overwrite it?",
-                               partial(_save_results_dir,
+                               partial(save_results,
                                        value,
                                        self.results,
                                        True),
@@ -1525,7 +1521,7 @@ class giGUI(F.BoxLayout):
                                self.cancel_results_save)
             else:
                 # File new
-                _save_results_dir(value, self.results, True)
+                save_results(value, self.results, True)
                 logger.info('... done.')
                 self.dismiss_popup()
                 self.save_results_dir_path = ''

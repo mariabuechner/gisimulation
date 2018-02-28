@@ -7,8 +7,7 @@ import logging
 import numpy as np
 import scipy.io
 import sys
-import os.path
-import shutil
+import os
 # gisimulation modules
 import simulation.utilities as utilities
 import simulation.parser_def as parser_def
@@ -138,11 +137,10 @@ def save_results(results_dir_path, results, overwrite=False):
                                     "to overwrite it?"
                                     .format(results_dir_path))
     if continue_ or overwrite:
-        # Delete existing folder
-        shutil.rmtree(results_dir_path, ignore_errors=True)
+        if not os.path.exists(results_dir_path):
+            os.makedirs(results_dir_path)
 
         logger.info("Writing results folder...")
-        os.makedirs(results_dir_path)
 
         for sub_dict_name in results.keys():
             if sub_dict_name == 'input':
