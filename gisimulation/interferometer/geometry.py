@@ -76,7 +76,6 @@ class Geometry():
         """
         return self._parameters
 
-
     def _calc_conventional(self):
         """
         For cone and parallel.
@@ -284,9 +283,9 @@ class Geometry():
                         # distance from G1 to G2 (dn)
                         # dn = -05*l + sqrt(0.25*l^2 + n/(2*lambda)*p2^2*l)
                         # lambda and p2 in um, need to be in mm
-                        wavelength = self._parameters['design_wavelength']  * \
+                        wavelength = self._parameters['design_wavelength'] * \
                             1e-3  # [mm]
-                        p2 = self._parameters['pitch_g2']  * 1e-3  # [mm]
+                        p2 = self._parameters['pitch_g2'] * 1e-3  # [mm]
 
                         self._parameters['distance_g1_g2'] = -0.5 * to_g1 + \
                             np.sqrt(0.25 * to_g1**2 +
@@ -329,9 +328,9 @@ class Geometry():
                         # distance from G1 to G2 (dn)
                         # dn = s / (s * 2 * lambda / (n * p2^2) + 1)
                         # lambda and p2 in um, need to be in mm
-                        wavelength = self._parameters['design_wavelength']  * \
+                        wavelength = self._parameters['design_wavelength'] * \
                             1e-3  # [mm]
-                        p2 = self._parameters['pitch_g2']  * 1e-3  # [mm]
+                        p2 = self._parameters['pitch_g2'] * 1e-3  # [mm]
 
                         self._parameters['distance_g1_g2'] = total_length / \
                             (total_length * 2 * wavelength /
@@ -389,9 +388,9 @@ class Geometry():
                         # distance from G1 to G2 (dn)
                         # dn = l / (n * p0^2 / (2 * lambda * l) - 1)
                         # lambda and p2 in um, need to be in mm
-                        wavelength = self._parameters['design_wavelength']  * \
+                        wavelength = self._parameters['design_wavelength'] * \
                             1e-3  # [mm]
-                        p0 = self._parameters['pitch_g0']  * 1e-3  # [mm]
+                        p0 = self._parameters['pitch_g0'] * 1e-3  # [mm]
 
                         self._parameters['distance_g1_g2'] = to_g1 / \
                             ((self._parameters['talbot_order'] * p0**2) /
@@ -433,9 +432,9 @@ class Geometry():
                         # distance from G1 to G2 (dn)
                         # dn = s / (s * 2 * lambda / (n * p2^2) + 1)
                         # lambda and p2 in um, need to be in mm
-                        wavelength = self._parameters['design_wavelength']  * \
+                        wavelength = self._parameters['design_wavelength'] * \
                             1e-3  # [mm]
-                        p0 = self._parameters['pitch_g0']  * 1e-3  # [mm]
+                        p0 = self._parameters['pitch_g0'] * 1e-3  # [mm]
 
                         self._parameters['distance_g1_g2'] = total_length / \
                             ((self._parameters['talbot_order'] * p0**2) /
@@ -443,7 +442,7 @@ class Geometry():
 
                         # Distance from Source/G0 to G1 fixed (l)
                         to_g1 = total_length - \
-                            self._parameters['distance_g1_g2']  # [mm]rs['distance_g1_g2'])
+                            self._parameters['distance_g1_g2']  # [mm]
 
                         # Check if l > dn:
                         if self._parameters['distance_g1_g2'] >= to_g1:
@@ -660,8 +659,8 @@ class Geometry():
                     raise GeometryError(error_message)
 
                 to_g1 = total_length/2.0 - np.sqrt(total_length**2.0 /
-                                               4.0 - total_length *
-                                               talbot_distance)
+                                                   4.0 - total_length *
+                                                   talbot_distance)
 
                 if 'G0' in self._parameters['component_list']:
                     self._parameters['distance_g0_g1'] = to_g1
@@ -704,9 +703,9 @@ class Geometry():
                 # distance from G1 to G2 (dn)
                 # dn = -05*l + sqrt(0.25*l^2 + n/(2*lambda)*p2^2*l)
                 # lambda and p2 in um, need to be in mm
-                wavelength = self._parameters['design_wavelength']  * \
+                wavelength = self._parameters['design_wavelength'] * \
                     1e-3  # [mm]
-                p2 = self._parameters['pitch_g2']  * 1e-3  # [mm]
+                p2 = self._parameters['pitch_g2'] * 1e-3  # [mm]
 
                 self._parameters['distance_g1_g2'] = -0.5 * to_g1 + \
                     np.sqrt(0.25 * to_g1**2 +
@@ -747,9 +746,9 @@ class Geometry():
                 # distance from G1 to G2 (dn)
                 # dn = s / (s * 2 * lambda / (n * p2^2) + 1)
                 # lambda and p2 in um, need to be in mm
-                wavelength = self._parameters['design_wavelength']  * \
+                wavelength = self._parameters['design_wavelength'] * \
                     1e-3  # [mm]
-                p2 = self._parameters['pitch_g2']  * 1e-3  # [mm]
+                p2 = self._parameters['pitch_g2'] * 1e-3  # [mm]
 
                 self._parameters['distance_g1_g2'] = total_length / \
                     (total_length * 2 * wavelength /
@@ -807,9 +806,9 @@ class Geometry():
                 # distance from G1 to G2 (dn)
                 # dn = l / (n * p0^2 / (2 * lambda * l) - 1)
                 # lambda and p2 in um, need to be in mm
-                wavelength = self._parameters['design_wavelength']  * \
+                wavelength = self._parameters['design_wavelength'] * \
                     1e-3  # [mm]
-                p0 = self._parameters['pitch_g0']  * 1e-3  # [mm]
+                p0 = self._parameters['pitch_g0'] * 1e-3  # [mm]
 
                 self._parameters['distance_g1_g2'] = to_g1 / \
                     ((self._parameters['talbot_order'] * p0**2) /
@@ -851,9 +850,9 @@ class Geometry():
                 # distance from G1 to G2 (dn)
                 # dn = s / (s * 2 * lambda / (n * p2^2) + 1)
                 # lambda and p2 in um, need to be in mm
-                wavelength = self._parameters['design_wavelength']  * \
+                wavelength = self._parameters['design_wavelength'] * \
                     1e-3  # [mm]
-                p0 = self._parameters['pitch_g0']  * 1e-3  # [mm]
+                p0 = self._parameters['pitch_g0'] * 1e-3  # [mm]
 
                 self._parameters['distance_g1_g2'] = total_length / \
                     ((self._parameters['talbot_order'] * p0**2) /
@@ -861,7 +860,7 @@ class Geometry():
 
                 # Distance from Source/G0 to G1 fixed (l)
                 to_g1 = total_length - \
-                    self._parameters['distance_g1_g2']  # [mm]rs['distance_g1_g2'])
+                    self._parameters['distance_g1_g2']  # [mm]
 
                 # Check if l < dn:
                 if self._parameters['distance_g1_g2'] <= to_g1:
@@ -1076,8 +1075,8 @@ class Geometry():
         # Add grating radii
         # if bent: radius not None <=> if straight: radius None
         radii = [(radius_name, radius_value) for radius_name, radius_value
-                   in self._parameters.iteritems()
-                   if 'radius_' in radius_name]
+                 in self._parameters.iteritems()
+                 if 'radius_' in radius_name]
         for radius in radii:
             self.results['gratings'][radius[0]] = radius[1]
 
@@ -1096,7 +1095,8 @@ class Geometry():
 
         # Detector
         self.results['detector'] = dict()
-        self.results['detector']['curved'] = self._parameters['curved_detector']
+        self.results['detector']['curved'] = \
+            self._parameters['curved_detector']
         if self._parameters['field_of_view'] is not None and \
                 self._parameters['pixel_size'] is not None:
             self.results['detector']['width'] = \

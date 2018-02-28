@@ -96,6 +96,57 @@ def save_input(input_file_path, input_parameters, overwrite=False):
         logger.info("Do not overwrite, abort save.")
         logger.warning("Input paramters are NOT saved.")
 
+#def save_results(results_dir_path, results, overwrite=False):
+#    """
+#    Save results dict to results .mat file.
+#
+#    Parameters
+#    ==========
+#
+#    results_dir_path [str]:    file path to results file, including name and
+#                                .mat
+#    results [dict]
+#    overwrite [boolean]:        force overwrite without promt (when called
+#                                from GUI)
+#
+#    Notes
+#    =====
+#
+#    results_dir_path:  path/file_name.mat
+#
+#    Structure results:
+#        results['input'] = dict of input parameters
+#        results['geometry'] = dict of geom dicts or parameters
+#        results[...] = dict of ...
+#
+#    Save as:
+#
+#
+#
+#    """
+#    continue_ = True
+#    if os.path.isdir(results_dir_path) and not overwrite:
+#        # File exists, promt decision
+#        logger.warning("File '{0}' already exists!".format(results_file_path))
+#        continue_ = _overwrite_file("Folder '{0}' already exists! Do you want "
+#                                    "to overwrite it?"
+#                                    .format(results_file_path))
+#    if continue_ or overwrite:
+#        logger.info("Overwriting file...")
+##        with open(results_file_path, 'w') as f:
+##            for var_key, value in input_parameters.iteritems():
+##                if value is not False:
+##                    f.writelines(var_key+'\n')
+##                    if type(value) is np.ndarray:  # For FOV and Range
+##                        f.writelines(str(value[0])+'\n')
+##                        f.writelines(str(value[1])+'\n')
+##                    elif value is not True:
+##                        f.writelines(str(value)+'\n')
+#        logger.info("... done.")
+#    else:
+#        logger.info("Do not overwrite, abort save.")
+#        logger.warning("Results paramters are NOT saved.")
+
 def _overwrite_file(message, default_answer='n'):
     """
     Promt user to enter y [yes] or n [n] when potentially overwriting a file.

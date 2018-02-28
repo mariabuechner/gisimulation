@@ -462,7 +462,7 @@ class GeometryGrid(F.GridLayout):
         frame_height = self.sketch.height
         frame_y_center = frame_y0 + frame_height/2.0
         # Frame absolute offsets
-        x0_offset =  frame_width/20.0
+        x0_offset = frame_width/20.0
 
         # Add Source if cone beam
         width = 10.0
@@ -477,7 +477,8 @@ class GeometryGrid(F.GridLayout):
         # Add Detector
         detector_width = 20.0
         detector_height = frame_height*0.8  # is max height of sketch
-        detector_pos_x = frame_x0 + frame_width - x0_offset - detector_width/2.0
+        detector_pos_x = frame_x0 + frame_width - x0_offset - \
+            detector_width/2.0
         detector_pos_y = frame_y_center - detector_height/2.0
 
         if not geometry_results['detector']['curved']:
@@ -490,7 +491,7 @@ class GeometryGrid(F.GridLayout):
             # from Source to Detector
             radius = detector_pos_x - self.source.pos[0]
             # Circle center at source center
-            pos_x = self.source.pos[0] + self.source.size[0]/2.0 #- line_width/2.0
+            pos_x = self.source.pos[0] + self.source.size[0]/2.0
             pos_y = self.source.pos[1] + self.source.size[1]/2.0
             half_angle = np.rad2deg(np.arctan(0.5 * detector_height / radius))
 
@@ -533,7 +534,7 @@ class GeometryGrid(F.GridLayout):
         # Angle for scaling height (only cone beam) (complete angle)
         fan_angle = 2.0 * np.arctan(setup_height / 2.0 / setup_width)
 
-         # Add Gratings
+        # Add Gratings
         gratings = [grating for grating in
                     geometry_results['setup']['component_list']
                     if "G" in grating]
@@ -546,12 +547,13 @@ class GeometryGrid(F.GridLayout):
                 # Bent
                 radius = radius * width_scaling  # [points]
 
-                pos_x = self.source.pos[0] + self.source.size[0]/2.0 - width/2.0
+                pos_x = self.source.pos[0] + self.source.size[0]/2.0 - \
+                    width/2.0
                 pos_y = self.source.pos[1] + self.source.size[1]/2.0
                 # add distance from source-radius to source pos x
                 distance_from_source = \
-                    geometry_results['distances']['distance_source_'
-                                                  + grating.lower()] * \
+                    geometry_results['distances']['distance_source_' +
+                                                  grating.lower()] * \
                     width_scaling  # [points]
                 pos_x = pos_x + (distance_from_source - radius)
                 half_angle = np.rad2deg(fan_angle)/2.0
@@ -573,8 +575,8 @@ class GeometryGrid(F.GridLayout):
                 # Straight
                 width = width * 2.0
 
-                pos_x = geometry_results['distances']['distance_source_'
-                                                      + grating.lower()]
+                pos_x = geometry_results['distances']['distance_source_' +
+                                                      grating.lower()]
                 pos_x = pos_x * width_scaling  # [points]
                 pos_x = pos_x - width/2.0 + x0_offset
                 height = (pos_x + width/2.0) * np.tan(fan_angle)  # [points]
@@ -602,13 +604,6 @@ class GeometryGrid(F.GridLayout):
                                         size=(width, width))
                 self.sketch.geometry_group.add(G.Color(0, 0, 1, 0.5))
                 self.sketch.geometry_group.add(self.sample)
-
-
-
-
-
-
-
 
 # %% Utilities
 
@@ -786,18 +781,21 @@ def _load_input_file(input_file_path):
         logger.debug('Storing {0}.'.format(value))
     return input_parameters
 
+
 # Results
-def _load_results_file(results_file_path):
+def _load_results_dir(results_dir_path):
     """
     """
     logger.info('LOADING RESULTS!!!')
-    logger.info(results_file_path)
+    logger.info(results_dir_path)
 
-def _save_results_file(results_file_path, results):
+
+def _save_results_dir(results_dir_path, results, bool_):
     """
     """
     logger.info('SAVING RESULTS!!!')
-    logger.info(results_file_path)
+    logger.info(results_dir_path)
+
 
 # #############################################################################
 # Collect widgets #############################################################
@@ -994,8 +992,8 @@ class giGUI(F.BoxLayout):
     spectrum_file_loaded = F.BooleanProperty(defaultvalue=False)
     load_input_file_paths = F.ListProperty()
     save_input_file_path = F.StringProperty()
-    load_results_file_path = F.ListProperty()
-    save_results_file_path = F.StringProperty()
+    load_results_dir_path = F.StringProperty()
+    save_results_dir_path = F.StringProperty()
 
     setup_components = F.ListProperty()  # List of all components in the setup
     sample_added = False
@@ -1183,11 +1181,15 @@ class giGUI(F.BoxLayout):
 #                self.previous_results['geometry'] = self.results['geometry']
 #                logger.debug("... done.")
 
+            # Store input
+            self.results['input'] = _collect_input(self.parameters, self.ids,
+                                                   self.parser_info)
+            # Calc geometry
             try:
                 logger.info("Calculationg geometry...")
-                gi_geometry = geometry.Geometry(self.parameters)  # Calc...
-                self.results['geometry'] = gi_geometry.results  # store geom dict
-                self.parameters = gi_geometry.update_parameters()  # transf. params
+                gi_geometry = geometry.Geometry(self.parameters)
+                self.results['geometry'] = gi_geometry.results
+                self.parameters = gi_geometry.update_parameters()
                 logger.info("... done.")
             except geometry.GeometryError as e:
                 ErrorDisplay('Geometry Error', str(e))
@@ -1197,7 +1199,6 @@ class giGUI(F.BoxLayout):
             self.show_geometry()
             # Switch tabs
             self.ids.result_tabs.switch_to(self.ids.geometry_results)
-
 
     def show_geometry(self):
         """
@@ -1294,7 +1295,7 @@ class giGUI(F.BoxLayout):
 
         # Add remaining intergrating distances
         distance_keys = [key for key in distances_results.keys()
-                     if 'distance_g' in key]
+                         if 'distance_g' in key]
         if distance_keys:
             boxlayout = F.BoxLayout()
             boxlayout.add_widget(F.NonFileBrowserLabel(text='----------'))
@@ -1311,7 +1312,7 @@ class giGUI(F.BoxLayout):
 
         # Add remaining source to distances
         distance_keys = [key for key in distances_results.keys()
-                     if 'distance_source' in key]
+                         if 'distance_source' in key]
         if distance_keys:
             boxlayout = F.BoxLayout()
             boxlayout.add_widget(F.NonFileBrowserLabel(text='----------'))
@@ -1350,18 +1351,6 @@ class giGUI(F.BoxLayout):
         self.ids.distances_results.height = \
             self.calc_boxlayout_height(LINE_HEIGHT,
                                        self.ids.distances_results)
-
-
-
-
-#        sorted_distances_keys = \
-#            sorted(distances_results.iterkeys())
-#        # Show distances
-#        for distance_key in sorted_distances_keys:
-#            distance = distances_results[distance_key]
-#            logger.info(distance_key)
-#            logger.info(distance)
-#            first_component = distance.split('_')[1]
 
     def calculate_visibility(self):
         """
@@ -1484,59 +1473,63 @@ class giGUI(F.BoxLayout):
         self.save_input_file_path = ''
 
     # Results
-    def on_load_results_file_path(self, instance, value):
+    def on_load_results_dir_path(self, instance, value):
         """
-        When load_results_file_path changes, ... .
+        When load_results_dir_path changes, ... .
         Update widget content accordingly.
 
         """
         if value:
             logger.info("Loading results file...")
-            self.results = _load_results_file(value)
+            self.results = _load_results_dir(value)
             # Set widget content (TODO)
+            # Clear all
+            # Show input
+            # Show results
             # inputs and results, via _set_widgets??? (like load input)???
             logger.info('... done.')
 
-        # Reset load_results_file_path to allow loading of same file
-        self.load_results_file_path = ''
+        # Reset load_results_dir_path to allow loading of same file
+        self.load_results_dir_path = ''
 
-    def on_save_results_file_path(self, instance, value):
+    def on_save_results_dir_path(self, instance, value):
         """
-        When save_results_file_path changes, ... .
+        When save_results_dir_path changes, ... .
 
         Notes
         =====
 
         If file exists:             Popup to ask to 'continue' or 'cancel',
                                     give following functions to popup:
-                                    _save_results_file:
+                                    _save_results_dir:
                                         overwrite
                                     self.overwrite_results_save:
                                         overwrite_finish
                                     self.cancel_results_save:
                                         cancel_finish
 
-        Reset save_results_file_path to '' to allow next save at same file.
+        Reset save_results_dir_path to '' to allow next save at same file.
 
         """
-        if self.save_results_file_path != '':  # e.g. after reset.
-            logger.info("Saving results to file...")
-            if os.path.isfile(value):
+        if self.save_results_dir_path != '':  # e.g. after reset.
+            logger.info("Saving results to folder...")
+            if os.path.isdir(value):
                 # File exists
-                logger.warning("File '{0}' already exists!".format(value))
+                logger.warning("Folder '{0}' already exists!".format(value))
                 WarningDisplay("File already exists!",
                                "Do you want to overwrite it?",
-                               partial(_save_results_file,
+                               partial(_save_results_dir,
                                        value,
-                                       self.results),
+                                       self.results,
+                                       True),
                                self.overwrite_results_save,
                                self.cancel_results_save)
             else:
                 # File new
-                _save_results_file(value, self.results)
+                _save_results_dir(value, self.results, True)
                 logger.info('... done.')
                 self.dismiss_popup()
-                self.save_results_file_path = ''
+                self.save_results_dir_path = ''
 
     def overwrite_results_save(self):
         """
@@ -1545,11 +1538,11 @@ class giGUI(F.BoxLayout):
         Notes
         =====
 
-        Reset sav_results_file_path to '' to allow next save at same file.
+        Reset sav_results_dir_path to '' to allow next save at same file.
 
         """
         self.dismiss_popup()
-        self.save_results_file_path = ''
+        self.save_results_dir_path = ''
 
     def cancel_results_save(self):
         """
@@ -1558,10 +1551,10 @@ class giGUI(F.BoxLayout):
         Notes
         =====
 
-        Reset save_results_file_path to '' to allow next save at same file.
+        Reset save_results_dir_path to '' to allow next save at same file.
 
         """
-        self.save_results_file_path = ''
+        self.save_results_dir_path = ''
 
     # General
     def dismiss_popup(self):
@@ -1681,7 +1674,7 @@ class giGUI(F.BoxLayout):
 
     def _input_save_fbrowser_success(self, instance):
         """
-        On input file path selection, save to file and close FileBrowser.
+        On input file path selection, store and close FileBrowser.
         """
         filename = instance.filename
         # Check extension
@@ -1711,30 +1704,31 @@ class giGUI(F.BoxLayout):
     # Loading
     def show_results_load(self):
         """
-        Open popup with file browser to select results file location.
+        Open popup with file browser to select results folder.
 
         Notes
         =====
 
         Default path:               ./data/results/
-        Available file extentions:  [*.mat']
+        Available file extentions:  [self._list_directories]
+                                    only show directories
 
         Accept only one file!
 
         """
         # Define browser
         results_path = os.path.join(os.path.dirname(os.path.
-                                                   realpath(__file__)),
+                                                    realpath(__file__)),
                                     'data', 'results')
         browser = FileBrowser(select_string='Select',
-                              multiselect=False,
+                              dirselect=True,
                               path=results_path,  # Folder to open at start
-                              filters=['*.mat'])
+                              filters=[self._list_directories])
         browser.bind(on_success=self._results_load_fbrowser_success,
                      on_canceled=self._fbrowser_canceled)
 
         # Add to popup
-        self._popup = F.Popup(title="Load results file", content=browser,
+        self._popup = F.Popup(title="Load results folder", content=browser,
                               size_hint=FILE_BROWSER_SIZE)
         self._popup.open()
 
@@ -1742,62 +1736,50 @@ class giGUI(F.BoxLayout):
         """
         On results file path selection, store and close FileBrowser.
         """
-        self.load_results_file_path = instance.selection
+        foldername = os.path.normpath(instance.filename)
+        self.load_results_dir_path = foldername
+#        self.load_results_dir_path = instance.selection
         self.dismiss_popup()
 
     # Saving
     def show_results_save(self):
         """
-        Open popup with file browser to select save results file path.
+        Open popup with file browser to select save results folder path.
 
         Notes
         =====
 
         Default path:               ./data/results/
-        Available file extentions:  [*.mat']
+        Available file extentions:  [self._list_directories]
+                                    only show directories
 
         """
         # Define browser
         results_path = os.path.join(os.path.dirname(os.path.
                                                     realpath(__file__)),
-                                  'data', 'results')
+                                    'data', 'results')
         browser = FileBrowser(select_string='Save',
+                              dirselect=True,
                               path=results_path,  # Folder to open at start
-                              filters=['*.mat'])
+                              filters=[self._list_directories])
         browser.bind(on_success=self._results_save_fbrowser_success,
                      on_canceled=self._fbrowser_canceled)
 
         # Add to popup
-        self._popup = F.Popup(title="Save results file", content=browser,
+        self._popup = F.Popup(title="Save results folder", content=browser,
                               size_hint=FILE_BROWSER_SIZE)
         self._popup.open()
 
     def _results_save_fbrowser_success(self, instance):
         """
-        On results file path selection, save to file and close FileBrowser.
+        On results folder path selection, store and close FileBrowser.
         """
-        filename = instance.filename
-        # Check extension
-        if filename.split('.')[-1] == instance.filters[0].split('.')[-1]:
-            # Correct extention
-            file_path = os.path.join(instance.path, filename)
-        elif filename.split('.')[-1] == '':
-            # Just '.' set
-            file_path = os.path.join(instance.path, filename+'mat')
-        elif filename.split('.')[-1] == filename:
-            # Not extention set
-            file_path = os.path.join(instance.path, filename+'.mat')
-        else:
-            # Wrong file extention
-            error_message = ("results file must be of type '{0}'"
-                             .format(instance.filters[0]))
-            logger.error(error_message)
-            ErrorDisplay('Saving results file: Wrong file extention.',
-                         error_message)
-            return
-        logger.debug("Save results to file: {0}"
-                     .format(file_path))
-        self.save_results_file_path = file_path
+        foldername = instance.filename
+        folder_path = os.path.join(instance.path, foldername)
+        self.save_results_dir_path = folder_path
+
+    def _list_directories(self, directory, filename):
+        return os.path.isdir(os.path.join(directory, filename))
 
     # Menu spinners ###########################################################
 
@@ -1812,6 +1794,7 @@ class giGUI(F.BoxLayout):
             self.show_input_load()
         elif selected == 'Results...':
             self.show_results_load()
+
     def on_save_spinner(self, spinner):
         """
         On save_spinner change, keep text the same and call respective
@@ -1890,11 +1873,11 @@ class giGUI(F.BoxLayout):
         """
         if self.ids.gi_geometry.text not in self.ids.gi_geometry.values:
             self.ids.gi_geometry.text = 'free'
-        #======================================================================
+        # =====================================================================
         #   Dirty fix for issue #12
         self.ids.fixed_grating.text = 'G0'
         self.ids.fixed_grating.text = 'Choose fixed grating...'
-        #======================================================================
+        # ====================================================================
         # Remove sample if it was set before (to start fresh)
         if 'Sample' in self.setup_components:
                 self.ids.add_sample.active = False
@@ -2181,10 +2164,6 @@ class giGUI(F.BoxLayout):
         if self.ids['type_'+grating].text == 'abs':
             self.ids['phase_shift_'+grating].text = ''
             self.ids['phase_shift_'+grating+'_options'].text = ''
-#        # Phase gratings
-#        if self.ids['type_'+grating].text == 'phase':
-#            if grating == 'g0':
-
 
         # If type is set, activate grating
         if self.ids['type_'+grating].text != '':
@@ -2410,11 +2389,9 @@ class giGUI(F.BoxLayout):
                         sample_position = value_str[0]
                     # Booleans
                     # From file: in file only of true
-                    elif any(phrase in var_name for phrase in ['_bent',
-                                                           '_matching',
-                                                           'photo_only',
-                                                           'dual_phase',
-                                                           'curved_detector']):
+                    elif any(phrase in var_name for phrase
+                             in ['_bent', '_matching', 'photo_only',
+                                 'dual_phase', 'curved_detector']):
                         logger.debug("Setting widget '{0}' to: {1}"
                                      .format(var_name, True))
                         self.ids[var_name].active = True
@@ -2710,6 +2687,7 @@ class giGUI(F.BoxLayout):
 
         # Clear current results (not previous)
         self.results['geometry'] = dict()
+        self.results['input'] = dict()
 
         logger.info("... done.")
 
