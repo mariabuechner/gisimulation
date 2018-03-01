@@ -14,6 +14,7 @@ import sys
 import re
 from functools import partial
 import os.path
+import scipy.io
 import logging
 # Set kivy logger console output format
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - '
@@ -553,7 +554,7 @@ class GeometryGrid(F.GridLayout):
                 # add distance from source-radius to source pos x
                 distance_from_source = \
                     geometry_results['distance_source_' +
-                                                  grating.lower()] * \
+                                     grating.lower()] * \
                     width_scaling  # [points]
                 pos_x = pos_x + (distance_from_source - radius)
                 half_angle = np.rad2deg(fan_angle)/2.0
@@ -785,10 +786,94 @@ def _load_input_file(input_file_path):
 # Results
 def _load_results_dir(results_dir_path):
     """
-    """
-    logger.info('LOADING RESULTS!!!')
-    logger.info(results_dir_path)
+    Load results dict from folder.
 
+    Parameters
+    ==========
+
+    results_dir_path [str]:     folder path to store /mat files in
+
+    Returns
+    =======
+
+    results [dict]
+
+    Notes
+    =====
+
+    results_dir_path:  path/folder_name
+
+    Structure results:
+        results['input'] = dict of input parameters
+        results['geometry'] = dict of geometry parameters
+        results[...] = dict of ...
+
+    Save as: at path/
+        - folder name
+            - input dict as foldername_input.text (via save_input)
+            - geometry.mat: all keys/values from dict (here: geometry)
+            - ... .mat:
+
+    """
+    results = dict()
+    logger.info("Reading results folder at {0}...".format(results_dir_path))
+    for file_ in os.listdir(results_dir_path):
+        logger.debug("Reading file '{0}' in {1}".format(file_,
+                                                        results_dir_path))
+        file_path = os.path.join(results_dir_path, file_)
+        logger.info(file_path)
+        if '_input.txt' in file_:
+            logger.info("Loading input...")
+            results['input'] = _load_input_file(file_path)
+            logger.info("... done.")
+        elif '.mat' in file_:
+            matfile_name = file_.split('.')[0]
+            logger.info("Loading {0} into results['{1}']..."
+                        .format(file_, matfile_name))
+            raw_mat = scipy.io.loadmat(file_path, squeeze_me=True,
+                                       chars_as_strings=True)
+            # Remove __header__ and __globals__
+            del raw_mat['__header__']
+            del raw_mat['__version__']
+            del raw_mat['__globals__']
+            # [] to None to read from .mat
+            # [] are read as np.array([], dtype=float64)
+            empty_arrays = [key for key, var in raw_mat.iteritems()
+                            if (type(var).__module__ == 'numpy' and
+                                var.size == 0)]
+            results[matfile_name] = {key: value
+                                     if key not in empty_arrays else None
+                                     for key, value
+                                     in raw_mat.iteritems()}
+            # Change 'True'/'False' to True/False
+            true_booleans = [key for key, var
+                             in results[matfile_name].iteritems()
+                             if (type(var) is str and var == 'True')]
+            false_booleans = [key for key, var
+                              in results[matfile_name].iteritems()
+                              if (type(var) is str and var is 'False')]
+            results[matfile_name] = {key: value
+                                     if key not in true_booleans else True
+                                     for key, value
+                                     in results[matfile_name].iteritems()}
+            results[matfile_name] = {key: value
+                                     if key not in false_booleans else False
+                                     for key, value
+                                     in results[matfile_name].iteritems()}
+            # Read list of strings correctly
+            # (original as numpy str (<U8) array)
+            component_list = results[matfile_name]['component_list']
+            component_list = component_list.astype('str').tolist()
+            component_list = [component.strip(' ')
+                              for component in component_list]
+            results[matfile_name]['component_list'] = component_list
+
+            logger.info("... done.")
+        else:
+            logger.warning("Wrong file or file extention in '{0}', skipping..."
+                           .format(file_))
+    logger.info("... done.")
+    return results
 
 
 # #############################################################################
@@ -1464,6 +1549,8 @@ class giGUI(F.BoxLayout):
 
         Reset save_input_file_path to '' to allow next save at same file.
 
+        parser_link [dict]:        parser_link[var_key] = var_name
+
         """
         self.save_input_file_path = ''
 
@@ -1473,19 +1560,45 @@ class giGUI(F.BoxLayout):
         When load_results_dir_path changes, ... .
         Update widget content accordingly.
 
+        Notes
+        =====
+
+        Formats:
+
+            stores booleans ('True'/'False') as True/False
+            stores emptry numpy array [] as None
+
         """
         if value:
+            # Clear all
+            self.reset_widgets()
+            _collect_widgets(self.parameters, self.ids)  # Resets parameters
+
             logger.info("Loading results file...")
             self.results = _load_results_dir(value)
-            # Set widget content (TODO)
-            # Clear all
-            # Show input
-            # Show results
-            # inputs and results, via _set_widgets??? (like load input)???
-            logger.info('... done.')
 
-        # Reset load_results_dir_path to allow loading of same file
-        self.load_results_dir_path = ''
+            # Set widgets
+            for dict_name, sub_dict in self.results.iteritems():
+                if dict_name == 'input':
+                    try:
+                        logger.debug("Setting input parameters to widgets...")
+                        self._set_widgets(self.results['input'], from_file=True)
+                        self._set_widgets(self.results['input'], from_file=True)
+                    except check_input.InputError as e:
+                        ErrorDisplay('Input Error', str(e))
+                else:
+                    # .matlogger.debug("Setting result parameters to widgets...")
+                    self._set_widgets(sub_dict, from_file=False)
+            # Update parameters
+            _collect_widgets(self.parameters, self.ids)
+
+            # Show loaded results
+            if 'geometry' in self.results:
+                self.show_geometry()
+
+            # Reset load_results_dir_path to allow loading of same file
+            self.load_results_dir_path = ''
+            logger.info('... done.')
 
     def on_save_results_dir_path(self, instance, value):
         """
@@ -2611,6 +2724,8 @@ class giGUI(F.BoxLayout):
 
         # Remove spectrum
         self.ids.spectrum_file_name.text = ''
+        # Reset spectrum step size
+        self.ids.spectrum_step.text = '1.0'
 
         # Handle special checkboxes
         self.ids.g0_set = False
@@ -2679,6 +2794,8 @@ class giGUI(F.BoxLayout):
 
         # Remove spectrum
         self.ids.spectrum_file_name.text = ''
+        # Reset spectrum step size
+        self.ids.spectrum_step.text = '1.0'
 
         # Clear current results (not previous)
         self.results['geometry'] = dict()

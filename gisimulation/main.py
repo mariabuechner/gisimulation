@@ -106,7 +106,7 @@ def save_results(results_dir_path, results, overwrite=False):
     Parameters
     ==========
 
-    results_dir_path [str]:    folder path to store /mat files in
+    results_dir_path [str]:     folder path to store /mat files in
     results [dict]
     overwrite [boolean]:        force overwrite without promt (when called
                                 from GUI)
@@ -118,20 +118,24 @@ def save_results(results_dir_path, results, overwrite=False):
 
     Structure results:
         results['input'] = dict of input parameters
-        results['geometry'] = dict of geom dicts or parameters
+        results['geometry'] = dict of geometry parameters
         results[...] = dict of ...
 
     Save as: at path/
         - folder name
-            - input dict as foldername.text (via save_input)
-            - geometry.mat: all keys/values from all sub dicts (here: geometry)
+            - input dict as foldername_input.text (via save_input)
+            - geometry.mat: all keys/values from dict (here: geometry)
+            - ... .mat:
 
+    Formats:
 
+        saves booleans (True/False) as 'True'/'False'
+        saves None as []
 
     """
     continue_ = True
     if os.path.isdir(results_dir_path) and not overwrite:
-        # File exists, promt decision
+        # Folder exists, promt decision
         logger.warning("Folder '{0}' already exists!".format(results_dir_path))
         continue_ = _overwrite_file("Folder '{0}' already exists! Do you want "
                                     "to overwrite it?"
@@ -143,7 +147,9 @@ def save_results(results_dir_path, results, overwrite=False):
         logger.info("Writing results folder...")
 
         for sub_dict_name in results.keys():
-            if sub_dict_name == 'input':
+            if not results[sub_dict_name]:
+                continue  # Skip empty dicts
+            elif sub_dict_name == 'input':
                 # Save input
                 input_file = os.path.basename(results_dir_path)+'_input.txt'
                 input_file_path = os.path.join(results_dir_path, input_file)
@@ -152,12 +158,30 @@ def save_results(results_dir_path, results, overwrite=False):
                 # Save sub dictionaries in single .mat (from single dict)
                 file_path = os.path.join(results_dir_path,
                                          sub_dict_name+'.mat')
-                result_dict = {key: value for key, value
-                               in results[sub_dict_name].iteritems()
-                               if value is not None}
-                scipy.io.savemat(file_path, result_dict)
+                # None to [] to store on .mat
+                result_dict = {key: value if value is not None else []
+                               for key, value
+                               in results[sub_dict_name].iteritems()}
+                # Change True/False to True'/'False'
+                true_booleans = [key for key, var in result_dict.iteritems()
+                                 if var is True]
+                false_booleans = [key for key, var in result_dict.iteritems()
+                                  if var is False]
+                result_dict = {key: value
+                               if key not in true_booleans else 'True'
+                               for key, value in result_dict.iteritems()}
+                result_dict = {key: value
+                               if key not in false_booleans else 'False'
+                               for key, value in result_dict.iteritems()}
 
-        logger.info("... done.")
+
+                scipy.io.savemat(file_path, result_dict)
+        # If nothing was saved
+        if not os.listdir(results_dir_path):
+            logger.info("No results to be saved, aborting...")
+            os.rmdir(results_dir_path)
+        else:
+            logger.info("... done.")
     else:
         logger.info("Do not overwrite, abort save.")
         logger.warning("Results paramters are NOT saved.")
