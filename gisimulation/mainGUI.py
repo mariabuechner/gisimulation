@@ -2728,13 +2728,13 @@ class giGUI(F.BoxLayout):
         self.ids.spectrum_step.text = '1.0'
 
         # Handle special checkboxes
-        self.ids.g0_set = False
-        self.ids.add_sample = False
-        self.ids.spectrum_range_set = False
-        self.ids.spectrum_range_min = ''
-        self.ids.spectrum_range_max = ''
-        self.ids.field_of_view_x = ''
-        self.ids.field_of_view_y = ''
+        self.ids.g0_set.active = False
+        self.ids.add_sample.active = False
+        self.ids.spectrum_range_set.active = False
+        self.ids.spectrum_range_min.text = ''
+        self.ids.spectrum_range_max.text = ''
+        self.ids.field_of_view_x.text = ''
+        self.ids.field_of_view_y.text = ''
 
         logger.info("... done.")
 
