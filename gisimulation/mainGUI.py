@@ -1059,11 +1059,13 @@ class giGUI(F.BoxLayout):
     necessary.
 
     """
-    # "Global" variables
-    parameters = F.DictProperty()  # Will be params[var_name] = value
-    parser_info = F.DictProperty()  # Will be params[var_name]
-                                    #           = [var_key, var_help]
-    parser_link = F.DictProperty()  # Will be params[var_key] = var_name
+    # "Global" variables (if kivy ..Property() sharable in .kv)
+    # params[var_name] = value
+    parameters = F.DictProperty()
+    # parser_info[var_name] = [var_key, var_help]
+    parser_info = F.DictProperty()
+    # parser_link[var_key] = var_name
+    parser_link = F.DictProperty()
 
     previous_results = F.DictProperty()
 
@@ -1074,7 +1076,7 @@ class giGUI(F.BoxLayout):
     load_results_dir_path = F.StringProperty()
     save_results_dir_path = F.StringProperty()
 
-    setup_components = F.ListProperty()  # List of all components in the setup
+    setup_components = F.ListProperty()
     sample_added = False
     available_gratings = F.ListProperty()
 
