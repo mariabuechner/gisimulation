@@ -1059,7 +1059,7 @@ class giGUI(F.BoxLayout):
     necessary.
 
     """
-    # "Global" variables (if kivy ..Property() sharable in .kv)
+    # "Global kivy" variables (if kivy ..Property() sharable in .kv)
     # params[var_name] = value
     parameters = F.DictProperty()
     # parser_info[var_name] = [var_key, var_help]

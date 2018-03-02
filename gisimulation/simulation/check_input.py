@@ -660,7 +660,6 @@ def geometry_input(parameters, parser_info):
                              "'distance_source_g0' to: 0")
                 parameters['distance_source_g0'] = 0.0
 
-
         # Info
         logger.info("Beam geometry is '{0}' and setup geometry is '{1}'."
                     .format(parameters['beam_geometry'],
@@ -716,17 +715,13 @@ def geometry_input(parameters, parser_info):
                     raise InputError(error_message)
 
             logger.debug("... done.")
-        logger.debug("... done.")  # Component checking done
 
-        logger.debug("... done.")  # Scenarios done
-
-
-        logger.debug("... done.")  # General checking
-
-#        # Re-Init geometry result dictionaries (overwrites previous results,
-#        # which need to be stored before)
-#        parameters['results'] = dict()
-#        parameters['results']['geometry'] = dict()
+        # Component checking done
+        logger.debug("... done.")
+        # Scenarios done
+        logger.debug("... done.")
+        # General checking
+        logger.debug("... done.")
 
     except AttributeError as e:
         error_message = "Input arguments missing: {}." \
