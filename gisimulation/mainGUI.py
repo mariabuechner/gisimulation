@@ -32,6 +32,9 @@ from kivy.garden.filebrowser import FileBrowser
 from kivy.core.window import Window
 from kivy.factory import Factory as F  # Widgets etc. (UIX)
 import kivy.graphics as G
+# Disabled kivy multitouch from mouse input
+from kivy.config import Config
+Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
 
 # Logging
 # Set logger before importing simulation modules (to set format for all)
@@ -47,7 +50,6 @@ import simulation.parser_def as parser_def
 import simulation.utilities as utilities
 import simulation.check_input as check_input
 import interferometer.geometry as geometry
-
 
 # Set App Window configuration
 Window.maximize()  # NOTE: On desktop platforms only
@@ -2038,7 +2040,7 @@ class giGUI(F.BoxLayout):
                                 "    .                    .\n"
                                 "    .                    .\n"
                                 "    .                    .")
-            help_popup = _OKPopupWindow("Help: [0]".format(selected),
+            help_popup = _OKPopupWindow("Help: {0}".format(selected),
                                         help_message)
             help_popup.popup.open()
 

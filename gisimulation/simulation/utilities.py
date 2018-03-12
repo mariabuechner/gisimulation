@@ -23,29 +23,6 @@ set_logger_level:   set level of logger.
 """
 import logging
 
-# %% Classes
-
-
-class Struct:
-    """
-    Custom struct class to transform dictionaries into structs.
-
-    Parameters
-    ==========
-
-    **entries [**kwargs]:   dictionary
-    Notes
-    =====
-
-    dictionary:         dict['key']
-                        >>> value
-    struct:             struct = Struct(**dict)
-                        struct.key
-                        >>> value
-
-    """
-    def __init__(self, **entries):
-        self.__dict__.update(entries)
 
 # %% Functions
 

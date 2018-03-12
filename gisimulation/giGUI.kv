@@ -7,14 +7,13 @@
 #:set parser_info parser_def.get_arguments_info(parser_def.input_parser())
 #:set num_input_size 0.3
 #:set default_font_size 18
-#:set line_height main.LINE_HEIGHT # 35
+#:set line_height main.LINE_HEIGHT
 #:set menu_button_width 100
-#:set tab_height main.TAB_HEIGHT  # 1200
+#:set tab_height main.TAB_HEIGHT
 #:set dark_grey np.divide([88, 88, 88, 50],[255., 255., 255., 100.])
 #:set dark_red_button np.divide([255, 50, 50, 100],[255., 255., 255., 100.])
 #:set dark_red_menu np.divide([154, 31, 31, 100],[255., 255., 255., 100.])
 #:set darker_red_menu np.divide([128, 0, 0, 100],[255., 255., 255., 100.])
-
 
 # All buttons
 <Button>:
@@ -905,7 +904,7 @@
                     size_hint_y: None
                     # tempFix for issue #9 (start)
                     height: line_height * 1.1
-                    size_hint_x: 1.01
+                    size_hint_x: 1.01 *0.5
                     pos_hint: {'right': 0.999}
                     # tempFix for issue #9 (end)
                     text: 'Calculate geometry'
@@ -1006,4 +1005,3 @@
                         text: 'bla'
                     Button:
                         text: 'Raise error and display'
-                        on_press: root.check_geometry_input()
