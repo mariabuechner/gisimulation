@@ -174,7 +174,6 @@ def save_results(results_dir_path, results, overwrite=False):
                                if key not in false_booleans else 'False'
                                for key, value in result_dict.iteritems()}
 
-
                 scipy.io.savemat(file_path, result_dict)
         # If nothing was saved
         if not os.listdir(results_dir_path):
@@ -185,6 +184,33 @@ def save_results(results_dir_path, results, overwrite=False):
     else:
         logger.info("Do not overwrite, abort save.")
         logger.warning("Results paramters are NOT saved.")
+
+
+def reset_results():
+    """
+    Returns an empty dictionary based on the results structure.
+
+    Returns
+    =======
+
+    results [dict]
+
+    Notes
+    =====
+
+    results = dict()
+    results['geometry'] = dict()
+    results['input'] = dict()
+    # results['analytical'] = dict()
+    # results['simulation'] = dict()
+
+    """
+    results = dict()
+    results['geometry'] = dict()
+    results['input'] = dict()
+    # results['analytical'] = dict()
+    # results['simulation'] = dict()
+    return results
 
 
 def _overwrite_file(message, default_answer='n'):

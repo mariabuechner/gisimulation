@@ -42,7 +42,7 @@ logging.Logger.manager.root = Logger  # Makes Kivy Logger root for all
 logger = logging.getLogger(__name__)
 
 # gisimulation imports
-from main import collect_input, save_input, save_results
+from main import collect_input, save_input, save_results, reset_results
 import simulation.parser_def as parser_def
 import simulation.utilities as utilities
 import simulation.check_input as check_input
@@ -739,7 +739,7 @@ class _ContinueCancelPopupWindow():
 # Input and results management ################################################
 
 # Input
-def _load_input_file(input_file_path):
+def _load_input_file(input_file_path, input_parameters):
     """
     Load string parameter keys and string values from input file.
 
@@ -747,6 +747,8 @@ def _load_input_file(input_file_path):
     ==========
 
     input_file_path [str]:      file path to input file, including name.
+    input_parameters [dict]:    in case multiple input files are loaded, pass
+                                previous input_parameters
 
     Returns
     =======
@@ -761,7 +763,6 @@ def _load_input_file(input_file_path):
     Flags (--) are set without value if true, else not set
 
     """
-    input_parameters = dict()
     # Read lines from file
     with open(input_file_path) as f:
         input_lines = f.readlines()
@@ -824,7 +825,7 @@ def _load_results_dir(results_dir_path):
         logger.info(file_path)
         if '_input.txt' in file_:
             logger.info("Loading input...")
-            results['input'] = _load_input_file(file_path)
+            results['input'] = _load_input_file(file_path, dict())
             logger.info("... done.")
         elif '.mat' in file_:
             matfile_name = file_.split('.')[0]
@@ -1037,8 +1038,8 @@ class _IgnoreExceptions(ExceptionHandler):
         """
         return ExceptionManager.PASS
 
-# If kivy NOT set to debug, disable kivy error handling, so that the errors pop
-# up
+# If kivy is NOT set to debug, disable kivy error handling, so that the errors
+# pop up
 if Logger.level > 10:
     ExceptionManager.add_handler(_IgnoreExceptions())
 
@@ -1062,12 +1063,6 @@ class giGUI(F.BoxLayout):
     # "Global kivy" variables (if kivy ..Property() sharable in .kv)
     # params[var_name] = value
     parameters = F.DictProperty()
-    # parser_info[var_name] = [var_key, var_help]
-    parser_info = F.DictProperty()
-    # parser_link[var_key] = var_name
-    parser_link = F.DictProperty()
-
-    previous_results = F.DictProperty()
 
     spectrum_file_path = F.StringProperty()
     spectrum_file_loaded = F.BooleanProperty(defaultvalue=False)
@@ -1075,6 +1070,8 @@ class giGUI(F.BoxLayout):
     save_input_file_path = F.StringProperty()
     load_results_dir_path = F.StringProperty()
     save_results_dir_path = F.StringProperty()
+
+    previous_results = F.DictProperty()
 
     setup_components = F.ListProperty()
     sample_added = False
@@ -1084,6 +1081,7 @@ class giGUI(F.BoxLayout):
         super(giGUI, self).__init__(**kwargs)
         self.parser_info = \
             parser_def.get_arguments_info(parser_def.input_parser())
+        self.parser_link = dict()
         for var_name, value in self.parser_info.iteritems():
             self.parser_link[value[0]] = var_name
 
@@ -1092,16 +1090,14 @@ class giGUI(F.BoxLayout):
         self.parameters['spectrum_file'] = None
         self._set_widgets(self.parameters, from_file=False)
 
-        # Init geometry result dictionaries
-        self.results = dict()
-        self.results['geometry'] = dict()
-        self.results['input'] = dict()
+        # Init result dictionaries
+        self.results = reset_results()
 
         # Components trackers (needed for immediate update in GUI, since
         # parameters...components... is set later)
         self.setup_components = ['Source', 'Detector']
 
-        # Avail fixed gratings
+        # Available fixed gratings
         self.ids.g0_set.disabled = True
         if self.ids.beam_geometry.text == 'parallel':
             self.available_gratings = ['G1', 'G2']
@@ -1255,16 +1251,21 @@ class giGUI(F.BoxLayout):
         Calculate the GI geometry based on the set input parameters.
         """
         if self.check_geometry_input():
-#            # If previous results, store
-#            if self.results['geometry']:
-#                logger.debug("Storing geometry results in "
-#                             "previous_results['geometry']...")
-#                self.previous_results['geometry'] = self.results['geometry']
-#                logger.debug("... done.")
+            current_input = _collect_input(self.parameters, self.ids,
+                                           self.parser_info)
+
+            # If previous geometry results, store (all) previous results
+            if (self.results['geometry'] and  # geometry must always be calc'ed
+                    current_input != self.results['input']):
+                logger.info("Storing current results in previous_results...")
+                self.previous_results = self.results.copy()
+                logger.info("... done.")
+
+            # Reset results
+            self.results = reset_results()
 
             # Store input
-            self.results['input'] = _collect_input(self.parameters, self.ids,
-                                                   self.parser_info)
+            self.results['input'] = current_input
             # Calc geometry
             try:
                 logger.info("Calculationg geometry...")
@@ -1277,21 +1278,49 @@ class giGUI(F.BoxLayout):
 
             # Update geom results
             self._set_widgets(self.parameters, from_file=False)
-            self.show_geometry()
+            self.show_geometry(self.results)
             # Switch tabs
             self.ids.result_tabs.switch_to(self.ids.geometry_results)
 
-    def show_geometry(self):
+    def calculate_visibility(self):
+        """
+        ...
+        """
+        self.ids.result_tabs.switch_to(self.ids.visibility_results)
+
+    def show_results(self, results):
+        """
+        Display all results by calling the corresponding functions.
+
+        Parameters
+        ==========
+
+        results [dict]:         can be self.results or self.previous_results
+
+        """
+        if 'geometry' in results:
+            self.show_geometry(results)
+#        elif 'analytical' in results:
+#            self.show_analytical(results)
+
+
+    def show_geometry(self, results):
         """
         Display the GI geometry results. Updates sketch and updates
         distances and gratings result info.
-        """
-        self.ids.geometry_sketch.update_geometry(self.results['geometry'])
 
-        component_list = self.results['geometry']['component_list']
+        Parameters
+        ==========
+
+        results [dict]:         can be self.results or self.previous_results
+
+        """
+        self.ids.geometry_sketch.update_geometry(results['geometry'])
+
+        component_list = results['geometry']['component_list']
 
         # Show gratings results
-        grating_results = self.results['geometry'].copy()
+        grating_results = results['geometry'].copy()
         gratings = [gratings for gratings
                     in component_list if 'G' in gratings]
         for grating in gratings:
@@ -1322,9 +1351,9 @@ class giGUI(F.BoxLayout):
                                            self.ids.grating_results)
 
         # Show distances
-        distances_results = self.results['geometry'].copy()
+        distances_results = results['geometry'].copy()
 
-        if self.results['geometry']['gi_geometry'] != 'free':
+        if results['geometry']['gi_geometry'] != 'free':
             # Show d, l, s first
             if 'G0' in component_list:
                 start_from = 'G0'
@@ -1375,11 +1404,13 @@ class giGUI(F.BoxLayout):
             self.ids.distances_results.add_widget(boxlayout)
 
         # Add remaining intergrating distances
+        seperator = 85*'-'  # seperator line for tabel
+
         distance_keys = [key for key in distances_results.keys()
                          if 'distance_g' in key]
         if distance_keys:
             boxlayout = F.BoxLayout()
-            boxlayout.add_widget(F.NonFileBrowserLabel(text='----------'))
+            boxlayout.add_widget(F.NonFileBrowserLabel(text=seperator))
             self.ids.distances_results.add_widget(boxlayout)
             for distance_key in distance_keys:
                 label_text = (distance_key.split('_')[1].upper()+' to ' +
@@ -1396,7 +1427,7 @@ class giGUI(F.BoxLayout):
                          if 'distance_source' in key]
         if distance_keys:
             boxlayout = F.BoxLayout()
-            boxlayout.add_widget(F.NonFileBrowserLabel(text='----------'))
+            boxlayout.add_widget(F.NonFileBrowserLabel(text=seperator))
             self.ids.distances_results.add_widget(boxlayout)
             for distance_key in distance_keys:
                 label_text = ('Source to ' +
@@ -1412,18 +1443,18 @@ class giGUI(F.BoxLayout):
         if 'Sample' in component_list:
             # Find reference component
             sample_index = component_list.index('Sample')
-            if 'a' in self.results['geometry']['sample_position']:
+            if 'a' in results['geometry']['sample_position']:
                 reference = component_list[sample_index-1]
             else:
                 reference = component_list[sample_index+1]
 
             boxlayout = F.BoxLayout()
-            boxlayout.add_widget(F.NonFileBrowserLabel(text='----------'))
+            boxlayout.add_widget(F.NonFileBrowserLabel(text=seperator))
             self.ids.distances_results.add_widget(boxlayout)
             boxlayout = F.BoxLayout()
             boxlayout.add_widget(F.NonFileBrowserLabel(text=(reference +
                                                              ' to sample')))
-            distance = self.results['geometry']['sample_distance']
+            distance = results['geometry']['sample_distance']
             distance = str(round(distance, 3))
             boxlayout.add_widget(F.NonFileBrowserLabel(text=distance))
             self.ids.distances_results.add_widget(boxlayout)
@@ -1432,12 +1463,6 @@ class giGUI(F.BoxLayout):
         self.ids.distances_results.height = \
             self.calc_boxlayout_height(LINE_HEIGHT,
                                        self.ids.distances_results)
-
-    def calculate_visibility(self):
-        """
-        ...
-        """
-        self.ids.result_tabs.switch_to(self.ids.visibility_results)
 
     # #########################################################################
     # Manage global variables and widget behavior #############################
@@ -1471,13 +1496,29 @@ class giGUI(F.BoxLayout):
 
         """
         if value:
+            # Clear all
+            self.reset_widgets()
+            _collect_widgets(self.parameters, self.ids)  # Resets parameters
+
             # Do for all files in load_input_file_paths and merge results.
             # Later files overwrite first files.
+            input_parameters = dict()
             for input_file in value:
                 input_file = os.path.normpath(input_file)
                 logger.info("Loading input from file at: {0}"
                             .format(input_file))
-                input_parameters = _load_input_file(input_file)
+                input_parameters = _load_input_file(input_file,
+                                                    input_parameters)
+
+            # Store (all) previous results, if previous geometry results and
+            # even if input is the same
+            if self.results['geometry']:
+                logger.info("Storing current results in previous_results...")
+                self.previous_results = self.results.copy()
+                logger.info("... done.")
+            # Reset current results
+            self.results = reset_results()
+
             # Set widget content
             try:
                 self._set_widgets(input_parameters, from_file=True)
@@ -1572,6 +1613,13 @@ class giGUI(F.BoxLayout):
 
         """
         if value:
+            # Store (all) previous results, if previous geometry results and
+            # even if input is the same
+            if self.results['geometry']:
+                logger.info("Storing current results in previous_results...")
+                self.previous_results = self.results.copy()
+                logger.info("... done.")
+
             # Clear all
             self.reset_widgets()
             _collect_widgets(self.parameters, self.ids)  # Resets parameters
@@ -1583,20 +1631,18 @@ class giGUI(F.BoxLayout):
             for dict_name, sub_dict in self.results.iteritems():
                 if dict_name == 'input':
                     try:
-                        logger.debug("Setting input parameters to widgets...")
-                        self._set_widgets(self.results['input'], from_file=True)
-                        self._set_widgets(self.results['input'], from_file=True)
+                        self._set_widgets(sub_dict, from_file=True)
+                        self._set_widgets(sub_dict, from_file=True)
                     except check_input.InputError as e:
                         ErrorDisplay('Input Error', str(e))
                 else:
-                    # .matlogger.debug("Setting result parameters to widgets...")
+                    # .mat
                     self._set_widgets(sub_dict, from_file=False)
             # Update parameters
             _collect_widgets(self.parameters, self.ids)
 
             # Show loaded results
-            if 'geometry' in self.results:
-                self.show_geometry()
+            self.show_results(self.results)
 
             # Reset load_results_dir_path to allow loading of same file
             self.load_results_dir_path = ''
@@ -1665,6 +1711,52 @@ class giGUI(F.BoxLayout):
 
         """
         self.save_results_dir_path = ''
+
+    def on_show_previous_results_active(self):
+        """
+        Shows previous results if true, else current results.
+
+        Notes
+        =====
+
+        If previous results are shown and no current results exists
+        (minimum geometry), the current input is stored in
+        self.results['input'] to be able to reset.
+
+        self.parameters are left as is, only input and results change.
+
+        """
+        if self.ids.show_previous_results.active:
+            logger.info("Showing previous results...")
+            results = self.previous_results
+            # If no current results, store current input in results to be able
+            # to reset
+            if not self.results['geometry']:  # Geometry is always calculated
+                self.results['input'] = _collect_input(self.parameters,
+                                                       self.ids,
+                                                       self.parser_info)
+        else:
+            logger.info("Showing current results...")
+            results = self.results
+            # And show other parameters
+            self._set_widgets(self.parameters, from_file=False)
+
+        # Set widgets from results
+        self.reset_widgets()
+        for dict_name, sub_dict in results.iteritems():
+            if dict_name == 'input':
+                try:
+                    self._set_widgets(sub_dict, from_file=True)
+                    self._set_widgets(sub_dict, from_file=True)
+                except check_input.InputError as e:
+                    ErrorDisplay('Input Error', str(e))
+            else:
+                self._set_widgets(sub_dict, from_file=False)
+
+        # Show loaded results
+        self.show_results(results)
+
+        logger.info("... done.")
 
     # General
     def dismiss_popup(self):
@@ -2798,10 +2890,6 @@ class giGUI(F.BoxLayout):
         self.ids.spectrum_file_name.text = ''
         # Reset spectrum step size
         self.ids.spectrum_step.text = '1.0'
-
-        # Clear current results (not previous)
-        self.results['geometry'] = dict()
-        self.results['input'] = dict()
 
         logger.info("... done.")
 
