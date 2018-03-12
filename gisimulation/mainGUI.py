@@ -66,18 +66,18 @@ TAB_HEIGHT = 1200
 
 # #############################################################################
 # Menu bar ####################################################################
-class MenuSpinnerButton(F.Button):
+class CustomSpinnerButton(F.Button):
     """
-    Custom button for MenuSpinner, defined in .kv.
+    Custom button for CustomSpinner, defined in .kv.
     """
     pass
 
 
-class MenuSpinner(F.Spinner):
+class CustomSpinner(F.Spinner):
     """
-    Custom Spinner, uses MenuSpinnerButton.
+    Custom Spinner, uses CustomSpinnerButton.
     """
-    option_cls = F.ObjectProperty(MenuSpinnerButton)
+    option_cls = F.ObjectProperty(CustomSpinnerButton)
 
 
 # #############################################################################
@@ -922,7 +922,7 @@ def _collect_widgets(parameters, ids):
             continue
         elif 'GeometryGrid' in str(value):
             continue
-        elif 'MenuSpinner' in str(value):
+        elif 'CustomSpinner' in str(value):
             continue
         elif not value.text:
             parameters[var_name] = None
@@ -2802,7 +2802,7 @@ class giGUI(F.BoxLayout):
                 continue
             elif 'GeometryGrid' in str(value):
                 continue
-            elif 'MenuSpinner' in str(value):
+            elif 'CustomSpinner' in str(value):
                 continue
             elif not value.text:
                 continue
@@ -2872,7 +2872,7 @@ class giGUI(F.BoxLayout):
                 continue
             elif 'GeometryGrid' in str(value):
                 continue
-            elif 'MenuSpinner' in str(value):
+            elif 'CustomSpinner' in str(value):
                 continue
             elif not value.text:
                 continue
@@ -2918,6 +2918,8 @@ class giGUI(F.BoxLayout):
                              boxlayout.padding[1] + boxlayout.padding[3]) *
                             len(boxlayout.children))
         return boxlayout_height
+
+
 
 # %% Main App
 
