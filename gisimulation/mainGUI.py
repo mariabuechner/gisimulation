@@ -1322,9 +1322,14 @@ class giGUI(F.BoxLayout):
 
         """
         geometry_results = results['geometry'].copy()
+        component_list = results['geometry']['component_list']
+
+        # Update sketch
         self.ids.geometry_sketch.update_geometry(geometry_results)
 
-        component_list = results['geometry']['component_list']
+        # Clear geometry result tables
+        self.ids.grating_results.clear_widgets()
+        self.ids.distances_results.clear_widgets()
 
         # Show gratings results
         gratings = [gratings for gratings
