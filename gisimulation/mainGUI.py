@@ -4,7 +4,7 @@ GUI module for gi-simulation.
 Usage
 #####
 
-python maingui.py [Option...]::
+python mainGUI.py [Option...]::
     -d, --debug     show debug logs
 
 @author: buechner_m  <maria.buechner@gmail.com>
@@ -16,12 +16,6 @@ from functools import partial
 import os.path
 import scipy.io
 import logging
-# gisimulation imports
-from main import collect_input, save_input, save_results, reset_results
-import simulation.parser_def as parser_def
-import simulation.check_input as check_input
-import interferometer.geometry as geometry
-# Kivy imports
 # Set kivy logger console output format
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - '
                               '%(message)s')
@@ -29,6 +23,7 @@ console = logging.StreamHandler()
 console.setFormatter(formatter)
 sys._kivy_logging_handler = console
 import kivy
+kivy.require('1.10.0')  # Checks kivy version
 from kivy.base import ExceptionHandler, ExceptionManager
 from kivy.logger import Logger
 from kivy.app import App
@@ -37,7 +32,6 @@ from kivy.garden.filebrowser import FileBrowser
 from kivy.core.window import Window
 from kivy.factory import Factory as F  # Widgets etc. (UIX)
 import kivy.graphics as G
-from kivy.config import Config
 
 # Logging
 # Set logger before importing simulation modules (to set format for all)
@@ -46,13 +40,16 @@ logging.Logger.manager.root = Logger  # Makes Kivy Logger root for all
                                       # following loggers
 logger = logging.getLogger(__name__)
 
+# gisimulation imports
+from main import collect_input, save_input, save_results, reset_results
+import simulation.parser_def as parser_def
+import simulation.utilities as utilities
+import simulation.check_input as check_input
+import interferometer.geometry as geometry
 
-# Checks kivy version and disable multitouch mouse option
-kivy.require('1.10.0')
-Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
 
 # Set App Window configuration
-Window.maximize()  # NOTE: On desktop platforms only
+Window.maximize() # NOTE: On desktop platforms only
 
 # %% Constants
 
@@ -394,6 +391,7 @@ class GeometrySketch(F.Widget):
         self.reset()
 
     def reset(self):
+        self.geometry_group.clear()
         self.rectangle = G.Rectangle()
         self.geometry_group.add(G.Color(0, 0, 0, 0.75))
         self.geometry_group.add(self.rectangle)
@@ -451,8 +449,7 @@ class GeometryGrid(F.GridLayout):
             From source center to detector edges. Either triangel or rectangle.
 
         """
-        # Clear previous
-        self.sketch.geometry_group.clear()
+        # reset previous
         self.sketch.reset()
         # Update to parents size and position
         kivy.clock.Clock.schedule_once(self.set_attributes)
@@ -1096,6 +1093,7 @@ class giGUI(F.BoxLayout):
         # Update parameters
         _collect_widgets(self.parameters, self.ids)
         self.parameters['spectrum_file'] = None
+        self.parameters['fixed_distance'] = None
         self._set_widgets(self.parameters, from_file=False)
 
         # Init result dictionaries
@@ -1231,7 +1229,6 @@ class giGUI(F.BoxLayout):
                                 "('-e')."
                 logger.error(error_message)
                 raise check_input.InputError(error_message)
-
             # Gratings types defined if selected?
             for grating in ['g0', 'g1', 'g2']:
                 if self.ids[grating+'_set'].active and \
@@ -1243,10 +1240,11 @@ class giGUI(F.BoxLayout):
 
             # Check rest
             check_input.geometry_input(self.parameters, self.parser_info)
-            logger.info("... done.")
 
             # Update widget content
-            self._set_widgets(self.parameters, from_file=False)  # next frame
+            self._set_widgets(self.parameters, from_file=False)
+
+            logger.info("... done.")
 
         except check_input.InputError as e:
             success = False
@@ -1323,12 +1321,12 @@ class giGUI(F.BoxLayout):
         results [dict]:         can be self.results or self.previous_results
 
         """
-        self.ids.geometry_sketch.update_geometry(results['geometry'])
+        geometry_results = results['geometry'].copy()
+        self.ids.geometry_sketch.update_geometry(geometry_results)
 
         component_list = results['geometry']['component_list']
 
         # Show gratings results
-        grating_results = results['geometry'].copy()
         gratings = [gratings for gratings
                     in component_list if 'G' in gratings]
         for grating in gratings:
@@ -1336,15 +1334,15 @@ class giGUI(F.BoxLayout):
 
             boxlayout.add_widget(F.NonFileBrowserLabel(text=grating))
 
-            pitch = grating_results['pitch_'+grating.lower()]
+            pitch = geometry_results['pitch_'+grating.lower()]
             pitch = str(round(pitch, 3))
             boxlayout.add_widget(F.NonFileBrowserLabel(text=pitch))
 
-            duty_cycle = grating_results['duty_cycle_'+grating.lower()]
+            duty_cycle = geometry_results['duty_cycle_'+grating.lower()]
             duty_cycle = str(round(duty_cycle, 3))
             boxlayout.add_widget(F.NonFileBrowserLabel(text=duty_cycle))
 
-            radius = grating_results['radius_'+grating.lower()]
+            radius = geometry_results['radius_'+grating.lower()]
             if radius is None:
                 radius = '-'
             else:
@@ -1359,8 +1357,6 @@ class giGUI(F.BoxLayout):
                                            self.ids.grating_results)
 
         # Show distances
-        distances_results = results['geometry'].copy()
-
         if results['geometry']['gi_geometry'] != 'free':
             # Show d, l, s first
             if 'G0' in component_list:
@@ -1371,8 +1367,8 @@ class giGUI(F.BoxLayout):
             boxlayout = F.BoxLayout()
             boxlayout.add_widget(F.NonFileBrowserLabel(text=(start_from +
                                                              ' to G1')))
-            distance = distances_results.pop('distance_'+start_from.lower() +
-                                             '_g1')
+            distance = geometry_results.pop('distance_'+start_from.lower() +
+                                            '_g1')
             distance = str(round(distance, 3))
             boxlayout.add_widget(F.NonFileBrowserLabel(text=distance))
             self.ids.distances_results.add_widget(boxlayout)
@@ -1380,7 +1376,7 @@ class giGUI(F.BoxLayout):
             # d
             boxlayout = F.BoxLayout()
             boxlayout.add_widget(F.NonFileBrowserLabel(text='G1 to G2'))
-            distance = distances_results.pop('distance_g1_g2')
+            distance = geometry_results.pop('distance_g1_g2')
             distance = str(round(distance, 3))
             boxlayout.add_widget(F.NonFileBrowserLabel(text=distance))
             self.ids.distances_results.add_widget(boxlayout)
@@ -1389,7 +1385,7 @@ class giGUI(F.BoxLayout):
             boxlayout = F.BoxLayout()
             boxlayout.add_widget(F.NonFileBrowserLabel(text=(start_from +
                                                              ' to G2')))
-            distance = distances_results.pop('distance_'+start_from.lower() +
+            distance = geometry_results.pop('distance_'+start_from.lower() +
                                              '_g2')
             distance = str(round(distance, 3))
             boxlayout.add_widget(F.NonFileBrowserLabel(text=distance))
@@ -1398,7 +1394,7 @@ class giGUI(F.BoxLayout):
         # Add total system length and if necessary source to sample
         boxlayout = F.BoxLayout()
         boxlayout.add_widget(F.NonFileBrowserLabel(text='Source to detector'))
-        distance = distances_results.pop('distance_source_detector')
+        distance = geometry_results.pop('distance_source_detector')
         distance = str(round(distance, 3))
         boxlayout.add_widget(F.NonFileBrowserLabel(text=distance))
         self.ids.distances_results.add_widget(boxlayout)
@@ -1406,7 +1402,7 @@ class giGUI(F.BoxLayout):
         if 'Sample' in component_list:
             boxlayout = F.BoxLayout()
             boxlayout.add_widget(F.NonFileBrowserLabel(text='Source to sample'))
-            distance = distances_results.pop('distance_source_sample')
+            distance = geometry_results.pop('distance_source_sample')
             distance = str(round(distance, 3))
             boxlayout.add_widget(F.NonFileBrowserLabel(text=distance))
             self.ids.distances_results.add_widget(boxlayout)
@@ -1414,7 +1410,7 @@ class giGUI(F.BoxLayout):
         # Add remaining intergrating distances
         seperator = 85*'-'  # seperator line for tabel
 
-        distance_keys = [key for key in distances_results.keys()
+        distance_keys = [key for key in geometry_results.keys()
                          if 'distance_g' in key]
         if distance_keys:
             boxlayout = F.BoxLayout()
@@ -1425,13 +1421,13 @@ class giGUI(F.BoxLayout):
                               distance_key.split('_')[2])
                 boxlayout = F.BoxLayout()
                 boxlayout.add_widget(F.NonFileBrowserLabel(text=label_text))
-                distance = distances_results.pop(distance_key)
+                distance = geometry_results.pop(distance_key)
                 distance = str(round(distance, 3))
                 boxlayout.add_widget(F.NonFileBrowserLabel(text=distance))
                 self.ids.distances_results.add_widget(boxlayout)
 
         # Add remaining source to distances
-        distance_keys = [key for key in distances_results.keys()
+        distance_keys = [key for key in geometry_results.keys()
                          if 'distance_source' in key]
         if distance_keys:
             boxlayout = F.BoxLayout()
@@ -1442,7 +1438,7 @@ class giGUI(F.BoxLayout):
                               distance_key.split('_')[2].upper())
                 boxlayout = F.BoxLayout()
                 boxlayout.add_widget(F.NonFileBrowserLabel(text=label_text))
-                distance = distances_results.pop(distance_key)
+                distance = geometry_results.pop(distance_key)
                 distance = str(round(distance, 3))
                 boxlayout.add_widget(F.NonFileBrowserLabel(text=distance))
                 self.ids.distances_results.add_widget(boxlayout)
@@ -1504,6 +1500,15 @@ class giGUI(F.BoxLayout):
 
         """
         if value:
+            # Store (all) previous results, if previous geometry results and
+            # even if input is the same
+            if self.results['geometry']:
+                logger.info("Storing current results in previous_results...")
+                self.previous_results = self.results.copy()
+                logger.info("... done.")
+            # Reset current results
+            self.results = reset_results()
+
             # Clear all
             self.reset_widgets()
             _collect_widgets(self.parameters, self.ids)  # Resets parameters
@@ -1517,16 +1522,6 @@ class giGUI(F.BoxLayout):
                             .format(input_file))
                 input_parameters = _load_input_file(input_file,
                                                     input_parameters)
-
-            # Store (all) previous results, if previous geometry results and
-            # even if input is the same
-            if self.results['geometry']:
-                logger.info("Storing current results in previous_results...")
-                self.previous_results = self.results.copy()
-                logger.info("... done.")
-            # Reset current results
-            self.results = reset_results()
-
             # Set widget content
             try:
                 self._set_widgets(input_parameters, from_file=True)
@@ -1735,17 +1730,6 @@ class giGUI(F.BoxLayout):
 
         """
         if self.ids.show_previous_results.active:
-#        # set check mark appearance
-#        checkbox = self.ids.show_previous_results
-#        rectangle = checkbox.canvas.get_group('check_mark')[0]
-#
-#        if checkbox.active:
-#            # Set mark in checkbox
-#            rectangle.source = ('atlas://data/images/defaulttheme/'
-#                                'checkbox{0}_{1}'
-#                                .format(('_radio' if checkbox.group else ''),
-#                                        'on'))
-
             logger.info("Showing previous results...")
             results = self.previous_results
             # If no current results, store current input in results to be able
@@ -1755,27 +1739,20 @@ class giGUI(F.BoxLayout):
                                                        self.ids,
                                                        self.parser_info)
         else:
-#            # Set mark in checkbox
-#            rectangle.source = ('atlas://data/images/defaulttheme/'
-#                                'checkbox{0}_{1}'
-#                                .format(('_radio' if checkbox.group else ''),
-#                                        'off'))
-
             logger.info("Showing current results...")
             results = self.results
-            # And show other parameters
-            self._set_widgets(self.parameters, from_file=False)
 
         # Set widgets from results
         self.reset_widgets(show_previous=True)
+        # Set input
+        try:
+            self._set_widgets(results['input'], from_file=True)
+            self._set_widgets(results['input'], from_file=True)
+        except check_input.InputError as e:
+            ErrorDisplay('Input Error', str(e))
+        # Set .mat results
         for dict_name, sub_dict in results.iteritems():
-            if dict_name == 'input':
-                try:
-                    self._set_widgets(sub_dict, from_file=True)
-                    self._set_widgets(sub_dict, from_file=True)
-                except check_input.InputError as e:
-                    ErrorDisplay('Input Error', str(e))
-            else:
+            if dict_name != 'input':
                 self._set_widgets(sub_dict, from_file=False)
 
         # Show loaded results
@@ -2502,12 +2479,15 @@ class giGUI(F.BoxLayout):
 
     # Set widgete values
 
-    def _set_widgets(self, input_parameters, from_file):
+    def _set_widgets(self, parameters, from_file):
         """
         Update widget content (text) to values stored in parameters.
 
         Parameters
         ==========
+
+        parameters [dict]
+        from_file [bool]
 
         Notes
         =====
@@ -2538,7 +2518,7 @@ class giGUI(F.BoxLayout):
 
                 sample_position = None  # See below
 
-                for var_key, value_str in input_parameters.iteritems():
+                for var_key, value_str in parameters.iteritems():
                     logger.debug("var_key is {0}".format(var_key))
                     logger.debug("value_str is {0}".format(value_str))
                     if var_key not in self.parser_link:
@@ -2611,6 +2591,11 @@ class giGUI(F.BoxLayout):
                         logger.debug("Setting text of widget '{0}' to: {1}"
                                      .format(var_name, value_str[0].upper()))
                         self.ids[var_name].text = value_str[0].upper()
+                    elif var_name == 'fixed_distance':
+                        # Not a widget, but set in self.parameters
+                        logger.debug("Setting self.parameter[{0}] to: {1}"
+                                     .format(var_name, value_str[0]))
+                        self.parameters[var_name] = value_str[0]
                     elif var_name == 'sample_position':
                         # Set later, since component list must be updated first
                         sample_position = value_str[0]
@@ -2623,10 +2608,9 @@ class giGUI(F.BoxLayout):
                                      .format(var_name, True))
                         self.ids[var_name].active = True
                     elif var_name == 'spectrum_file':
+                        logger.debug("Setting self.spectrum_file_path to: {0}"
+                                     .format(value_str[0]))
                         self.spectrum_file_path = value_str[0]
-#                        # Move cursor to front of file name
-#                        self.ids['spectrum_file_name'].do_cursor_movement(
-#                                                       'cursor_home')
                     else:
                         logger.debug("Setting text of widget '{0}' to: {1}"
                                      .format(var_name, value_str[0]))
@@ -2658,9 +2642,9 @@ class giGUI(F.BoxLayout):
                     self.ids.add_sample.active = True
             else:
                 logger.info("Setting widget values from parameters...")
-                for var_name, value in input_parameters.iteritems():
+                for var_name, value in parameters.iteritems():
                     # Skip all distances and do later (except sample_distance)
-                    if var_name == 'sample_position':
+                    if var_name in ['sample_position', 'fixed_distance']:
                         # No widget
                         continue
                     if value is None:
@@ -2738,9 +2722,6 @@ class giGUI(F.BoxLayout):
                             self.ids[var_name].active = value
                         elif var_name == 'spectrum_file':
                             self.spectrum_file_path = value
-#                            # Move cursor to front of file name
-#                            self.ids['spectrum_file_name'].do_cursor_movement(
-#                                                           'cursor_home')
                         else:
                             logger.debug("Setting text of widget '{0}' to: {1}"
                                          .format(var_name, value))
@@ -2897,6 +2878,12 @@ class giGUI(F.BoxLayout):
             for widget in distance.children:
                 if 'FloatInput' in str(widget):
                     widget.text = ''
+
+        # Clear geometry result tables
+        self.ids.grating_results.clear_widgets()
+        self.ids.distances_results.clear_widgets()
+        # Reset geometry results sketch
+        self.ids.geometry_sketch.sketch.reset()
 
         for var_name, value in self.ids.iteritems():
             if 'CheckBox' in str(value):

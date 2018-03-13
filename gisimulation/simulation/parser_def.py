@@ -283,7 +283,6 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         type=numerical_type,
                         help="Pixel size (square) [um].")
     parser.add_argument('-fov', dest='field_of_view', nargs=2,
-                        #required=True,
                         action=_StoreNpArray,
                         metavar='FIELD_OF_VIEW',
                         type=np.int,
@@ -308,6 +307,14 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                               "(default)."))
 
     # Distances
+    parser.add_argument('-fd', dest='fixed_distance',
+                        type=str.lower,
+                        choices=['distance_source_g1', 'distance_source_g2',
+                                 'distance_g0_g1', 'distance_g0_g2'],
+                        metavar='FIXED_DISTANCE',
+                        help="Choose based on which fixed distance the "
+                        "interferometer will be calcualted from. Note that G0 "
+                        "can only be chosen if G0 is added to the setup.")
     # From source
     parser.add_argument('-sg0', dest='distance_source_g0',
                         action=_PositiveNumber,

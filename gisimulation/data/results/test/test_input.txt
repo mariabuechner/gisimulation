@@ -25,6 +25,8 @@ inv
 10.0
 80.0
 --curved_detector
+-fd
+distance_g0_g2
 -fg
 g1
 -m1

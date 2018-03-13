@@ -418,17 +418,30 @@ def geometry_input(parameters, parser_info):
                             raise InputError(error_message)
                         elif parameters['distance_source_g1'] and \
                                 parameters['distance_source_g2']:
-                            logger.warning("Both distance from Source to G1 "
-                                           "({0}) AND Source to G2 ({1}) are "
-                                           "defined, choosing last choice of "
-                                           "set distance ({2})."
-                                           .format(parser_info
-                                                   ['distance_source_g1'][0],
-                                                   parser_info
-                                                   ['distance_source_g2'][0],
-                                                   parameters
-                                                   ['fixed_distance']))
-                            fixed_distance = parameters['fixed_distance']
+                            if parameters['fixed_distance']:
+                                logger.warning("Both distance from Source to "
+                                               "G1 ({0}) AND Source to G2 "
+                                               "({1}) are defined, choosing "
+                                               "last choice of set distance "
+                                               "({2})."
+                                               .format(parser_info
+                                                       ['distance_g0_g1'][0],
+                                                       parser_info
+                                                       ['distance_g0_g2'][0],
+                                                       parameters
+                                                       ['fixed_distance']))
+                                fixed_distance = parameters['fixed_distance']
+                            else:
+                                # Fixed distance not defined
+                                error_message = ("Either distance from Source "
+                                                 "to G1 ({0}) OR Source to G2 "
+                                                 "({1}) must be defined [mm]."
+                                                 .format(parser_info
+                                                         ['distance_g0_g1'][0],
+                                                         parser_info
+                                                         ['distance_g0_g2'][0]))
+                                logger.error(error_message)
+                                raise InputError(error_message)
                         elif parameters['distance_source_g1']:
                             fixed_distance = 'distance_source_g1'
                         elif parameters['distance_source_g2']:
@@ -462,23 +475,35 @@ def geometry_input(parameters, parser_info):
                             raise InputError(error_message)
                         elif parameters['distance_g0_g1'] and \
                                 parameters['distance_g0_g2']:
-                            logger.warning("Both distance from G0 to G1 "
-                                           "({0}) AND G0 to G2 ({1}) are "
-                                           "defined, choosing last choice of "
-                                           "set distance ({2})."
-                                           .format(parser_info
-                                                   ['distance_g0_g1'][0],
-                                                   parser_info
-                                                   ['distance_g0_g2'][0],
-                                                   parameters
-                                                   ['fixed_distance']))
-                            fixed_distance = parameters['fixed_distance']
+                            if parameters['fixed_distance']:
+                                logger.warning("Both distance from G0 to G1 "
+                                               "({0}) AND G0 to G2 ({1}) are "
+                                               "defined, choosing last choice "
+                                               "of set distance ({2})."
+                                               .format(parser_info
+                                                       ['distance_g0_g1'][0],
+                                                       parser_info
+                                                       ['distance_g0_g2'][0],
+                                                       parameters
+                                                       ['fixed_distance']))
+                                fixed_distance = parameters['fixed_distance']
+                            else:
+                                # Fixed distance not defined
+                                error_message = ("Either distance from G0 to "
+                                                 "G1 ({0}) OR G0 to G2 ({1}) "
+                                                 "must be defined [mm]."
+                                                 .format(parser_info
+                                                         ['distance_g0_g1'][0],
+                                                         parser_info
+                                                         ['distance_g0_g2'][0]))
+                                logger.error(error_message)
+                                raise InputError(error_message)
                         elif parameters['distance_g0_g1']:
                             fixed_distance = 'distance_g0_g1'
                         elif parameters['distance_g0_g2']:
                             fixed_distance = 'distance_g0_g2'
                     else:
-                        fixed_distance = None
+                        fixed_distance = None  # Sym
                 parameters['fixed_distance'] = fixed_distance
 
                 # Sort updated component list
