@@ -16,6 +16,12 @@ from functools import partial
 import os.path
 import scipy.io
 import logging
+# gisimulation imports
+from main import collect_input, save_input, save_results, reset_results
+import simulation.parser_def as parser_def
+import simulation.check_input as check_input
+import interferometer.geometry as geometry
+# Kivy imports
 # Set kivy logger console output format
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - '
                               '%(message)s')
@@ -23,7 +29,6 @@ console = logging.StreamHandler()
 console.setFormatter(formatter)
 sys._kivy_logging_handler = console
 import kivy
-kivy.require('1.10.0')  # Checks kivy version
 from kivy.base import ExceptionHandler, ExceptionManager
 from kivy.logger import Logger
 from kivy.app import App
@@ -32,24 +37,19 @@ from kivy.garden.filebrowser import FileBrowser
 from kivy.core.window import Window
 from kivy.factory import Factory as F  # Widgets etc. (UIX)
 import kivy.graphics as G
-# Disabled kivy multitouch from mouse input
 from kivy.config import Config
-Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
 
 # Logging
 # Set logger before importing simulation modules (to set format for all)
 # Use Kivy logger to handle logging.Logger
 logging.Logger.manager.root = Logger  # Makes Kivy Logger root for all
                                       # following loggers
-
 logger = logging.getLogger(__name__)
 
-# gisimulation imports
-from main import collect_input, save_input, save_results, reset_results
-import simulation.parser_def as parser_def
-import simulation.utilities as utilities
-import simulation.check_input as check_input
-import interferometer.geometry as geometry
+
+# Checks kivy version and disable multitouch mouse option
+kivy.require('1.10.0')
+Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
 
 # Set App Window configuration
 Window.maximize()  # NOTE: On desktop platforms only
@@ -830,31 +830,37 @@ def _load_results_dir(results_dir_path):
             results['input'] = _load_input_file(file_path, dict())
             logger.info("... done.")
         elif '.mat' in file_:
-            matfile_name = file_.split('.')[0]
+            matfile_name = str(file_.split('.')[0])
             logger.info("Loading {0} into results['{1}']..."
                         .format(file_, matfile_name))
             raw_mat = scipy.io.loadmat(file_path, squeeze_me=True,
                                        chars_as_strings=True)
+
             # Remove __header__ and __globals__
             del raw_mat['__header__']
             del raw_mat['__version__']
             del raw_mat['__globals__']
             # [] to None to read from .mat
             # [] are read as np.array([], dtype=float64)
-            empty_arrays = [key for key, var in raw_mat.iteritems()
-                            if (type(var).__module__ == 'numpy' and
-                                var.size == 0)]
+            empty_arrays = [key for key, value in raw_mat.iteritems()
+                            if (type(value).__module__ == 'numpy' and
+                                value.size == 0)]
             results[matfile_name] = {key: value
                                      if key not in empty_arrays else None
                                      for key, value
                                      in raw_mat.iteritems()}
+            # Convert strings from unicode to string
+            results[matfile_name] = {key: value
+                                     if not isinstance(value, unicode)
+                                     else str(value) for key, value
+                                     in results[matfile_name].iteritems()}
             # Change 'True'/'False' to True/False
-            true_booleans = [key for key, var
+            true_booleans = [key for key, value
                              in results[matfile_name].iteritems()
-                             if (type(var) is str and var == 'True')]
+                             if (type(value) is str and value == 'True')]
             false_booleans = [key for key, var
                               in results[matfile_name].iteritems()
-                              if (type(var) is str and var is 'False')]
+                              if (type(value) is str and value is 'False')]
             results[matfile_name] = {key: value
                                      if key not in true_booleans else True
                                      for key, value
@@ -1729,6 +1735,17 @@ class giGUI(F.BoxLayout):
 
         """
         if self.ids.show_previous_results.active:
+#        # set check mark appearance
+#        checkbox = self.ids.show_previous_results
+#        rectangle = checkbox.canvas.get_group('check_mark')[0]
+#
+#        if checkbox.active:
+#            # Set mark in checkbox
+#            rectangle.source = ('atlas://data/images/defaulttheme/'
+#                                'checkbox{0}_{1}'
+#                                .format(('_radio' if checkbox.group else ''),
+#                                        'on'))
+
             logger.info("Showing previous results...")
             results = self.previous_results
             # If no current results, store current input in results to be able
@@ -1738,13 +1755,19 @@ class giGUI(F.BoxLayout):
                                                        self.ids,
                                                        self.parser_info)
         else:
+#            # Set mark in checkbox
+#            rectangle.source = ('atlas://data/images/defaulttheme/'
+#                                'checkbox{0}_{1}'
+#                                .format(('_radio' if checkbox.group else ''),
+#                                        'off'))
+
             logger.info("Showing current results...")
             results = self.results
             # And show other parameters
             self._set_widgets(self.parameters, from_file=False)
 
         # Set widgets from results
-        self.reset_widgets()
+        self.reset_widgets(show_previous=True)
         for dict_name, sub_dict in results.iteritems():
             if dict_name == 'input':
                 try:
@@ -2770,6 +2793,9 @@ class giGUI(F.BoxLayout):
         self.ids [dict]:            self.ids[var_name] = var_value
 
         """
+        # First switch back to curent results
+        self.ids.show_previous_results.active = False
+
         input_parameters = _collect_input(self.parameters, self.ids,
                                           self.parser_info)
 
@@ -2838,6 +2864,9 @@ class giGUI(F.BoxLayout):
         """
         Reset all distances to 'empty'.
         """
+        # First switch back to curent results
+        self.ids.show_previous_results.active = False
+
         logger.info("Resetting distances...")
 
         for distance in self.ids.distances.children:
@@ -2847,9 +2876,17 @@ class giGUI(F.BoxLayout):
 
         logger.info("... done.")
 
-    def reset_widgets(self):
+    def reset_widgets(self, show_previous=False):
         """
-        Reset all widgets to 'empty'/False.
+        Reset all widgets to 'empty'/False, except if show_previous is true.
+
+        Parameters
+        ==========
+
+        show_pervious [bool]:   Default is false, reset all.
+                                If true, do not reset show_previous_results
+                                checkbox
+
         """
         logger.info("Resetting widget values...")
 
@@ -2863,7 +2900,12 @@ class giGUI(F.BoxLayout):
 
         for var_name, value in self.ids.iteritems():
             if 'CheckBox' in str(value):
-                value.active = False
+                # Exclude show previous, since on_show_previous_results_active
+                # is calling this function
+                if not show_previous:
+                    value.active = False
+                elif var_name != 'show_previous_results':
+                    value.active = False
             elif 'TabbedPanel' in str(value):
                 continue
             elif 'Layout' in str(value):

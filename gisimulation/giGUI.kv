@@ -149,7 +149,7 @@
             CheckBox:
                 disabled: not root.previous_results
                 id: show_previous_results
-                #on_active: root.on_show_previous_results_active()
+                on_active: root.on_show_previous_results_active()
                 canvas:
                     Clear:
                     Color:
@@ -160,6 +160,7 @@
                     Color:
                         rgba: 1, 1, 1, 1
                     Rectangle:
+                        group: 'check_mark'
                         source: 'atlas://data/images/defaulttheme/checkbox%s_%s' % (('_radio' if self.group else ''), ('on' if self.active else 'off'))
                         size: self.size
                         pos: self.pos
