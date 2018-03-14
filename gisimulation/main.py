@@ -24,6 +24,48 @@ NUMERICAL_TYPE = np.float
 
 # %% Functions
 
+# #############################################################################
+# Calculations ################################################################
+
+
+def calculate_geometry(parameters, parser_info, results):
+    """
+    Calculate the GI geometry based on the set input parameters.
+
+    Parameters
+    ==========
+
+    parameters [dict]
+    parser_info [dict]
+    results [dict]
+
+    Notes
+    =====
+
+    parameters and results are passed as references, thus the function changes
+    them 'globally'
+
+    """
+    # Check input
+    logger.info("Checking geometry input...")
+    try:
+        check_input.geometry_input(parameters, parser_info)
+    except check_input.InputError:
+        logger.info("Command line error, exiting...")
+        sys.exit(2)  # 2: command line syntax errors
+    logger.info("... done.")
+
+    # Calculate
+    logger.info("Calculationg geometry...")
+    gi_geometry = geometry.Geometry(parameters)
+    results['geometry'] = gi_geometry.results
+    parameters = gi_geometry.update_parameters()
+    logger.info("... done.")
+
+# #############################################################################
+# Input/Results i/o ###########################################################
+
+
 def collect_input(parameters, parser_info):
     """
     Selects only input parameters defined in parser from all available
@@ -212,6 +254,9 @@ def reset_results():
     # results['simulation'] = dict()
     return results
 
+# #############################################################################
+# Utilities ###################################################################
+
 
 def compare_dictionaries(a, b):
     """
@@ -285,45 +330,25 @@ if __name__ == '__main__':
     # Parse from command line
 
     parser = parser_def.input_parser(NUMERICAL_TYPE)
-    args = parser.parse_args()
-    parameters = vars(args)
-#    parameters = utilities.Struct(**vars(args))
-# =============================================================================
-# LEAVE OUT FOR NOW, TRY TO CHECK INPUT WITH NONETYPES
-#     args = parser.parse_args()  # returns namespace
-#     # Clean parsed arguments
-#     all_input_parameters = vars(args)  # namespace to dict
-#     # Keep verbosity level and all non-None input parameters
-#     input_parameters = dict([key, value] for [key, value] in
-#                             all_input_parameters.items()
-#                             if value is not None or key == 'verbose')
-#    # dict to struct
-#    parameters = simulation.utility.Struct(**input_parameters)
-# =============================================================================
+    parser_info = parser_def.get_arguments_info(parser)
+
+    parameters = vars(parser.parse_args())
+
+    results = reset_results()
 
     # Config logger output
-
-    # Get verbose level of logger
     logger_level = utilities.get_logger_level(parameters['verbose'])
     # Set logger config
     logging.basicConfig(level=logger_level, format='%(asctime)s - %(name)s '
                         '- %(levelname)s - '
                         '%(message)s', disable_existing_loggers=False)
 
-    parser_info = parser_def.get_arguments_info(parser)
+#    # Check input
+#    try:
+#        parameters = check_input._test_check_parser(parameters)
+#    except check_input.InputError:
+#        logger.info("Command line error, exiting...")
+#        sys.exit(2)  # 2: command line syntax errors
 
-    # Check input
-    try:
-        logger.info("Checking parsed arguments...")
-        parameters = check_input.check_parser(parameters)
-        logger.info("... done.")
-    except check_input.InputError:
-        logger.info("Command line error, exiting...")
-        sys.exit(2)  # 2: command line syntax errors
-
-    # Calc geometries
-    gi_geometry = geometry.Geometry(parameters)
-    parameters = gi_geometry.update_parameters()
-
-
-
+    # Calc geometries (params check inside)
+    calculate_geometry(parameters, parser_info, results)

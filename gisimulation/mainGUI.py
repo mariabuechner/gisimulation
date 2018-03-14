@@ -1306,8 +1306,10 @@ class giGUI(F.BoxLayout):
                                 results tab
 
         """
-        # Update geometry
+        # Update geometry (also stores previous and resets self.results)
         self.calculate_geometry()
+
+        # Calc analytical
 
         if switch_tab:
             self.ids.result_tabs.switch_to(self.ids.analytical_results)

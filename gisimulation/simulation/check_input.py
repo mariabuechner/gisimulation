@@ -34,9 +34,9 @@ class InputError(Exception):
 # %% Public checking functions
 
 
-def check_parser(parameters):
+def _test_check_parser(parameters):
     """
-    checking all input (from parser).
+    Checking all input (from parser).
 
     Parameters
     ==========
@@ -47,13 +47,14 @@ def check_parser(parameters):
     # Get parameter infos from parser, to link var_names and var_keys
     parser_info = parser_def.get_arguments_info(parser_def.input_parser())
 
+    logger.info("Checking geometry input...")
+    geometry_input(parameters, parser_info)
+    logger.info("... done.")
+
     logger.info("Checking general input...")
     # % Minimal required input for all scenarios
     all_input(parameters, parser_info)
     logger.info("... done.")
-
-    # % Scenario specific requirements
-    # General and connected parameters (calculated geom., Metrices, ct, ...)
 
 
 def all_input(parameters, parser_info):
@@ -171,7 +172,6 @@ def all_input(parameters, parser_info):
             raise InputError(error_message)
         logger.debug("... done.")
 
-
         # Check all selected gratings (materials and phase/absorption)
         if 'G0' in parameters['component_list']:
             logger.debug("Checking G0...")
@@ -201,11 +201,6 @@ def all_input(parameters, parser_info):
             raise InputError(error_message)
 
         logger.debug("... done.")  # General checking
-
-#        # Re-Init geometry result dictionaries (overwrites previous results,
-#        # which need to be stored before)
-#        parameters['results'] = dict()
-#        parameters['results']['geometry'] = dict()
 
     except AttributeError as e:
         error_message = "Input arguments missing: {}." \
