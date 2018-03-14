@@ -213,6 +213,33 @@ def reset_results():
     return results
 
 
+def compare_dictionaries(a, b):
+    """
+    Compares if 2 dictionaries are equal (keys and values).
+
+    Parameters
+    ==========
+
+    a [dict]
+    b [dict]
+
+    Returns
+    =======
+
+    True if both dicts have the same keys and the same values, else False.
+
+    """
+    if len(a) != len(b):
+        return False
+    for key, value in a.iteritems():
+        if key not in b:
+            return False
+        elif np.array_equal(value, b[key]):
+            return True
+        else:
+            return False
+
+
 def _overwrite_file(message, default_answer='n'):
     """
     Promt user to enter y [yes] or n [n] when potentially overwriting a file.

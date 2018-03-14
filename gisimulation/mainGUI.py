@@ -41,7 +41,7 @@ logging.Logger.manager.root = Logger  # Makes Kivy Logger root for all
 logger = logging.getLogger(__name__)
 
 # gisimulation imports
-from main import collect_input, save_input, save_results, reset_results
+import main
 import simulation.parser_def as parser_def
 import simulation.utilities as utilities
 import simulation.check_input as check_input
@@ -1022,7 +1022,7 @@ def _collect_input(parameters, ids, parser_info):
     # Update parameters
     _collect_widgets(parameters, ids)
 
-    input_parameters = collect_input(parameters, parser_info)
+    input_parameters = main.collect_input(parameters, parser_info)
 
     return input_parameters
 
@@ -1097,7 +1097,7 @@ class giGUI(F.BoxLayout):
         self._set_widgets(self.parameters, from_file=False)
 
         # Init result dictionaries
-        self.results = reset_results()
+        self.results = main.reset_results()
 
         # Components trackers (needed for immediate update in GUI, since
         # parameters...components... is set later)
@@ -1260,15 +1260,15 @@ class giGUI(F.BoxLayout):
             current_input = _collect_input(self.parameters, self.ids,
                                            self.parser_info)
 
-            # If previous geometry results, store (all) previous results
             if (self.results['geometry'] and  # geometry must always be calc'ed
-                    current_input != self.results['input']):
+                    main.compare_dictionaries(current_input,
+                                         self.results['input'])):
                 logger.info("Storing current results in previous_results...")
                 self.previous_results = self.results.copy()
                 logger.info("... done.")
 
             # Reset results
-            self.results = reset_results()
+            self.results = main.reset_results()
 
             # Store input
             self.results['input'] = current_input
@@ -1512,7 +1512,7 @@ class giGUI(F.BoxLayout):
                 self.previous_results = self.results.copy()
                 logger.info("... done.")
             # Reset current results
-            self.results = reset_results()
+            self.results = main.reset_results()
 
             # Clear all
             self.reset_widgets()
@@ -1565,7 +1565,7 @@ class giGUI(F.BoxLayout):
                 logger.warning("File '{0}' already exists!".format(value))
                 WarningDisplay("File already exists!",
                                "Do you want to overwrite it?",
-                               partial(save_input,
+                               partial(main.save_input,
                                        value,
                                        input_parameters,
                                        True),
@@ -1573,7 +1573,7 @@ class giGUI(F.BoxLayout):
                                self.cancel_input_save)
             else:
                 # File new
-                save_input(value, input_parameters, True)
+                main.save_input(value, input_parameters, True)
                 logger.info('... done.')
                 self.dismiss_popup()
                 self.save_input_file_path = ''
@@ -1682,7 +1682,7 @@ class giGUI(F.BoxLayout):
                 logger.warning("Folder '{0}' already exists!".format(value))
                 WarningDisplay("File already exists!",
                                "Do you want to overwrite it?",
-                               partial(save_results,
+                               partial(main.save_results,
                                        value,
                                        self.results,
                                        True),
@@ -1690,7 +1690,7 @@ class giGUI(F.BoxLayout):
                                self.cancel_results_save)
             else:
                 # File new
-                save_results(value, self.results, True)
+                main.save_results(value, self.results, True)
                 logger.info('... done.')
                 self.dismiss_popup()
                 self.save_results_dir_path = ''
@@ -1736,7 +1736,7 @@ class giGUI(F.BoxLayout):
         """
         if self.ids.show_previous_results.active:
             logger.info("Showing previous results...")
-            results = self.previous_results
+            results = self.previous_results.copy()
             # If no current results, store current input in results to be able
             # to reset
             if not self.results['geometry']:  # Geometry is always calculated
@@ -1745,7 +1745,7 @@ class giGUI(F.BoxLayout):
                                                        self.parser_info)
         else:
             logger.info("Showing current results...")
-            results = self.results
+            results = self.results.copy()
 
         # Set widgets from results
         self.reset_widgets(show_previous=True)
