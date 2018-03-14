@@ -1287,11 +1287,17 @@ class giGUI(F.BoxLayout):
             # Switch tabs
             self.ids.result_tabs.switch_to(self.ids.geometry_results)
 
-    def calculate_visibility(self):
+    def calculate_analytical(self):
         """
         ...
         """
-        self.ids.result_tabs.switch_to(self.ids.visibility_results)
+        self.ids.result_tabs.switch_to(self.ids.analytical_results)
+
+    def run_simulation(self):
+        """
+        ...
+        """
+        self.ids.result_tabs.switch_to(self.ids.simulation_results)
 
     def show_results(self, results):
         """
@@ -1502,11 +1508,6 @@ class giGUI(F.BoxLayout):
         input_parameters [dict]:    input_parameters[var_key] = str(value)
 
         """
-
-        if value:
-            logger.info("===============input================")
-
-
         if value:
             # Store (all) previous results, if previous geometry results and
             # even if input is the same
@@ -1611,7 +1612,8 @@ class giGUI(F.BoxLayout):
     # Results
     def on_load_results_dir_path(self, instance, value):
         """
-        When load_results_dir_path changes, ... .
+        When load_results_dir_path changes, laod keys and values from input
+        file and all .mat files in selection list.
         Update widget content accordingly.
 
         Notes

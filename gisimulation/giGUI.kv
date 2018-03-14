@@ -834,14 +834,6 @@
                                     Distances:
                                         id: distances
 
-
-
-
-                                Button:
-                                    pos_hint: {'top': 0.04}
-                                    text: 'Check input'
-                                    on_press: root.check_geometry_input()
-
                     # Sample
                     TabbedPanelItem:
                         text: 'Sample'
@@ -907,6 +899,18 @@
                     text: 'Calculate geometry'
                     on_press: root.calculate_geometry()
 
+                Button:
+                    disabled: show_previous_results.active
+                    size_hint_y: None
+                    text: 'Calculate analytical results'
+                    on_press: root.calculate_analytical()
+
+                Button:
+                    disabled: show_previous_results.active
+                    size_hint_y: None
+                    text: 'Run simulation'
+                    on_press: root.run_simulation()
+
 
         # Left side of splitter
         TabbedPanel:
@@ -916,7 +920,7 @@
 
             # Geometry
             TabbedPanelItem:
-                text: 'Geometry Overview'
+                text: 'Geometry'
                 id: geometry_results
 
                 ScrollView:
@@ -978,27 +982,50 @@
                                     orientation: 'vertical'
                                     size_hint_y: None
 
-
-
-
-
-#                Button:
-#                    text: 'Calculate visibility'
-#                    on_press: root.calculate_visibility()
-
-            # Visibility (Maybe in overview tab???)
-            # For normal spectrum, with sample spectrum
+            # Analytical results
             TabbedPanelItem:
-                text: 'Visibility'
-                id: visibility_results
-                NonFileBrowserLabel:
-                    text: '2. tab content area'
+                text: 'Analytical'
+                id: analytical_results
+                TabbedPanel:
+                    id: analytical_tabs
+                    do_default_tab: False
+                    tab_width: self.size[0]/len(self.tab_list)
 
-            # CT
+                    # Visibility and spectrum development
+                    TabbedPanelItem:
+                        text: 'Spectrum and Visibility'
+                        NonFileBrowserLabel:
+                            text: '2. tab content area'
+
+                    # Performance (Radiography and CT)
+                    TabbedPanelItem:
+                        text: 'Performance'
+                        BoxLayout:
+                            NonFileBrowserLabel:
+                                text: 'bla'
+                            Button:
+                                text: 'Raise error and display'
+
+            # Simulation results
             TabbedPanelItem:
-                text: 'CT'
-                BoxLayout:
-                    NonFileBrowserLabel:
-                        text: 'bla'
-                    Button:
-                        text: 'Raise error and display'
+                text: 'Simulation'
+                id: simulation_results
+                TabbedPanel:
+                    id: simulation_tabs
+                    do_default_tab: False
+                    tab_width: self.size[0]/len(self.tab_list)
+
+                    # Visibility and spectrum development
+                    TabbedPanelItem:
+                        text: 'Spectrum and Visibility'
+                        NonFileBrowserLabel:
+                            text: '2. tab content area'
+
+                    # Performance (Radiography and CT)
+                    TabbedPanelItem:
+                        text: 'Performance'
+                        BoxLayout:
+                            NonFileBrowserLabel:
+                                text: 'bla'
+                            Button:
+                                text: 'Raise error and display'
