@@ -1,5 +1,5 @@
 """
-Module to run grating interferometer simulation and metrics calculation
+Module to run grating interferometer simulation and metrics calculation.
 
 @author: buechner_m <maria.buechner@gmail.com>
 """
@@ -54,6 +54,9 @@ def calculate_geometry(parameters, parser_info, results):
         logger.info("Command line error, exiting...")
         sys.exit(2)  # 2: command line syntax errors
     logger.info("... done.")
+
+    # Store input
+    results['input'] = collect_input(parameters, parser_info)
 
     # Calculate
     logger.info("Calculationg geometry...")
@@ -352,3 +355,8 @@ if __name__ == '__main__':
 
     # Calc geometries (params check inside)
     calculate_geometry(parameters, parser_info, results)
+
+#    input_parameters = collect_input(parameters, parser_info)
+    save_input('C:/Users/buechner_m/Documents/Code/bCTDesign/Simulation/Python/gisimulation/gisimulation/data/inputs/test5.txt', results['input'])
+
+    save_results('C:/Users/buechner_m/Documents/Code/bCTDesign/Simulation/Python/gisimulation/gisimulation/data/results/test5', results)

@@ -42,7 +42,7 @@ class _CustomFormatter(argparse.ArgumentDefaultsHelpFormatter,
 
 class _StoreNpArray(argparse._StoreAction):
     """
-    argpars._StoreAction custom class to store multiple inout values into a
+    argpars._StoreAction custom class to store multiple input values into a
     numpy array. Values must be true positives.
 
     Usage
@@ -52,7 +52,25 @@ class _StoreNpArray(argparse._StoreAction):
 
     """
     def __call__(self, parser, namespace, values, option_string=None):
-        values = np.array(values, dtype=NUMERICAL_TYPE)
+        values = np.array(values).astype(np.float).astype(NUMERICAL_TYPE)
+        if (values <= 0).any():
+            parser.error("Values in {0} must be > 0.".format(option_string))
+        setattr(namespace, self.dest, values)
+
+
+class _StoreNpIntArray(argparse._StoreAction):
+    """
+    argpars._StoreAction custom class to store multiple input values into a
+    numpy array. Values must be true positives.
+
+    Usage
+    #####
+
+    action=_StoreNpIntArray
+
+    """
+    def __call__(self, parser, namespace, values, option_string=None):
+        values = np.array(values).astype(np.float).round().astype(np.int)
         if (values <= 0).any():
             parser.error("Values in {0} must be > 0.".format(option_string))
         setattr(namespace, self.dest, values)
@@ -123,7 +141,6 @@ def _PhaseValue(value):
     value [NUMERICAL_TYPE]
 
     """
-    print(type(value))
     if type(value) is str:
         if value.lower() == 'pi':
             value = np.pi
@@ -245,7 +262,7 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
     parser.add_argument('-r', dest='spectrum_range',
                         action=_StoreNpArray,
                         metavar='SPECTRUM_RANGE',
-                        nargs=2, type=numerical_type,
+                        nargs=2,
                         help=("Range of energies [keV]: min max.\n"
                               "If specturm from file: cut off at >= min and"
                               "<= max.\n"
@@ -283,9 +300,8 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         type=numerical_type,
                         help="Pixel size (square) [um].")
     parser.add_argument('-fov', dest='field_of_view', nargs=2,
-                        action=_StoreNpArray,
+                        action=_StoreNpIntArray,
                         metavar='FIELD_OF_VIEW',
-                        type=np.int,
                         help="Number of pixels: x y.")
     parser.add_argument('-dth', dest='detector_threshold',
                         action=_TruePositiveNumber,
