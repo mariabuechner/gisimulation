@@ -575,8 +575,7 @@ class GeometryGrid(F.GridLayout):
                 # Straight
                 width = width * 2.0
 
-                pos_x = geometry_results['distance_source_' +
-                                                      grating.lower()]
+                pos_x = geometry_results['distance_source_' + grating.lower()]
                 pos_x = pos_x * width_scaling  # [points]
                 pos_x = pos_x - width/2.0 + x0_offset
                 height = (pos_x + width/2.0) * np.tan(fan_angle)  # [points]
@@ -1262,7 +1261,7 @@ class giGUI(F.BoxLayout):
 
             if (self.results['geometry'] and  # geometry must always be calc'ed
                     main.compare_dictionaries(current_input,
-                                         self.results['input'])):
+                                              self.results['input'])):
                 logger.info("Storing current results in previous_results...")
                 self.previous_results = self.results.copy()
                 logger.info("... done.")
@@ -1308,7 +1307,6 @@ class giGUI(F.BoxLayout):
             self.show_geometry(results)
 #        elif 'analytical' in results:
 #            self.show_analytical(results)
-
 
     def show_geometry(self, results):
         """
@@ -1391,7 +1389,7 @@ class giGUI(F.BoxLayout):
             boxlayout.add_widget(F.NonFileBrowserLabel(text=(start_from +
                                                              ' to G2')))
             distance = geometry_results.pop('distance_'+start_from.lower() +
-                                             '_g2')
+                                            '_g2')
             distance = str(round(distance, 3))
             boxlayout.add_widget(F.NonFileBrowserLabel(text=distance))
             self.ids.distances_results.add_widget(boxlayout)
@@ -1504,6 +1502,11 @@ class giGUI(F.BoxLayout):
         input_parameters [dict]:    input_parameters[var_key] = str(value)
 
         """
+
+        if value:
+            logger.info("===============input================")
+
+
         if value:
             # Store (all) previous results, if previous geometry results and
             # even if input is the same
@@ -1614,13 +1617,15 @@ class giGUI(F.BoxLayout):
         Notes
         =====
 
+        If nothing is selected, value is no '', but '.'
+
         Formats:
 
             stores booleans ('True'/'False') as True/False
             stores emptry numpy array [] as None
 
         """
-        if value:
+        if value not in ['', '.']:
             # Store (all) previous results, if previous geometry results and
             # even if input is the same
             if self.results['geometry']:
@@ -1655,6 +1660,10 @@ class giGUI(F.BoxLayout):
             # Reset load_results_dir_path to allow loading of same file
             self.load_results_dir_path = ''
             logger.info('... done.')
+        else:
+            # Reset load_results_dir_path to allow loading of same file
+            self.load_results_dir_path = ''
+
 
     def on_save_results_dir_path(self, instance, value):
         """
@@ -2954,9 +2963,7 @@ class giGUI(F.BoxLayout):
         return boxlayout_height
 
 
-
 # %% Main App
-
 
 class giGUIApp(App):
     def build(self):
