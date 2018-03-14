@@ -897,13 +897,13 @@
                     disabled: show_previous_results.active
                     size_hint_y: None
                     text: 'Calculate geometry'
-                    on_press: root.calculate_geometry()
+                    on_press: root.calculate_geometry(switch_tab=True)
 
                 Button:
                     disabled: show_previous_results.active
                     size_hint_y: None
                     text: 'Calculate analytical results'
-                    on_press: root.calculate_analytical()
+                    on_press: root.calculate_analytical(switch_tab=True)
 
                 Button:
                     disabled: show_previous_results.active
@@ -994,17 +994,85 @@
                     # Visibility and spectrum development
                     TabbedPanelItem:
                         text: 'Spectrum and Visibility'
-                        NonFileBrowserLabel:
-                            text: '2. tab content area'
+
+                        ScrollView:
+                            FloatLayout:
+                                size_hint_y: None
+                                height: tab_height
+
+                                # Spectrum development
+                                NonFileBrowserLabel:
+                                    pos_hint: {'top': 1}
+                                    text: 'Spectrum'
+#                                GridLayout:
+#                                    pos_hint: {'top': 0.6}
+#                                    cols: 2
+#                                    col_default_width: geometry_sketch.width/2.0 + 50
+#                                    col_force_default: True
+#                                    StackLayout:
+#                                        NonFileBrowserLabel:
+#                                            text: 'Distances'
+#                                            bold: True
+#                                        BoxLayout:
+#                                            orientation: 'vertical'
+#                                            size_hint_y: None
+#                                            height: root.calc_boxlayout_height(line_height, self)
+#                                            BoxLayout:
+#                                                NonFileBrowserLabel:
+#                                                    text: 'Distance'
+#                                                NonFileBrowserLabel:
+#                                                    text: '[mm]'
+#                                        BoxLayout:
+#                                            id: distances_results
+#                                            orientation: 'vertical'
+#                                            size_hint_y: None
+#
+#                                    StackLayout:
+#                                        NonFileBrowserLabel:
+#                                            text: 'Gratings'
+#                                            bold: True
+#                                        BoxLayout:
+#                                            orientation: 'vertical'
+#                                            size_hint_y: None
+#                                            height: root.calc_boxlayout_height(line_height, self)
+#                                            BoxLayout:
+#                                                NonFileBrowserLabel:
+#                                                    text: 'Grating'
+#                                                NonFileBrowserLabel:
+#                                                    text: 'Pitch [um]'
+#                                                NonFileBrowserLabel:
+#                                                    text: 'Duty Cycle'
+#                                                NonFileBrowserLabel:
+#                                                    text: 'Radius [mm]'
+#                                        BoxLayout:
+#                                            id: grating_results
+#                                            orientation: 'vertical'
+#                                            size_hint_y: None
+
+                                # Visibility development
+                                NonFileBrowserLabel:
+                                    pos_hint: {'top': 0.5}
+                                    text: 'Visibility'
+
 
                     # Performance (Radiography and CT)
                     TabbedPanelItem:
                         text: 'Performance'
-                        BoxLayout:
-                            NonFileBrowserLabel:
-                                text: 'bla'
-                            Button:
-                                text: 'Raise error and display'
+
+                        ScrollView:
+                            FloatLayout:
+                                size_hint_y: None
+                                height: tab_height
+
+                                # Radiography
+                                NonFileBrowserLabel:
+                                    pos_hint: {'top': 1}
+                                    text: 'Radiography'
+
+                                # CT
+                                NonFileBrowserLabel:
+                                    pos_hint: {'top': 0.5}
+                                    text: 'CT'
 
             # Simulation results
             TabbedPanelItem:
@@ -1015,17 +1083,54 @@
                     do_default_tab: False
                     tab_width: self.size[0]/len(self.tab_list)
 
-                    # Visibility and spectrum development
+                    # Interference pattern
                     TabbedPanelItem:
-                        text: 'Spectrum and Visibility'
-                        NonFileBrowserLabel:
-                            text: '2. tab content area'
+                        text: 'Interference pattern'
+
+                        ScrollView:
+                            FloatLayout:
+                                size_hint_y: None
+                                height: tab_height
+
+                                # No sample
+                                NonFileBrowserLabel:
+                                    pos_hint: {'top': 1}
+                                    text: 'Without sample'
+
+                                # With sample
+                                NonFileBrowserLabel:
+                                    pos_hint: {'top': 0.5}
+                                    text: 'With sample'
+
+                    # Images
+                    TabbedPanelItem:
+                        text: 'Images'
+
+                        ScrollView:
+                            FloatLayout:
+                                size_hint_y: None
+                                height: tab_height
+
+                                # With sample
+                                NonFileBrowserLabel:
+                                    pos_hint: {'top': 1}
+                                    text: 'With sample'
 
                     # Performance (Radiography and CT)
                     TabbedPanelItem:
                         text: 'Performance'
-                        BoxLayout:
-                            NonFileBrowserLabel:
-                                text: 'bla'
-                            Button:
-                                text: 'Raise error and display'
+
+                        ScrollView:
+                            FloatLayout:
+                                size_hint_y: None
+                                height: tab_height
+
+                                # Radiography
+                                NonFileBrowserLabel:
+                                    pos_hint: {'top': 1}
+                                    text: 'Radiography'
+
+                                # CT
+                                NonFileBrowserLabel:
+                                    pos_hint: {'top': 0.5}
+                                    text: 'CT'

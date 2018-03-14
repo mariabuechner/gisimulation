@@ -1251,9 +1251,16 @@ class giGUI(F.BoxLayout):
         finally:
             return success
 
-    def calculate_geometry(self):
+    def calculate_geometry(self, switch_tab=False):
         """
         Calculate the GI geometry based on the set input parameters.
+
+        Parameters
+        ==========
+
+        switch_tab [bool]:      Default is False, do not switch to geometry
+                                results tab
+
         """
         if self.check_geometry_input():
             current_input = _collect_input(self.parameters, self.ids,
@@ -1285,13 +1292,25 @@ class giGUI(F.BoxLayout):
             self._set_widgets(self.parameters, from_file=False)
             self.show_geometry(self.results)
             # Switch tabs
-            self.ids.result_tabs.switch_to(self.ids.geometry_results)
+            if switch_tab:
+                self.ids.result_tabs.switch_to(self.ids.geometry_results)
 
-    def calculate_analytical(self):
+    def calculate_analytical(self, switch_tab=False):
         """
         ...
+
+        Parameters
+        ==========
+
+        switch_tab [bool]:      Default is False, do not switch to analytical
+                                results tab
+
         """
-        self.ids.result_tabs.switch_to(self.ids.analytical_results)
+        # Update geometry
+        self.calculate_geometry()
+
+        if switch_tab:
+            self.ids.result_tabs.switch_to(self.ids.analytical_results)
 
     def run_simulation(self):
         """
