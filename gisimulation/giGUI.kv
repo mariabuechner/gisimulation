@@ -910,7 +910,8 @@
                     disabled: show_previous_results.active
                     size_hint_y: None
                     text: 'Calculate analytical results'
-                    on_press: root.calculate_analytical(switch_tab=True)
+                    #on_press: root.calculate_analytical(switch_tab=True)
+                    on_press: original_spectrum_absolute.update()
 
                 Button:
                     disabled: show_previous_results.active
@@ -1013,19 +1014,20 @@
                                     StackLayout:
                                         NonFileBrowserLabel:
                                             text: 'Original'
-#                                        BoxLayout:
-#                                            orientation: 'vertical'
-#                                            size_hint_y: None
-#                                            height: root.calc_boxlayout_height(line_height, self)
-#                                            BoxLayout:
-#                                                NonFileBrowserLabel:
-#                                                    text: 'Distance'
-#                                                NonFileBrowserLabel:
-#                                                    text: '[mm]'
-#                                        BoxLayout:
-#                                            id: distances_results
-#                                            orientation: 'vertical'
-#                                            size_hint_y: None
+                                        PlotLayout:
+                                            id: original_spectrum_absolute
+                                            size_hint_y: None
+                                            height: (tab_height-2*line_height)/4
+                                            title: 'Absolute'
+                                            label_x: 'Energy [keV]'
+                                            label_y: 'Counts [1/pixel/sec]'
+                                        PlotLayout:
+                                            id: original_spectrum_relative
+                                            size_hint_y: None
+                                            height: (tab_height-2*line_height)/4
+                                            title: 'Relative'
+                                            label_x: 'Energy [keV]'
+                                            label_y: 'Photon density [%/1.0 keV]'
 
                                     StackLayout:
                                         NonFileBrowserLabel:

@@ -6,6 +6,7 @@ Module to run grating interferometer simulation and metrics calculation.
 import logging
 import numpy as np
 import scipy.io
+import matplotlib.pyplot as plt
 import sys
 import os
 # gisimulation modules
@@ -187,7 +188,19 @@ def show_geometry(results):
 def show_analytical():
     """
     """
-    pass
+    x = np.arange(0.0, 5.0, 0.1)
+    y = np.exp(-x) * np.cos(2*np.pi*x)
+
+    fig, ax = plt.subplots()
+
+    ax.plot(x, y)
+
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.set_title('title')
+
+#    fig.draw()
+    fig.show()
 
 # #############################################################################
 # Input/Results i/o ###########################################################
@@ -481,6 +494,8 @@ if __name__ == '__main__':
     calculate_geometry(parameters, parser_info, results)
 
     show_geometry(results)
+
+    show_analytical()
 
 ##    input_parameters = collect_input(parameters, parser_info)
 #    save_input('C:/Users/buechner_m/Documents/Code/bCTDesign/Simulation/Python/gisimulation/gisimulation/data/inputs/test5.txt', results['input'])

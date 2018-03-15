@@ -15,9 +15,6 @@ import re
 from functools import partial
 import os.path
 import scipy.io
-import matplotlib
-matplotlib.use('module://kivy.garden.matplotlib.backend_kivy')
-import matplotlib.pyplot as plt
 import logging
 # Set kivy logger console output format
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - '
@@ -35,13 +32,17 @@ from kivy.garden.filebrowser import FileBrowser
 from kivy.core.window import Window
 from kivy.factory import Factory as F  # Widgets etc. (UIX)
 import kivy.graphics as G
-
 # Logging
-# Set logger before importing simulation modules (to set format for all)
-# Use Kivy logger to handle logging.Logger
+# Set logger before importing (simulation) modules (to set format for all
+# loggers)
 logging.Logger.manager.root = Logger  # Makes Kivy Logger root for all
                                       # following loggers
 logger = logging.getLogger(__name__)
+
+import matplotlib
+matplotlib.use('module://kivy.garden.matplotlib.backend_kivy')
+import matplotlib.pyplot as plt
+from kivy.garden.matplotlib.backend_kivyagg import FigureCanvasKivyAgg
 
 # gisimulation imports
 import main
@@ -291,6 +292,41 @@ class Distances(F.GridLayout):
                 self.distance_fixed = True
         else:
             linked_instance.disabled = False
+
+
+class PlotLayout(F.BoxLayout):
+    title = F.StringProperty()
+    label_x = F.StringProperty()
+    label_y = F.StringProperty()
+
+    def __init__(self, **kwargs):
+        """
+        ... init empty plot
+        """
+        super(PlotLayout, self).__init__(**kwargs)
+
+        self.figure = plt.figure()
+        self.axis = self.figure.add_subplot(111)
+
+        x = np.arange(0.0, 5.0, 0.1)
+        y = np.exp(-x) * np.cos(2*np.pi*x)
+
+        self.axis.plot(x, y)
+
+        self.image = FigureCanvasKivyAgg(self.figure)
+
+        self.add_widget(self.image)
+
+    def update(self):
+
+        x = np.arange(0.0, 5.0, 0.1)
+        y = np.exp(-x) * np.cos(2*np.pi*x) + 10.0
+
+        self.axis.clear()
+
+        self.axis.plot(x, y)
+
+        self.image.draw()
 
 
 # #############################################################################
@@ -1434,7 +1470,8 @@ class giGUI(F.BoxLayout):
 
         if 'Sample' in component_list:
             boxlayout = F.BoxLayout()
-            boxlayout.add_widget(F.NonFileBrowserLabel(text='Source to sample'))
+            boxlayout.add_widget(F.NonFileBrowserLabel(text='Source to '
+                                                       'sample'))
             distance = geometry_results.pop('distance_source_sample')
             distance = str(round(distance, 3))
             boxlayout.add_widget(F.NonFileBrowserLabel(text=distance))
