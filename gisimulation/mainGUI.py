@@ -2063,7 +2063,8 @@ class giGUI(F.BoxLayout):
                                 "e2,p2\n"
                                 ".,.\n"
                                 ".,.\n"
-                                ".,.")
+                                ".,.\n\n"
+                                "Photons are in [1/pixel/sec].")
             if selected == 'Input file':
                 help_message = ("File type: .txt\n"
                                 "Can use multiple files, in case of double "
@@ -2074,6 +2075,9 @@ class giGUI(F.BoxLayout):
                                 "ArgValue1               100\n"
                                 "ArgName2                -p0\n"
                                 "ArgValue2               2.4\n"
+                                "ArgName3                -fov\n"
+                                "ArgValue3.1             200\n"
+                                "ArgValue3.2             400\n"
                                 "    .                    .\n"
                                 "    .                    .\n"
                                 "    .                    .")

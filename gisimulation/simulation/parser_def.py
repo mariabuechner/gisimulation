@@ -179,11 +179,17 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                                      "Can use multiple files. Arguments can \n"
                                      "be overwritten afterwards in command "
                                      "line.\n"
-                                     "File layout:\n"
-                                     "\tArgName ArgValue\n"
-                                     "Example:\n"
-                                     "\t-sr 100\n"
-                                     "\t-p0 2.4\n",
+                                     "File layout:        Example:\n"
+                                     "ArgName1                -sr\n"
+                                     "ArgValue1               100\n"
+                                     "ArgName2                -p0\n"
+                                     "ArgValue2               2.4\n"
+                                     "ArgName3                -fov\n"
+                                     "ArgValue3.1             200\n"
+                                     "ArgValue3.2             400\n"
+                                     "    .                    .\n"
+                                     "    .                    .\n"
+                                     "    .                    .",
                                      usage="Parameters that are defined but "
                                      "not applicable in current setup will "
                                      "be ignored without warning.",
