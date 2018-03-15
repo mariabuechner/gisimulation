@@ -15,6 +15,9 @@ import re
 from functools import partial
 import os.path
 import scipy.io
+import matplotlib
+matplotlib.use('module://kivy.garden.matplotlib.backend_kivy')
+import matplotlib.pyplot as plt
 import logging
 # Set kivy logger console output format
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - '

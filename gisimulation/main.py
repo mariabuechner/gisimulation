@@ -66,6 +66,129 @@ def calculate_geometry(parameters, parser_info, results):
     logger.info("... done.")
 
 # #############################################################################
+# Show results ################################################################
+
+
+def show_geometry(results):
+    """
+    Print to console the geometry results.
+    """
+    geometry_results = results['geometry'].copy()
+    component_list = geometry_results['component_list']
+
+    # Setup info
+    print("Setup")
+    print("{0} beam and {1} setup\n".format(geometry_results['beam_geometry'],
+                                            geometry_results['gi_geometry']))
+    # Distances
+    seperator = 43*'-'  # seperator line for tabel
+    print("Distances")
+    print(43*'=')
+    print("Distance\t\t\t[mm]")
+    print(seperator)
+    if results['geometry']['gi_geometry'] != 'free':
+        # Show d, l, s first
+        if 'G0' in component_list:
+            start_from = 'G0'
+        else:
+            start_from = 'Source'
+        # l
+        text = start_from + ' to G1'
+        distance = geometry_results.pop('distance_'+start_from.lower() +
+                                        '_g1')
+        distance = str(round(distance, 3))
+        print("{0}\t\t\t{1}".format(text, distance))
+        # d
+        text = 'G1 to G2'
+        distance = geometry_results.pop('distance_g1_g2')
+        distance = str(round(distance, 3))
+        print("{0}\t\t\t{1}".format(text, distance))
+        # s
+        text = start_from + ' to G2'
+        distance = geometry_results.pop('distance_'+start_from.lower() +
+                                        '_g2')
+        distance = str(round(distance, 3))
+        print("{0}\t\t\t{1}".format(text, distance))
+    # Add total system length and if necessary source to sample
+    text = 'Source to detector'
+    distance = geometry_results.pop('distance_source_detector')
+    distance = str(round(distance, 3))
+    print("{0}\t\t{1}".format(text, distance))
+
+    if 'Sample' in component_list:
+        text = 'Source to sample'
+        distance = geometry_results.pop('distance_source_sample')
+        distance = str(round(distance, 3))
+        print("{0}\t\t{1}".format(text, distance))
+
+    # Add remaining intergrating distances
+    print(seperator)
+    distance_keys = [key for key in geometry_results.keys()
+                     if 'distance_g' in key]
+    if distance_keys:
+        for distance_key in distance_keys:
+            text = (distance_key.split('_')[1].upper()+' to ' +
+                    distance_key.split('_')[2])
+            distance = geometry_results.pop(distance_key)
+            distance = str(round(distance, 3))
+            print("{0}\t\t\t{1}".format(text, distance))
+
+    print(seperator)
+    # Add remaining source to distances
+    distance_keys = [key for key in geometry_results.keys()
+                     if 'distance_source' in key]
+    if distance_keys:
+        for distance_key in distance_keys:
+            text = ('Source to ' + distance_key.split('_')[2].upper())
+            distance = geometry_results.pop(distance_key)
+            distance = str(round(distance, 3))
+            print("{0}\t\t\t{1}".format(text, distance))
+
+    print(seperator)
+    # Add remaining sample relative to distance
+    if 'Sample' in component_list:
+        # Find reference component
+        sample_index = component_list.index('Sample')
+        if 'a' in results['geometry']['sample_position']:
+            reference = component_list[sample_index-1]
+        else:
+            reference = component_list[sample_index+1]
+
+        text = reference + ' to sample'
+        distance = results['geometry']['sample_distance']
+        distance = str(round(distance, 3))
+        print("{0}\t\t\t{1}".format(text, distance))
+
+    # Gratings
+    seperator = 53*'-'  # seperator line for tabel
+    print("\nGratings")
+    print(53*'=')
+    print("Grating\tPitch [um]\tDuty Cycle\tRadius [mm]")
+    print(seperator)
+    gratings = [gratings for gratings
+                in component_list if 'G' in gratings]
+    for grating in gratings:
+        pitch = geometry_results['pitch_'+grating.lower()]
+        pitch = str(round(pitch, 3))
+
+        duty_cycle = geometry_results['duty_cycle_'+grating.lower()]
+        duty_cycle = str(round(duty_cycle, 3))
+
+        radius = geometry_results['radius_'+grating.lower()]
+        if radius is None:
+            radius = '-'
+        else:
+            radius = str(round(radius, 3))
+
+        print("{0}\t{1}\t\t{2}\t\t{3}".format(grating, pitch, duty_cycle, radius))
+
+
+def show_analytical():
+    """
+    """
+    pass
+
+# #############################################################################
 # Input/Results i/o ###########################################################
 
 
