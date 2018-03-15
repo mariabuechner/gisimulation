@@ -991,28 +991,21 @@
                     do_default_tab: False
                     tab_width: self.size[0]/len(self.tab_list)
 
-                    # Visibility and spectrum development
+                    # Spectrum development
                     TabbedPanelItem:
-                        text: 'Spectrum and Visibility'
+                        text: 'Spectrum'
 
                         ScrollView:
                             FloatLayout:
                                 size_hint_y: None
                                 height: tab_height
 
-                                # Spectrum development
-                                NonFileBrowserLabel:
+                                GridLayout:
                                     pos_hint: {'top': 1}
-                                    text: 'Spectrum'
-#                                GridLayout:
-#                                    pos_hint: {'top': 0.6}
-#                                    cols: 2
-#                                    col_default_width: geometry_sketch.width/2.0 + 50
-#                                    col_force_default: True
-#                                    StackLayout:
-#                                        NonFileBrowserLabel:
-#                                            text: 'Distances'
-#                                            bold: True
+                                    cols: 2
+                                    StackLayout:
+                                        NonFileBrowserLabel:
+                                            text: 'Original'
 #                                        BoxLayout:
 #                                            orientation: 'vertical'
 #                                            size_hint_y: None
@@ -1026,33 +1019,37 @@
 #                                            id: distances_results
 #                                            orientation: 'vertical'
 #                                            size_hint_y: None
-#
-#                                    StackLayout:
-#                                        NonFileBrowserLabel:
-#                                            text: 'Gratings'
-#                                            bold: True
-#                                        BoxLayout:
-#                                            orientation: 'vertical'
-#                                            size_hint_y: None
-#                                            height: root.calc_boxlayout_height(line_height, self)
-#                                            BoxLayout:
-#                                                NonFileBrowserLabel:
-#                                                    text: 'Grating'
-#                                                NonFileBrowserLabel:
-#                                                    text: 'Pitch [um]'
-#                                                NonFileBrowserLabel:
-#                                                    text: 'Duty Cycle'
-#                                                NonFileBrowserLabel:
-#                                                    text: 'Radius [mm]'
-#                                        BoxLayout:
-#                                            id: grating_results
-#                                            orientation: 'vertical'
-#                                            size_hint_y: None
 
-                                # Visibility development
-                                NonFileBrowserLabel:
-                                    pos_hint: {'top': 0.5}
-                                    text: 'Visibility'
+                                    StackLayout:
+                                        NonFileBrowserLabel:
+                                            text: '+ Filter'
+
+                                    StackLayout:
+                                        NonFileBrowserLabel:
+                                            text: '+ Gratings'
+
+                                    StackLayout:
+                                        NonFileBrowserLabel:
+                                            text: '+ Sample'
+
+                    # Visibility
+                    TabbedPanelItem:
+                        text: 'Visibility'
+
+                        ScrollView:
+                            FloatLayout:
+                                size_hint_y: None
+                                height: tab_height
+
+                                GridLayout:
+                                    pos_hint: {'top': 1}
+                                    cols: 2
+                                    StackLayout:
+                                        NonFileBrowserLabel:
+                                            text: 'Gratings'
+                                    StackLayout:
+                                        NonFileBrowserLabel:
+                                            text: '+ Filter'
 
 
                     # Performance (Radiography and CT)
@@ -1115,6 +1112,25 @@
                                 NonFileBrowserLabel:
                                     pos_hint: {'top': 1}
                                     text: 'With sample'
+
+                                        # Visibility
+                    TabbedPanelItem:
+                        text: 'Visibility'
+
+                        ScrollView:
+                            FloatLayout:
+                                size_hint_y: None
+                                height: tab_height
+
+                                GridLayout:
+                                    pos_hint: {'top': 1}
+                                    cols: 2
+                                    StackLayout:
+                                        NonFileBrowserLabel:
+                                            text: 'Gratings'
+                                    StackLayout:
+                                        NonFileBrowserLabel:
+                                            text: '+ Filter'
 
                     # Performance (Radiography and CT)
                     TabbedPanelItem:
