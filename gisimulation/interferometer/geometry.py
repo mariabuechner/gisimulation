@@ -1071,6 +1071,7 @@ class Geometry():
         radii = [(radius_name, radius_value) for radius_name, radius_value
                  in self._parameters.iteritems()
                  if 'radius_' in radius_name]
+
         for radius in radii:
             self.results[radius[0]] = radius[1]
 

@@ -180,7 +180,8 @@ def show_geometry(results):
         else:
             radius = str(round(radius, 3))
 
-        print("{0}\t{1}\t\t{2}\t\t{3}".format(grating, pitch, duty_cycle, radius))
+        print("{0}\t{1}\t\t{2}\t\t{3}".format(grating, pitch, duty_cycle,
+              radius))
 
 
 def show_analytical():
@@ -479,7 +480,9 @@ if __name__ == '__main__':
     # Calc geometries (params check inside)
     calculate_geometry(parameters, parser_info, results)
 
-#    input_parameters = collect_input(parameters, parser_info)
-    save_input('C:/Users/buechner_m/Documents/Code/bCTDesign/Simulation/Python/gisimulation/gisimulation/data/inputs/test5.txt', results['input'])
+    show_geometry(results)
 
-    save_results('C:/Users/buechner_m/Documents/Code/bCTDesign/Simulation/Python/gisimulation/gisimulation/data/results/test5', results)
+##    input_parameters = collect_input(parameters, parser_info)
+#    save_input('C:/Users/buechner_m/Documents/Code/bCTDesign/Simulation/Python/gisimulation/gisimulation/data/inputs/test5.txt', results['input'])
+#
+#    save_results('C:/Users/buechner_m/Documents/Code/bCTDesign/Simulation/Python/gisimulation/gisimulation/data/results/test5', results)
