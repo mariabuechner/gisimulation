@@ -2864,8 +2864,9 @@ class giGUI(F.BoxLayout):
 
         # Remove spectrum
         self.ids.spectrum_file_name.text = ''
-        # Reset spectrum step size
+        # Reset defaults
         self.ids.spectrum_step.text = '1.0'
+        self.ids.exposure_time.text = '1.0'
 
         # Handle special checkboxes
         self.ids.g0_set.active = False
@@ -2956,8 +2957,9 @@ class giGUI(F.BoxLayout):
 
         # Remove spectrum
         self.ids.spectrum_file_name.text = ''
-        # Reset spectrum step size
+        # Reset defaults
         self.ids.spectrum_step.text = '1.0'
+        self.ids.exposure_time.text = '1.0'
 
         logger.info("... done.")
 

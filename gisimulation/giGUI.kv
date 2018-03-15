@@ -375,6 +375,13 @@
                                                     disabled: not spectrum_range_set.active or root.spectrum_file_loaded
                                             BoxLayout:
                                                 LabelHelp:
+                                                    text: 'Exposure time [s]'
+                                                    help_message: parser_info['exposure_time'][1]
+                                                FloatInput:
+                                                    id: exposure_time
+                                                    text: '1.0'
+                                            BoxLayout:
+                                                LabelHelp:
                                                     text: 'Filter material'
                                                     help_message: parser_info['material_filter'][1]
                                                 TextInput:

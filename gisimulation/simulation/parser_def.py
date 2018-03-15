@@ -258,7 +258,8 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         "e2,p2\n"
                         ".,.\n"
                         ".,.\n"
-                        ".,.")
+                        ".,.\n\n"
+                        "Photons are in [1/pixel/sec].")
     parser.add_argument('-r', dest='spectrum_range',
                         action=_StoreNpArray,
                         metavar='SPECTRUM_RANGE',
@@ -272,6 +273,10 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         action=_TruePositiveNumber,
                         type=numerical_type,
                         help="Step size of range [keV].")
+    parser.add_argument('-et', dest='exposure_time', default=1,
+                        action=_TruePositiveNumber,
+                        type=numerical_type,
+                        help="Exposure time per acquired image [s].")
     parser.add_argument('-fm', dest='material_filter',
                         type=str,
                         help="Choose filter material. Note: non-shape "
