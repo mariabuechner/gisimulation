@@ -147,10 +147,10 @@ class Distances(F.GridLayout):
         """
         super(Distances, self).__init__(**kwargs)
         self.cols = 1
-        self.update(['Source', 'Detector'])
+        self.update(['Source', 'Detector'], False)
         self.distance_fixed = False
 
-    def update(self, component_list, beam_geometry='parallel',
+    def update(self, component_list, dual_phase, beam_geometry='parallel',
                gi_geometry='free'):
         """
         Update the distance widgets according to the component list or any
@@ -162,6 +162,7 @@ class Distances(F.GridLayout):
         component_list [list]
         beam_geometry [str]
         gi_geometry [str]
+        dual_phase [boolean]
 
         Notes
         =====
@@ -176,12 +177,17 @@ class Distances(F.GridLayout):
         'parallel'&'conv':      required:   none
                                 display:    G1-G2
 
-        'cone'& not 'free' or 'sym:     required:   S/G0_G1 OR S/G0_G2
+        'cone'& not 'free' or 'sym':    required:   S/G0_G1 OR S/G0_G2
                                         optional:   G2_Dectector
                                                     if G0, than S_G0
                                         display:    G1-G2
 
-        'cone'& 'sym:   required:   none
+        'cone'& 'conv' and 'dual_phase':    required:   S/G0_G1 OR S/G0_G2
+                                            optional:   G2_Dectector
+                                                        if G0, than S_G0
+                                            display:    G1-G2
+
+        'cone'& 'sym':  required:   none
                         optional:   G2_Dectector
                                     if G0, than S_G0
                         display:    G1-G2
@@ -217,7 +223,8 @@ class Distances(F.GridLayout):
                 distance_value.disabled = True
             elif beam_geometry == 'cone' and gi_geometry != 'free':
                 if distance_id == 'distance_g1_g2':
-                    distance_value.disabled = True
+                    if not dual_phase:
+                        distance_value.disabled = True
                 if gi_geometry == 'sym':
                     if distance_id == 'distance_source_g1' or \
                             distance_id == 'distance_g0_g1':
@@ -2117,6 +2124,11 @@ class giGUI(F.BoxLayout):
                 if self.ids.type_g2.text == 'phase':
                     self.ids.type_g2.text = 'abs'
                 self.ids.type_g2.values = ['mix', 'abs']
+        # Update distances options
+        self.ids.distances.update(self.setup_components,
+                                  self.ids.dual_phase.active,
+                                  self.ids.beam_geometry.text,
+                                  self.ids.gi_geometry.text)
 
     def on_gi_geometry(self):
         """
@@ -2196,6 +2208,7 @@ class giGUI(F.BoxLayout):
 
         # Update distances options
         self.ids.distances.update(self.setup_components,
+                                  self.ids.dual_phase.active,
                                   self.ids.beam_geometry.text,
                                   self.ids.gi_geometry.text)
 
@@ -2247,6 +2260,7 @@ class giGUI(F.BoxLayout):
             self.available_gratings = ['G1', 'G2']
             # Update distances options
             self.ids.distances.update(self.setup_components,
+                                      self.ids.dual_phase.active,
                                       self.ids.beam_geometry.text,
                                       self.ids.gi_geometry.text)
         else:
