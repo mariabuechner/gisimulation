@@ -2099,7 +2099,10 @@ class giGUI(F.BoxLayout):
         if self.ids.dual_phase.disabled:
             self.ids.dual_phase.active = False
         if self.ids.dual_phase.active:
-            self.ids.fixed_grating.values = ['G1', 'G2']  # Disable G0
+            # Only G1 as fixed grating
+            self.ids.fixed_grating.values = ['G1']
+            self.ids.fixed_grating.text = 'G1'
+            # Disable G0
             self.ids.g0_set.active = False
             self.ids.g0_set.disabled = True
             if self.ids.gi_geometry.text != 'free':
