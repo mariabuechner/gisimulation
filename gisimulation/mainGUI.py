@@ -308,30 +308,63 @@ class PlotLayout(F.BoxLayout):
 
     def __init__(self, **kwargs):
         """
-        ... init empty plot
+        Init empty plot.
         """
         super(PlotLayout, self).__init__(**kwargs)
 
         self.figure = plt.figure()
+        self.figure.subplots_adjust(bottom=0.15)  # Adds space for xlabel
         self.axis = self.figure.add_subplot(111)
-
-        x = np.arange(0.0, 5.0, 0.1)
-        y = np.exp(-x) * np.cos(2*np.pi*x)
-
-        self.axis.plot(x, y)
-
         self.image = FigureCanvasKivyAgg(self.figure)
+#        # Display labels and title
+#        self.update([], [])
 
         self.add_widget(self.image)
 
-    def update(self):
+    def update(self, x_values, y_values, labels=None):
+        """
+        Update plot.
 
-        x = np.arange(0.0, 5.0, 0.1)
-        y = np.exp(-x) * np.cos(2*np.pi*x) + 10.0
+        Parameters
+        ==========
+
+        x_values [list]/[np.array]:     list/array or list of lists/array of
+                                        arrays. If multiple lists/arrays,
+                                        multiple lines will be drawn.
+                                        x_values.shape
+                                            = number_lines, number_values
+        y_values [list]/[np.array]
+        labels [list[strings]]:         List of strings, defaults to None
+                                        (no legend)
+
+        Notes
+        =====
+
+        x_values, y_values, labels must have the same length.
+
+        """
+        # Convert to np array
+        x_values = np.array(x_values)
+        y_values = np.array(y_values)
 
         self.axis.clear()
 
-        self.axis.plot(x, y)
+        if len(x_values.shape) == 1:
+            # Only one series
+            self.axis.plot(x_values, x_values)
+        else:
+            index = 0
+            for x in x_values:
+                y = y_values[index]
+                self.axis.plot(x, y)
+                index = index + 1
+
+        # Udpate info
+        self.axis.set_title(self.title)
+        self.axis.set_xlabel(self.label_x)
+        self.axis.set_ylabel(self.label_y)
+        if labels:
+            self.axis.legend(labels)
 
         self.image.draw()
 

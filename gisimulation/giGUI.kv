@@ -911,7 +911,7 @@
                     size_hint_y: None
                     text: 'Calculate analytical results'
                     #on_press: root.calculate_analytical(switch_tab=True)
-                    on_press: original_spectrum_absolute.update()
+                    on_press: original_spectrum_absolute.update([np.arange(0.0, 5.0, 0.1), np.arange(0.0, 5.0, 0.1)], [np.arange(0.0, 5.0, 0.1), 2*np.arange(0.0, 5.0, 0.1)], ['bla', 'blubb'])
 
                 Button:
                     disabled: show_previous_results.active
@@ -1012,19 +1012,20 @@
                                     pos_hint: {'top': 1}
                                     cols: 2
                                     StackLayout:
+                                        spacing: [0, 4]
                                         NonFileBrowserLabel:
                                             text: 'Original'
                                         PlotLayout:
                                             id: original_spectrum_absolute
                                             size_hint_y: None
-                                            height: (tab_height-2*line_height)/4
+                                            height: (tab_height-2*line_height)/4 -10
                                             title: 'Absolute'
                                             label_x: 'Energy [keV]'
                                             label_y: 'Counts [1/pixel/sec]'
                                         PlotLayout:
                                             id: original_spectrum_relative
                                             size_hint_y: None
-                                            height: (tab_height-2*line_height)/4
+                                            height: (tab_height-2*line_height)/4 -10
                                             title: 'Relative'
                                             label_x: 'Energy [keV]'
                                             label_y: 'Photon density [%/1.0 keV]'
