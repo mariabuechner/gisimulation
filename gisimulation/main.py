@@ -216,6 +216,59 @@ def show_analytical():
 #    fig.draw()
     fig.show()
 
+
+def show_plot(x_values, y_values, title, label_x, label_y, labels=None):
+    """
+    Show plot.
+
+    Parameters
+    ==========
+
+    x_values [list]/[np.array]:     list/array or list of lists/array of
+                                    arrays. If multiple lists/arrays,
+                                    multiple lines will be drawn.
+                                    x_values.shape
+                                        = number_lines, number_values
+    y_values [list]/[np.array]
+    title [str]
+    label_x [str]
+    label_y [str]
+    labels [list[strings]]:         List of strings, defaults to None
+                                    (no legend)
+
+    Notes
+    =====
+
+    x_values, y_values, labels must have the same length.
+
+    """
+    # Convert to np array
+    x_values = np.array(x_values)
+    y_values = np.array(y_values)
+
+    # Figure
+    figure = plt.figure()
+    axis = figure.add_subplot(111)
+
+    if len(x_values.shape) == 1:
+        # Only one series
+        axis.plot(x_values, y_values)
+    else:
+        index = 0
+        for x in x_values:
+            y = y_values[index]
+            axis.plot(x, y)
+            index = index + 1
+
+    # Udpate info
+    axis.set_title(title)
+    axis.set_xlabel(label_x)
+    axis.set_ylabel(label_y)
+    if labels:
+        axis.legend(labels)
+
+    plt.draw()
+
 # #############################################################################
 # Input/Results i/o ###########################################################
 

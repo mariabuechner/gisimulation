@@ -351,7 +351,7 @@ class PlotLayout(F.BoxLayout):
 
         if len(x_values.shape) == 1:
             # Only one series
-            self.axis.plot(x_values, x_values)
+            self.axis.plot(x_values, y_values)
         else:
             index = 0
             for x in x_values:
