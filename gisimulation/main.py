@@ -86,7 +86,7 @@ def show_geometry(results):
     print(43*'=')
     print("Distance\t\t\t[mm]")
     print(seperator)
-    if results['geometry']['gi_geometry'] != 'free':
+    if geometry_results['gi_geometry'] != 'free':
         # Show d, l, s first
         if 'G0' in component_list:
             start_from = 'G0'
@@ -149,21 +149,21 @@ def show_geometry(results):
     if 'Sample' in component_list:
         # Find reference component
         sample_index = component_list.index('Sample')
-        if 'a' in results['geometry']['sample_position']:
+        if 'a' in geometry_results['sample_position']:
             reference = component_list[sample_index-1]
         else:
             reference = component_list[sample_index+1]
 
         text = reference + ' to sample'
-        distance = results['geometry']['sample_distance']
+        distance = geometry_results['sample_distance']
         distance = str(round(distance, 3))
         print("{0}\t\t\t{1}".format(text, distance))
 
     # Gratings
-    seperator = 53*'-'  # seperator line for tabel
+    seperator = 60*'-'  # seperator line for tabel
     print("\nGratings")
-    print(53*'=')
-    print("Grating\tPitch [um]\tDuty Cycle\tRadius [mm]")
+    print(60*'=')
+    print("Grating\t\tPitch [um]\tDuty Cycle\tRadius [mm]")
     print(seperator)
     gratings = [gratings for gratings
                 in component_list if 'G' in gratings]
@@ -180,8 +180,22 @@ def show_geometry(results):
         else:
             radius = str(round(radius, 3))
 
-        print("{0}\t{1}\t\t{2}\t\t{3}".format(grating, pitch, duty_cycle,
-              radius))
+        print("{0}\t\t{1}\t\t{2}\t\t{3}".format(grating, pitch, duty_cycle,
+                                              radius))
+    # Fringe pitch on detector if dual phase
+    if geometry_results['dual_phase']:
+        pitch = str(round(geometry_results['pitch_fringe'], 3))
+        duty_cycle = str(round(geometry_results['duty_cycle_fringe'], 3))
+
+        radius = geometry_results['radius_detector']
+        if radius is None:
+            radius = '-'
+        else:
+            radius = str(round(radius, 3))
+
+        print("{0}\t{1}\t\t{2}\t\t{3}".format('Detector fringe', pitch,
+                                              duty_cycle,
+                                              radius))
 
 
 def show_analytical():

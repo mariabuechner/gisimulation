@@ -78,7 +78,8 @@ class Geometry():
 
     def _calc_conventional(self):
         """
-        For cone and parallel.
+        For cone and parallel. Special case for dual phase (distances entered
+        manually, just calculate pitch of G2 and fringe periode (pitch_fringe))
 
         Notes
         =====
@@ -158,11 +159,6 @@ class Geometry():
                          (2 * self._parameters['design_wavelength']))  # [um]
                     self._parameters['distance_g1_g2'] = \
                         self._parameters['distance_g1_g2'] * 1e-3  # [mm]
-            else:
-                # Dual phase setup (HERE OR INSIDE CALCS???)
-                logger.warning("Parallel, conv and dual phase not possible "
-                               "yet!")
-
         else:
             # Cone beam
             if not self._parameters['dual_phase']:
@@ -479,8 +475,39 @@ class Geometry():
                         self._parameters['duty_cycle_g0'] = \
                             self._parameters['duty_cycle_g2']
             else:
-                # Dual phase setup (HERE OR INSIDE CALCS???)
-                logger.warning("Cone, conv and dual phase not possible yet!")
+                # Dual phase setup
+
+                # Remaining distance
+                if self._parameters['fixed_distance'] == \
+                            'distance_source_g1':
+                    self._parameters['distance_source_g2'] = \
+                        self._parameters['distance_source_g1'] + \
+                        self._parameters['distance_g1_g2']
+                elif self._parameters['fixed_distance'] == \
+                            'distance_source_g2':
+                    self._parameters['distance_source_g1'] = \
+                        self._parameters['distance_source_g2'] - \
+                        self._parameters['distance_g1_g2']
+
+                # G2
+                # Duty cycle
+                self._parameters['duty_cycle_g2'] = \
+                    self._parameters['duty_cycle_g1']
+                # Pitche [um]
+                s_g1 = self._parameters['distance_source_g1']  # [mm]
+                g1_g2 = self._parameters['distance_g1_g2']  # [mm]
+                self._parameters['pitch_g2'] = \
+                    self._parameters['pitch_g1'] * (s_g1 + g1_g2)/s_g1
+
+                # Fringe at detector [um] # Duty cycle
+                self._parameters['duty_cycle_fringe'] = \
+                    self._parameters['duty_cycle_g1']
+                # Pitche [um]
+                g2_d = self._parameters['distance_g2_detector']  # [mm]
+                p1 = self._parameters['pitch_g1']  # [um]
+                self._parameters['pitch_fringe'] = \
+                    ((s_g1 + g1_g2 + g2_d)/(s_g1 + g1_g2) /
+                     (1.0/p1 - s_g1/(p1*(s_g1 + g1_g2))))
 
         logger.info("... done.")
 
@@ -1018,6 +1045,7 @@ class Geometry():
                 - component_list
                 - gi_geometry
                 - beam_geometry
+                - dual_phase
             - distances (not none) [mm]
             - if sample:
                 - sample info
@@ -1040,6 +1068,7 @@ class Geometry():
         # Add geometries
         self.results['gi_geometry'] = self._parameters['gi_geometry']
         self.results['beam_geometry'] = self._parameters['beam_geometry']
+        self.results['dual_phase'] = self._parameters['dual_phase']
 
         # Distances
         # distances =  [('distance_b', 10), ('distance_a', 10)]
@@ -1087,7 +1116,13 @@ class Geometry():
                 self._parameters['sample_diameter']
 
         # Detector
-        self.results['curved'] = self._parameters['curved_detector']
+        self.results['curved_detector'] = self._parameters['curved_detector']
+        if self.results['curved_detector']:
+            self.results['radius_detector'] = \
+                self._parameters['distance_source_detector']  # [mm]
+        else:
+            self.results['radius_detector'] =  None
+
         if self._parameters['field_of_view'] is not None and \
                 self._parameters['pixel_size'] is not None:
             self.results['width'] = self._parameters['field_of_view'][0] * \
