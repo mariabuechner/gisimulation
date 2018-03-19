@@ -3,7 +3,9 @@ X-ray detector for grating interferometer simulation.
 
 @author: buechner_m <maria.buechner@gmail.com>
 """
-import materials
+import sys
+sys.path.append('..')
+import simulation.materials as materials
 from scipy.ndimage.filters import gaussian_filter
 import logging
 logger = logging.getLogger(__name__)
