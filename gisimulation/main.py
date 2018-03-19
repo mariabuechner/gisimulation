@@ -12,7 +12,7 @@ import os
 import simulation.utilities as utilities
 import simulation.parser_def as parser_def
 import simulation.check_input as check_input
-import interferometer.geometry as geometry
+import simulation.geometry as geometry
 # import materials
 # import geometry
 # import gratings

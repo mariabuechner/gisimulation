@@ -18,7 +18,7 @@ check_input:    Checks the input parameters, logs errors and raises an
 """
 import numpy as np
 import simulation.parser_def as parser_def
-import interferometer.materials as materials
+import simulation.materials as materials
 import logging
 logger = logging.getLogger(__name__)
 

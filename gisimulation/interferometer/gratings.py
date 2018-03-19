@@ -2,7 +2,9 @@
 
 @author: buechner_m <maria.buechner@gmail.com>
 """
-import materials
+import sys
+sys.path.append('..')  # To allow importing from neighbouring folder
+import simulation.materials as materials
 import logging
 logger = logging.getLogger(__name__)
 

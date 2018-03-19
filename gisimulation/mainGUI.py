@@ -49,7 +49,7 @@ import main
 import simulation.parser_def as parser_def
 import simulation.utilities as utilities
 import simulation.check_input as check_input
-import interferometer.geometry as geometry
+import simulation.geometry as geometry
 
 
 # Set App Window configuration

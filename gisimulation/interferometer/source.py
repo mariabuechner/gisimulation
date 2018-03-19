@@ -4,7 +4,9 @@ X-ray source for grating interferometer simulation.
 @author: buechner_m <maria.buechner@gmail.com>
 """
 import numpy as np
-import materials
+import sys
+sys.path.append('..')  # To allow importing from neighbouring folder
+import simulation.materials as materials
 import logging
 logger = logging.getLogger(__name__)
 
