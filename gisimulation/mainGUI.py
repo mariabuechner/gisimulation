@@ -17,7 +17,7 @@ import os.path
 import scipy.io
 import logging
 # Set kivy logger console output format
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - '
+formatter = logging.Formatter('%(asctime)s - %(name)s -    %(levelname)s - '
                               '%(message)s')
 console = logging.StreamHandler()
 console.setFormatter(formatter)
@@ -39,11 +39,11 @@ logging.Logger.manager.root = Logger  # Makes Kivy Logger root for all
                                       # following loggers
 logger = logging.getLogger(__name__)
 
+# All imports using logging
 import matplotlib
 matplotlib.use('module://kivy.garden.matplotlib.backend_kivy')
 import matplotlib.pyplot as plt
 from kivy.garden.matplotlib.backend_kivyagg import FigureCanvasKivyAgg
-
 # gisimulation imports
 import main
 import simulation.parser_def as parser_def
@@ -148,10 +148,10 @@ class Distances(F.GridLayout):
         """
         super(Distances, self).__init__(**kwargs)
         self.cols = 1
-        self.update(['Source', 'Detector'])
+        self.update(['Source', 'Detector'], False)
         self.distance_fixed = False
 
-    def update(self, component_list, beam_geometry='parallel',
+    def update(self, component_list, dual_phase, beam_geometry='parallel',
                gi_geometry='free'):
         """
         Update the distance widgets according to the component list or any
@@ -163,6 +163,7 @@ class Distances(F.GridLayout):
         component_list [list]
         beam_geometry [str]
         gi_geometry [str]
+        dual_phase [boolean]
 
         Notes
         =====
@@ -177,12 +178,17 @@ class Distances(F.GridLayout):
         'parallel'&'conv':      required:   none
                                 display:    G1-G2
 
-        'cone'& not 'free' or 'sym:     required:   S/G0_G1 OR S/G0_G2
+        'cone'& not 'free' or 'sym':    required:   S/G0_G1 OR S/G0_G2
                                         optional:   G2_Dectector
                                                     if G0, than S_G0
                                         display:    G1-G2
 
-        'cone'& 'sym:   required:   none
+        'cone'& 'conv' and 'dual_phase':    required:   S/G0_G1 OR S/G0_G2
+                                            optional:   G2_Dectector
+                                                        if G0, than S_G0
+                                            display:    G1-G2
+
+        'cone'& 'sym':  required:   none
                         optional:   G2_Dectector
                                     if G0, than S_G0
                         display:    G1-G2
@@ -218,7 +224,8 @@ class Distances(F.GridLayout):
                 distance_value.disabled = True
             elif beam_geometry == 'cone' and gi_geometry != 'free':
                 if distance_id == 'distance_g1_g2':
-                    distance_value.disabled = True
+                    if not dual_phase:
+                        distance_value.disabled = True
                 if gi_geometry == 'sym':
                     if distance_id == 'distance_source_g1' or \
                             distance_id == 'distance_g0_g1':
@@ -520,7 +527,7 @@ class GeometryGrid(F.GridLayout):
             detector_width/2.0
         detector_pos_y = frame_y_center - detector_height/2.0
 
-        if not geometry_results['curved']:
+        if not geometry_results['curved_detector']:
             # straight
             self.detector = G.Rectangle(pos=(detector_pos_x, detector_pos_y),
                                         size=(detector_width, detector_height))
@@ -1386,7 +1393,7 @@ class giGUI(F.BoxLayout):
 
         """
         geometry_results = results['geometry'].copy()
-        component_list = results['geometry']['component_list']
+        component_list = geometry_results['component_list']
 
         # Update sketch
         self.ids.geometry_sketch.update_geometry(geometry_results)
@@ -1420,13 +1427,34 @@ class giGUI(F.BoxLayout):
 
             self.ids.grating_results.add_widget(boxlayout)
 
-            # Update height of 'grating_results'
-            self.ids.grating_results.height = \
-                self.calc_boxlayout_height(LINE_HEIGHT,
-                                           self.ids.grating_results)
+        # Fringe pitch on detector if dual phase
+        if geometry_results['dual_phase']:
+            boxlayout = F.BoxLayout()
+
+            boxlayout.add_widget(F.NonFileBrowserLabel(text='Detector fringe'))
+
+            pitch = str(round(geometry_results['pitch_fringe'], 3))
+            boxlayout.add_widget(F.NonFileBrowserLabel(text=pitch))
+
+            duty_cycle = str(round(geometry_results['duty_cycle_fringe'], 3))
+            boxlayout.add_widget(F.NonFileBrowserLabel(text=duty_cycle))
+
+            radius = geometry_results['radius_detector']
+            if radius is None:
+                radius = '-'
+            else:
+                radius = str(round(radius, 3))
+            boxlayout.add_widget(F.NonFileBrowserLabel(text=radius))
+
+            self.ids.grating_results.add_widget(boxlayout)
+
+        # Update height of 'grating_results'
+        self.ids.grating_results.height = \
+            self.calc_boxlayout_height(LINE_HEIGHT,
+                                       self.ids.grating_results)
 
         # Show distances
-        if results['geometry']['gi_geometry'] != 'free':
+        if geometry_results['gi_geometry'] != 'free':
             # Show d, l, s first
             if 'G0' in component_list:
                 start_from = 'G0'
@@ -2136,7 +2164,10 @@ class giGUI(F.BoxLayout):
         if self.ids.dual_phase.disabled:
             self.ids.dual_phase.active = False
         if self.ids.dual_phase.active:
-            self.ids.fixed_grating.values = ['G1', 'G2']  # Disable G0
+            # Only G1 as fixed grating
+            self.ids.fixed_grating.values = ['G1']
+            self.ids.fixed_grating.text = 'G1'
+            # Disable G0
             self.ids.g0_set.active = False
             self.ids.g0_set.disabled = True
             if self.ids.gi_geometry.text != 'free':
@@ -2151,6 +2182,11 @@ class giGUI(F.BoxLayout):
                 if self.ids.type_g2.text == 'phase':
                     self.ids.type_g2.text = 'abs'
                 self.ids.type_g2.values = ['mix', 'abs']
+        # Update distances options
+        self.ids.distances.update(self.setup_components,
+                                  self.ids.dual_phase.active,
+                                  self.ids.beam_geometry.text,
+                                  self.ids.gi_geometry.text)
 
     def on_gi_geometry(self):
         """
@@ -2230,6 +2266,7 @@ class giGUI(F.BoxLayout):
 
         # Update distances options
         self.ids.distances.update(self.setup_components,
+                                  self.ids.dual_phase.active,
                                   self.ids.beam_geometry.text,
                                   self.ids.gi_geometry.text)
 
@@ -2281,6 +2318,7 @@ class giGUI(F.BoxLayout):
             self.available_gratings = ['G1', 'G2']
             # Update distances options
             self.ids.distances.update(self.setup_components,
+                                      self.ids.dual_phase.active,
                                       self.ids.beam_geometry.text,
                                       self.ids.gi_geometry.text)
         else:

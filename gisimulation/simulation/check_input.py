@@ -227,8 +227,8 @@ def geometry_input(parameters, parser_info):
         # GI Design:
         logger.debug("Checking GI input...")
         if parameters['gi_geometry'] != 'free':
-            # If GI, talbot order necessary
-            if not parameters['talbot_order']:
+            # If GI, talbot order necessary (unless dual_phase)
+            if not parameters['talbot_order'] and not parameters['dual_phase']:
                 error_message = ("Input argument missing: 'talbot_order' "
                                  "({0})."
                                  .format(parser_info['talbot_order'][0]))
@@ -386,15 +386,31 @@ def geometry_input(parameters, parser_info):
                 if not parameters['type_g0']:
                     # No G0
                     if parameters['fixed_grating'] == 'g0':
-                        error_message = "G0 is not defined, choose G1 or G2 "
-                        "as fixed grating."
+                        if parameters['dual_pahse']:
+                            error_message = "G0 is not defined, choose G1 "
+                            "as fixed grating."
+                        else:
+                            error_message = "G0 is not defined, choose G1 or "
+                            "G2 as fixed grating."
+                        logger.error(error_message)
+                        raise InputError(error_message)
+                    elif (parameters['fixed_grating'] == 'g2' and
+                          parameters['dual_pahse']):
+                        error_message = "G1 must be fixed in dual phase "
+                        "setup, not G2."
                         logger.error(error_message)
                         raise InputError(error_message)
                     elif not parameters['fixed_grating']:
-                        error_message = ("Choose G1 or G2 as fixed grating "
-                                         "({0})."
-                                         .format(parser_info['fixed_grating']
-                                                 [0]))
+                        if parameters['dual_pahse']:
+                            error_message = ("Choose G1 as fixed grating "
+                                             "({0})."
+                                             .format(parser_info
+                                                     ['fixed_grating'][0]))
+                        else:
+                            error_message = ("Choose G1 or G2 as fixed "
+                                             "grating ({0})."
+                                             .format(parser_info
+                                                     ['fixed_grating'][0]))
                         logger.error(error_message)
                         raise InputError(error_message)
                     # Fixed distance
@@ -434,7 +450,8 @@ def geometry_input(parameters, parser_info):
                                                  .format(parser_info
                                                          ['distance_g0_g1'][0],
                                                          parser_info
-                                                         ['distance_g0_g2'][0]))
+                                                         ['distance_g0_g2']
+                                                         [0]))
                                 logger.error(error_message)
                                 raise InputError(error_message)
                         elif parameters['distance_source_g1']:
@@ -448,6 +465,10 @@ def geometry_input(parameters, parser_info):
                     # Add to component list (unless dual_phase)
                     if not parameters['dual_phase']:
                         parameters['component_list'].append('G0')
+                    else:
+                        error_message = ("Dual phase setup cannot include G0.")
+                        logger.error(error_message)
+                        raise InputError(error_message)
                     if not parameters['fixed_grating']:
                         error_message = ("Choose G0, G1 or G2 as fixed "
                                          "grating ({0})."
@@ -490,7 +511,8 @@ def geometry_input(parameters, parser_info):
                                                  .format(parser_info
                                                          ['distance_g0_g1'][0],
                                                          parser_info
-                                                         ['distance_g0_g2'][0]))
+                                                         ['distance_g0_g2']
+                                                         [0]))
                                 logger.error(error_message)
                                 raise InputError(error_message)
                         elif parameters['distance_g0_g1']:
@@ -537,6 +559,28 @@ def geometry_input(parameters, parser_info):
                             error_message = "Sample must be before G1."
                             logger.error(error_message)
                             raise InputError(error_message)
+                    # Dual phase manual distances set?
+                    if not parameters['distance_g1_g2']:
+                        error_message = "Distance from G1 to G2 must be "
+                        "defined."
+                        logger.error(error_message)
+                        raise InputError(error_message)
+                    elif parameters['distance_g1_g2'] == 0:
+                        error_message = "Distance from G1 to G2 must be "
+                        "larger than 0."
+                        logger.error(error_message)
+                        raise InputError(error_message)
+                    if not parameters['distance_g2_detector']:
+                        error_message = "Distance from G2 to the detector "
+                        "must be defined."
+                        logger.error(error_message)
+                        raise InputError(error_message)
+                    elif parameters['distance_g2_detector'] == 0:
+                        error_message = "Distance from G2 to the detector "
+                        "must be larger than 0."
+                        logger.error(error_message)
+                        raise InputError(error_message)
+
                     logger.debug("... done.")
                 elif parameters['gi_geometry'] == 'sym':
                     # =========================================================
@@ -688,14 +732,26 @@ def geometry_input(parameters, parser_info):
                     .format(parameters['component_list']))
         if 'Sample' not in parameters['component_list']:
             logger.info("No sample included.")
+
+        # Check fixed grating
         if parameters['gi_geometry'] != 'free':
             logger.info("Fixed grating is: '{0}'."
                         .format(parameters['fixed_grating']))
-            # Check fixed grating
+            # Fixed grating
             logger.debug("Checking {0}...".format(parameters['fixed_grating']))
             _check_grating_input(parameters['fixed_grating'], parameters,
                                  parser_info, True)
             logger.debug("... done.")
+            # Check G2 if dual phase as if it was fixed for phase shift
+            # settings (G1 is fixed)
+            if parameters['dual_phase']:
+                logger.debug("Checking G2...")
+                fixed_grating = parameters['fixed_grating']
+                parameters['fixed_grating'] = 'g2'
+                _check_grating_input('g2', parameters, parser_info, True)
+                parameters['fixed_grating'] = fixed_grating
+                logger.debug("... done.")
+            # Fixed distance
             if parameters['beam_geometry'] == 'cone':
                 logger.info("Fixed distance is: {0}."
                             .format(fixed_distance))
@@ -983,10 +1039,12 @@ def _check_grating_input(grating, parameters, parser_info, geometry):
 
     Basic required input:
         type (is defined)
-        pitch (if fixed grating or free geoemtry)
-        duty cycle (if fixed grating or free geometry)
+        pitch (if fixed grating or free geoemtry, except G2 and dual phase)
+        duty cycle (if fixed grating or free geometry, except G2 and dual
+                    phase)
+
         material (optional for geometry calc)
-        Phase and/or thickness and/or absorption:
+        Phase and/or thickness and/or absorption: (cals only if not geometry)
             If free:
                 abs:
                     required: thickness or absorption (dominant)
@@ -1054,11 +1112,12 @@ def _check_grating_input(grating, parameters, parser_info, geometry):
             logger.error(error_message)
             raise InputError(error_message)
 
-    # Basic required input
+    # Basic required input (except G2 and dual phase)
     # If fixed grating (for none-free input) or free input
-    if (parameters['gi_geometry'] != 'free' and
-            grating == parameters['fixed_grating']) or \
-            parameters['gi_geometry'] == 'free':
+    if ((parameters['gi_geometry'] != 'free' and
+            grating == parameters['fixed_grating']) or
+            parameters['gi_geometry'] == 'free') and not \
+            (parameters['dual_phase'] and grating == 'g2'):
         if not parameters['pitch_'+grating]:
             error_message = ("Pitch of {0} ({1}) must be defined."
                              .format(grating.upper(),
@@ -1117,44 +1176,54 @@ def _check_grating_input(grating, parameters, parser_info, geometry):
                                        "shift.".format(grating.upper()))
                     logger.warn(warning_message)
                 # Calc thickness
-                parameters['thickness_'+grating] = \
-                    materials.shift_to_height(parameters
-                                              ['phase_shift_'+grating],
-                                              parameters
-                                              ['material_'+grating],
-                                              parameters['design_energy'],
-                                              photo_only=
-                                              parameters['photo_only'],
-                                              source=
-                                              parameters['look_up_table'])
+                if not geometry:
+                    parameters['thickness_'+grating] = \
+                        materials.shift_to_height(parameters
+                                                  ['phase_shift_'+grating],
+                                                  parameters
+                                                  ['material_'+grating],
+                                                  parameters['design_energy'],
+                                                  photo_only=
+                                                  parameters['photo_only'],
+                                                  source=
+                                                  parameters['look_up_table'])
             else:
                 # Phase not defined, but thickness
                 # Calc phase shift
-                parameters['phase_shift_'+grating] = \
-                    materials.height_to_shift(parameters
-                                              ['thickness_'+grating],
-                                              parameters
-                                              ['material_'+grating],
-                                              parameters['design_energy'],
-                                              photo_only=
-                                              parameters['photo_only'],
-                                              source=
-                                              parameters['look_up_table'])
+                if not geometry:
+                    parameters['phase_shift_'+grating] = \
+                        materials.height_to_shift(parameters
+                                                  ['thickness_'+grating],
+                                                  parameters
+                                                  ['material_'+grating],
+                                                  parameters['design_energy'],
+                                                  photo_only=
+                                                  parameters['photo_only'],
+                                                  source=
+                                                  parameters['look_up_table'])
         else:
             # GI setup
             # Either phase G1 (normal and dual phase) or
             # phase G2 (for dual phase)
             if not parameters['phase_shift_'+grating]:
-                error_message = ("Phase shift ({0}) of {1} "
-                                 "must be defined as pi or pi/2."
-                                 .format(parser_info['phase_shift_'+grating]
-                                         [0],
-                                         grating.upper()))
+                if parameters['dual_phase']:
+                    error_message = ("Phase shift ({0}) of {1} "
+                                     "must be defined."
+                                     .format(parser_info['phase_shift_' +
+                                                         grating][0],
+                                             grating.upper()))
+                else:
+                    error_message = ("Phase shift ({0}) of {1} "
+                                     "must be defined as pi or pi/2."
+                                     .format(parser_info['phase_shift_' +
+                                                         grating][0],
+                                             grating.upper()))
                 logger.error(error_message)
                 raise InputError(error_message)
 
-            if not((round(parameters['phase_shift_'+grating] - np.pi) == 0) or
-                   (round(parameters['phase_shift_'+grating] - np.pi/2) == 0)):
+            if (not parameters['dual_phase'] and
+                not((round(parameters['phase_shift_'+grating] - np.pi) == 0) or
+                   (round(parameters['phase_shift_'+grating] - np.pi/2) == 0))):
                 error_message = ("Phase shift ({0}) of {1} must be 'pi' or "
                                  "'pi/2'."
                                  .format(parser_info['phase_shift_'+grating]
@@ -1170,12 +1239,16 @@ def _check_grating_input(grating, parameters, parser_info, geometry):
                                    "shift.".format(grating.upper()))
                 logger.warn(warning_message)
             # Calc thickness
-            parameters['thickness_'+grating] = \
-                materials.shift_to_height(parameters['phase_shift_'+grating],
-                                          parameters['material_'+grating],
-                                          parameters['design_energy'],
-                                          photo_only=parameters['photo_only'],
-                                          source=parameters['look_up_table'])
+            if not geometry:
+                parameters['thickness_'+grating] = \
+                    materials.shift_to_height(parameters['phase_shift_' +
+                                                         grating],
+                                              parameters['material_'+grating],
+                                              parameters['design_energy'],
+                                              photo_only=
+                                              parameters['photo_only'],
+                                              source=
+                                              parameters['look_up_table'])
     else:
         # Mix grating
         if parameters['gi_geometry'] == 'free':
@@ -1200,28 +1273,31 @@ def _check_grating_input(grating, parameters, parser_info, geometry):
                                        "thickness.".format(grating.upper()))
                     logger.warn(warning_message)
                 # Calc phase shift
-                parameters['phase_shift_'+grating] = \
-                    materials.height_to_shift(parameters
-                                              ['thickness_'+grating],
-                                              parameters
-                                              ['material_'+grating],
-                                              parameters['design_energy'],
-                                              photo_only=
-                                              parameters['photo_only'],
-                                              source=
-                                              parameters['look_up_table'])
+                if not geometry:
+                    parameters['phase_shift_'+grating] = \
+                        materials.height_to_shift(parameters
+                                                  ['thickness_'+grating],
+                                                  parameters
+                                                  ['material_'+grating],
+                                                  parameters['design_energy'],
+                                                  photo_only=
+                                                  parameters['photo_only'],
+                                                  source=
+                                                  parameters['look_up_table'])
             else:
                 # Phase shift defined
                 # Calc thickness
-                parameters['thickness_'+grating] = \
-                    materials.shift_to_height(parameters
-                                              ['phase_shift_'+grating],
-                                              parameters['material_'+grating],
-                                              parameters['design_energy'],
-                                              photo_only=
-                                              parameters['photo_only'],
-                                              source=
-                                              parameters['look_up_table'])
+                if not geometry:
+                    parameters['thickness_'+grating] = \
+                        materials.shift_to_height(parameters
+                                                  ['phase_shift_'+grating],
+                                                  parameters['material_' +
+                                                             grating],
+                                                  parameters['design_energy'],
+                                                  photo_only=
+                                                  parameters['photo_only'],
+                                                  source=
+                                                  parameters['look_up_table'])
         else:
             # GI setup
             if grating == 'g0' or (grating == 'g2' and
@@ -1243,16 +1319,17 @@ def _check_grating_input(grating, parameters, parser_info, geometry):
                                        "thickness.".format(grating.upper()))
                     logger.warn(warning_message)
                 # Calc phase shift
-                parameters['phase_shift_'+grating] = \
-                    materials.height_to_shift(parameters
-                                              ['thickness_'+grating],
-                                              parameters
-                                              ['material_'+grating],
-                                              parameters['design_energy'],
-                                              photo_only=
-                                              parameters['photo_only'],
-                                              source=
-                                              parameters['look_up_table'])
+                if not geometry:
+                    parameters['phase_shift_'+grating] = \
+                        materials.height_to_shift(parameters
+                                                  ['thickness_'+grating],
+                                                  parameters
+                                                  ['material_'+grating],
+                                                  parameters['design_energy'],
+                                                  photo_only=
+                                                  parameters['photo_only'],
+                                                  source=
+                                                  parameters['look_up_table'])
             else:
                 # G1 (normal and dual phase) or G2 if dual phase
                 if not parameters['phase_shift_'+grating]:
@@ -1270,15 +1347,17 @@ def _check_grating_input(grating, parameters, parser_info, geometry):
                                        "thickness.".format(grating.upper()))
                     logger.warn(warning_message)
                 # Calc thickness
-                parameters['thickness_'+grating] = \
-                    materials.shift_to_height(parameters
-                                              ['phase_shift_'+grating],
-                                              parameters['material_'+grating],
-                                              parameters['design_energy'],
-                                              photo_only=
-                                              parameters['photo_only'],
-                                              source=
-                                              parameters['look_up_table'])
+                if not geometry:
+                    parameters['thickness_'+grating] = \
+                        materials.shift_to_height(parameters
+                                                  ['phase_shift_'+grating],
+                                                  parameters['material_' +
+                                                             grating],
+                                                  parameters['design_energy'],
+                                                  photo_only=
+                                                  parameters['photo_only'],
+                                                  source=
+                                                  parameters['look_up_table'])
 
     # Optional input if not geometry check
     # Always required
