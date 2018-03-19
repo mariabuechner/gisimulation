@@ -906,17 +906,17 @@
                     text: 'Calculate geometry'
                     on_press: root.calculate_geometry(switch_tab=True)
 
-                Button:
-                    disabled: show_previous_results.active
-                    size_hint_y: None
-                    text: 'Calculate analytical results'
-                    on_press: root.calculate_analytical(switch_tab=True)
-
-                Button:
-                    disabled: show_previous_results.active
-                    size_hint_y: None
-                    text: 'Run simulation'
-                    on_press: root.run_simulation()
+#                Button:
+#                    disabled: show_previous_results.active
+#                    size_hint_y: None
+#                    text: 'Calculate analytical results'
+#                    on_press: root.calculate_analytical(switch_tab=True)
+#
+#                Button:
+#                    disabled: show_previous_results.active
+#                    size_hint_y: None
+#                    text: 'Run simulation'
+#                    on_press: root.run_simulation()
 
 
         # Left side of splitter
@@ -989,171 +989,159 @@
                                     orientation: 'vertical'
                                     size_hint_y: None
 
-            # Analytical results
-            TabbedPanelItem:
-                text: 'Analytical'
-                id: analytical_results
-                TabbedPanel:
-                    id: analytical_tabs
-                    do_default_tab: False
-                    tab_width: self.size[0]/len(self.tab_list)
-
-                    # Spectrum development
-                    TabbedPanelItem:
-                        text: 'Spectrum'
-
-                        ScrollView:
-                            FloatLayout:
-                                size_hint_y: None
-                                height: tab_height
-
-                                GridLayout:
-                                    pos_hint: {'top': 1}
-                                    cols: 2
-                                    StackLayout:
-                                        NonFileBrowserLabel:
-                                            text: 'Original'
-#                                        BoxLayout:
-#                                            orientation: 'vertical'
-#                                            size_hint_y: None
-#                                            height: root.calc_boxlayout_height(line_height, self)
-#                                            BoxLayout:
-#                                                NonFileBrowserLabel:
-#                                                    text: 'Distance'
-#                                                NonFileBrowserLabel:
-#                                                    text: '[mm]'
-#                                        BoxLayout:
-#                                            id: distances_results
-#                                            orientation: 'vertical'
-#                                            size_hint_y: None
-
-                                    StackLayout:
-                                        NonFileBrowserLabel:
-                                            text: '+ Filter'
-
-                                    StackLayout:
-                                        NonFileBrowserLabel:
-                                            text: '+ Gratings'
-
-                                    StackLayout:
-                                        NonFileBrowserLabel:
-                                            text: '+ Sample'
-
-                    # Visibility
-                    TabbedPanelItem:
-                        text: 'Visibility'
-
-                        ScrollView:
-                            FloatLayout:
-                                size_hint_y: None
-                                height: tab_height
-
-                                GridLayout:
-                                    pos_hint: {'top': 1}
-                                    cols: 2
-                                    StackLayout:
-                                        NonFileBrowserLabel:
-                                            text: 'Gratings'
-                                    StackLayout:
-                                        NonFileBrowserLabel:
-                                            text: '+ Filter'
-
-
-                    # Performance (Radiography and CT)
-                    TabbedPanelItem:
-                        text: 'Performance'
-
-                        ScrollView:
-                            FloatLayout:
-                                size_hint_y: None
-                                height: tab_height
-
-                                # Radiography
-                                NonFileBrowserLabel:
-                                    pos_hint: {'top': 1}
-                                    text: 'Radiography'
-
-                                # CT
-                                NonFileBrowserLabel:
-                                    pos_hint: {'top': 0.5}
-                                    text: 'CT'
-
-            # Simulation results
-            TabbedPanelItem:
-                text: 'Simulation'
-                id: simulation_results
-                TabbedPanel:
-                    id: simulation_tabs
-                    do_default_tab: False
-                    tab_width: self.size[0]/len(self.tab_list)
-
-                    # Interference pattern
-                    TabbedPanelItem:
-                        text: 'Interference pattern'
-
-                        ScrollView:
-                            FloatLayout:
-                                size_hint_y: None
-                                height: tab_height
-
-                                # No sample
-                                NonFileBrowserLabel:
-                                    pos_hint: {'top': 1}
-                                    text: 'Without sample'
-
-                                # With sample
-                                NonFileBrowserLabel:
-                                    pos_hint: {'top': 0.5}
-                                    text: 'With sample'
-
-                    # Images
-                    TabbedPanelItem:
-                        text: 'Images'
-
-                        ScrollView:
-                            FloatLayout:
-                                size_hint_y: None
-                                height: tab_height
-
-                                # With sample
-                                NonFileBrowserLabel:
-                                    pos_hint: {'top': 1}
-                                    text: 'With sample'
-
-                                        # Visibility
-                    TabbedPanelItem:
-                        text: 'Visibility'
-
-                        ScrollView:
-                            FloatLayout:
-                                size_hint_y: None
-                                height: tab_height
-
-                                GridLayout:
-                                    pos_hint: {'top': 1}
-                                    cols: 2
-                                    StackLayout:
-                                        NonFileBrowserLabel:
-                                            text: 'Gratings'
-                                    StackLayout:
-                                        NonFileBrowserLabel:
-                                            text: '+ Filter'
-
-                    # Performance (Radiography and CT)
-                    TabbedPanelItem:
-                        text: 'Performance'
-
-                        ScrollView:
-                            FloatLayout:
-                                size_hint_y: None
-                                height: tab_height
-
-                                # Radiography
-                                NonFileBrowserLabel:
-                                    pos_hint: {'top': 1}
-                                    text: 'Radiography'
-
-                                # CT
-                                NonFileBrowserLabel:
-                                    pos_hint: {'top': 0.5}
-                                    text: 'CT'
+#            # Analytical results
+#            TabbedPanelItem:
+#                text: 'Analytical'
+#                id: analytical_results
+#                TabbedPanel:
+#                    id: analytical_tabs
+#                    do_default_tab: False
+#                    tab_width: self.size[0]/len(self.tab_list)
+#
+#                    # Spectrum development
+#                    TabbedPanelItem:
+#                        text: 'Spectrum'
+#
+#                        ScrollView:
+#                            FloatLayout:
+#                                size_hint_y: None
+#                                height: tab_height
+#
+#                                GridLayout:
+#                                    pos_hint: {'top': 1}
+#                                    cols: 2
+#                                    StackLayout:
+#                                        spacing: [0, 4]
+#                                        NonFileBrowserLabel:
+#                                            text: 'Original'
+#
+#                                    StackLayout:
+#                                        NonFileBrowserLabel:
+#                                            text: '+ Filter'
+#
+#                                    StackLayout:
+#                                        NonFileBrowserLabel:
+#                                            text: '+ Gratings'
+#
+#                                    StackLayout:
+#                                        NonFileBrowserLabel:
+#                                            text: '+ Sample'
+#
+#                    # Visibility
+#                    TabbedPanelItem:
+#                        text: 'Visibility'
+#
+#                        ScrollView:
+#                            FloatLayout:
+#                                size_hint_y: None
+#                                height: tab_height
+#
+#                                GridLayout:
+#                                    pos_hint: {'top': 1}
+#                                    cols: 2
+#                                    StackLayout:
+#                                        NonFileBrowserLabel:
+#                                            text: 'Gratings'
+#                                    StackLayout:
+#                                        NonFileBrowserLabel:
+#                                            text: '+ Filter'
+#
+#
+#                    # Performance (Radiography and CT)
+#                    TabbedPanelItem:
+#                        text: 'Performance'
+#
+#                        ScrollView:
+#                            FloatLayout:
+#                                size_hint_y: None
+#                                height: tab_height
+#
+#                                # Radiography
+#                                NonFileBrowserLabel:
+#                                    pos_hint: {'top': 1}
+#                                    text: 'Radiography'
+#
+#                                # CT
+#                                NonFileBrowserLabel:
+#                                    pos_hint: {'top': 0.5}
+#                                    text: 'CT'
+#
+#            # Simulation results
+#            TabbedPanelItem:
+#                text: 'Simulation'
+#                id: simulation_results
+#                TabbedPanel:
+#                    id: simulation_tabs
+#                    do_default_tab: False
+#                    tab_width: self.size[0]/len(self.tab_list)
+#
+#                    # Interference pattern
+#                    TabbedPanelItem:
+#                        text: 'Interference pattern'
+#
+#                        ScrollView:
+#                            FloatLayout:
+#                                size_hint_y: None
+#                                height: tab_height
+#
+#                                # No sample
+#                                NonFileBrowserLabel:
+#                                    pos_hint: {'top': 1}
+#                                    text: 'Without sample'
+#
+#                                # With sample
+#                                NonFileBrowserLabel:
+#                                    pos_hint: {'top': 0.5}
+#                                    text: 'With sample'
+#
+#                    # Images
+#                    TabbedPanelItem:
+#                        text: 'Images'
+#
+#                        ScrollView:
+#                            FloatLayout:
+#                                size_hint_y: None
+#                                height: tab_height
+#
+#                                # With sample
+#                                NonFileBrowserLabel:
+#                                    pos_hint: {'top': 1}
+#                                    text: 'With sample'
+#
+#                                        # Visibility
+#                    TabbedPanelItem:
+#                        text: 'Visibility'
+#
+#                        ScrollView:
+#                            FloatLayout:
+#                                size_hint_y: None
+#                                height: tab_height
+#
+#                                GridLayout:
+#                                    pos_hint: {'top': 1}
+#                                    cols: 2
+#                                    StackLayout:
+#                                        NonFileBrowserLabel:
+#                                            text: 'Gratings'
+#                                    StackLayout:
+#                                        NonFileBrowserLabel:
+#                                            text: '+ Filter'
+#
+#                    # Performance (Radiography and CT)
+#                    TabbedPanelItem:
+#                        text: 'Performance'
+#
+#                        ScrollView:
+#                            FloatLayout:
+#                                size_hint_y: None
+#                                height: tab_height
+#
+#                                # Radiography
+#                                NonFileBrowserLabel:
+#                                    pos_hint: {'top': 1}
+#                                    text: 'Radiography'
+#
+#                                # CT
+#                                NonFileBrowserLabel:
+#                                    pos_hint: {'top': 0.5}
+#                                    text: 'CT'
