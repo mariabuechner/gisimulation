@@ -13,7 +13,8 @@ import os
 import simulation.utilities as utilities
 import simulation.parser_def as parser_def
 import simulation.check_input as check_input
-import interferometer.geometry as geometry
+import simulation.geometry as geometry
+import simulation.analytical as analytical
 # import materials
 # import geometry
 # import gratings
@@ -457,8 +458,8 @@ def reset_results():
     results = dict()
     results['geometry'] = dict()
     results['input'] = dict()
-    # results['analytical'] = dict()
-    # results['simulation'] = dict()
+    results['analytical'] = dict()
+#    results['simulation'] = dict()
     return results
 
 # #############################################################################

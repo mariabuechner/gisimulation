@@ -49,7 +49,8 @@ import main
 import simulation.parser_def as parser_def
 import simulation.utilities as utilities
 import simulation.check_input as check_input
-import interferometer.geometry as geometry
+import simulation.geometry as geometry
+import simulation.analytical as analytical
 
 
 # Set App Window configuration
@@ -1389,6 +1390,17 @@ class giGUI(F.BoxLayout):
         self.calculate_geometry()
 
         # Calc analytical
+#        try:
+        logger.info("Calculationg analytical results...")
+        self.results['analytical'] = \
+            analytical.calculate_results(self.parameters,
+                                         self.results['geometry'])
+        logger.info("... done.")
+#            except geometry.GeometryError as e:
+#                ErrorDisplay('Geometry Error', str(e))
+
+        # Show results
+        self.show_analytical(self.results)
 
         if switch_tab:
             self.ids.result_tabs.switch_to(self.ids.analytical_results)
@@ -1411,8 +1423,8 @@ class giGUI(F.BoxLayout):
         """
         if 'geometry' in results:
             self.show_geometry(results)
-#        elif 'analytical' in results:
-#            self.show_analytical(results)
+        elif 'analytical' in results:
+            self.show_analytical(results)
 
     def show_geometry(self, results):
         """
@@ -1598,6 +1610,11 @@ class giGUI(F.BoxLayout):
         self.ids.distances_results.height = \
             self.calc_boxlayout_height(LINE_HEIGHT,
                                        self.ids.distances_results)
+
+    def show_analytical(self, results):
+        """
+        """
+        logger.warning("Not done yet...")
 
     # #########################################################################
     # Manage global variables and widget behavior #############################

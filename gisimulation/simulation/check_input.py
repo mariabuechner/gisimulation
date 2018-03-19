@@ -18,7 +18,7 @@ check_input:    Checks the input parameters, logs errors and raises an
 """
 import numpy as np
 import simulation.parser_def as parser_def
-import interferometer.materials as materials
+import simulation.materials as materials
 import logging
 logger = logging.getLogger(__name__)
 
@@ -108,7 +108,10 @@ def all_input(parameters, parser_info):
             _get_spectrum(parameters['spectrum_file'],
                           parameters['spectrum_range'],
                           parameters['spectrum_step'],
-                          parameters['design_energy'])
+                          parameters['design_energy'])  # [photons/pixel/sec]
+        parameters['spectrum']['phontons'] = \
+            parameters['spectrum']['phontons'] * \
+            parameters['exposure_time'] #  [photons/pixel]
         # Material filter
         if parameters['thickness_filter'] and \
                 not parameters['material_filter']:
@@ -816,7 +819,7 @@ def geometry_input(parameters, parser_info):
 def _get_spectrum(spectrum_file, range_, spectrum_step, design_energy):
     """
     Load spectrum from file or define based on range (min, max). Returns
-    energies and relative photons (normalized to 1 in total).
+    energies and relative photons (photons/pixel/sec).
 
     Parameters
     ==========
@@ -829,7 +832,8 @@ def _get_spectrum(spectrum_file, range_, spectrum_step, design_energy):
     Returns
     =======
 
-    [spectrum, min, max]        spectrum: [energies, photons] [keV, relative]
+    [spectrum, min, max]        spectrum:   [energies, photons]
+                                            [keV, photons/pixel/sec]
                                 min: minimal energy [keV]
                                 max: maximal energy [keV]
 
@@ -905,9 +909,8 @@ def _get_spectrum(spectrum_file, range_, spectrum_step, design_energy):
                                          range_[1]+spectrum_step,
                                          spectrum_step,
                                          dtype=np.float)
-        spectrum['photons'] = (np.ones(len(spectrum['energies']),
-                                       dtype=np.float) /
-                               len(spectrum['energies']))
+        spectrum['photons'] = np.ones(len(spectrum['energies']),
+                                      dtype=np.float)
         logger.debug("\tSet all photons to {}."
                      .format(spectrum['photons'][0]))
         # Convert to struct

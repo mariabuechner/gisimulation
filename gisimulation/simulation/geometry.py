@@ -1,10 +1,6 @@
 """
 Module to calculate the grating interferometer geometry
 
-ToDo:
-    include check for correct results (p0>p2 etc., incase of invalid input
-    values.
-
 @author: buechner_m <maria.buechner@gmail.com>
 """
 import numpy as np
