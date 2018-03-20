@@ -36,8 +36,8 @@ import kivy.graphics as G
 # Logging
 # Set logger before importing simulation modules (to set format for all)
 # Use Kivy logger to handle logging.Logger
-logging.Logger.manager.root = Logger  # Makes Kivy Logger root for all
-                                      # following loggers
+# Makes Kivy Logger root for all following loggers
+logging.Logger.manager.root = Logger
 logger = logging.getLogger(__name__)
 
 # All imports using logging

@@ -75,7 +75,14 @@ def all_input(parameters, parser_info):
         # General input:
         logger.debug("Checking simulation input...")
 
-        if not parameters['sampling_rate']:
+        if parameters['sampling_rate']:
+            if parameters['sampling_rate'] > parameters['pixel_size']:
+                error_message = ("Sampling rate ({0} um) must be smaller than "
+                                 "pixel size ({1} um)"
+                                 .format(parameters['sampling_rate'],
+                                         parameters['pixel_size']))
+        else:
+            # if not parameters['sampling_rate']:
             logger.debug("Sampling rate ({0}) is not specified, "
                          "set to pixel size * 1e-3."
                          .format(parser_info['sampling_rate'][0]))

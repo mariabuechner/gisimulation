@@ -74,6 +74,43 @@ class Detector():
         return image
 
 
+def pixel_coordinates(field_of_view, pixel_size, distance_source_detector):
+    """
+    Calculates pixel center coordinates based on total detector field of view
+    and pixel size. Source is at ccordinates (0, 0).
+
+    Parameters
+    ==========
+
+    field_of_view [np.array]:       [x, y] number of pixels
+    pixel_size [um]
+
+    Returns
+    =======
+
+    pixel_coordinates [np.array]:   matrix (0...y-1, 0...x-1) of
+                                    [pixel_x, pixel_y] coordinates [um]
+
+    Notes
+    =====
+
+    Matrix (ndarray): [rows (y), cols (x)]
+        -> np.zeros([field_of_view[1], field_of_view[0], 2])
+
+    """
+    pixel_coordinates = np.zeros([field_of_view[1], field_of_view[0], 2])
+    row, col = np.indices([field_of_view[1], field_of_view[0]])
+
+    # x-coordinates
+    pixel_coordinates[:, :, 0] = pixel_size/2.0 * (1 - field_of_view[0]) + \
+        col*pixel_size
+    # y-coordinates
+    pixel_coordinates[:, :, 1] = pixel_size/2.0 * (1 - field_of_view[1]) + \
+        row*pixel_size
+
+    return pixel_coordinates
+
+
 if __name__ == '__main__':
     import numpy as np
     detector = Detector('conv', 80., 50., np.array([20,20]), 25, None, None, np.array([20, 25, 30, 35, 40]), 'nist', False)
