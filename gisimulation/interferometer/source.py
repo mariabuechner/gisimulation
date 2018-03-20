@@ -30,6 +30,7 @@ class Source():
         ==========
 
         parameters [dict]
+        geometry_results [dict]
 
         Notes
         =====

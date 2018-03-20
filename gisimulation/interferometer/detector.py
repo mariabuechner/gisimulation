@@ -13,31 +13,31 @@ logger = logging.getLogger(__name__)
 
 class Detector():
     """
+    Detector for grating interferometer simulation.
     """
-    def __init__(self, detector_type, point_spread_function, pixel_size,
-                 field_of_view, detector_threshold,
-                 material_detector, thickness_detector,
-                 spectrum, look_up_table, photo_only,
-                 sampling_rate):
+    def __init__(self, parameters):
         """
+        Parameters
+        ==========
+
+        parameters [dict]
+
         """
-        self.type = detector_type
+        self.type = parameters['detector_type]
         if self.type == 'conv':
-            self.point_spread_function = point_spread_function
-        self.pixel_size = pixel_size
-        self.field_of_view = field_of_view
-        self.detector_threshold = detector_threshold
+            self.point_spread_function = parameters['point_spread_function']
+        self.pixel_size = parameters['pixel_size']
+        self.field_of_view = parameters['field_of_view']
+        self.detector_threshold = parameters['detector_threshold']
 
-        self.sampling_rate = sampling_rate
-
-        if material_detector:
+        if parameters['material_detector']:
             # Calculate detector efficiency
             self.efficiency = \
-                materials.height_to_absorption(thickness_detector,
-                                               material_detector,
-                                               spectrum,
-                                               photo_only=photo_only,
-                                               source=look_up_table)
+                materials.height_to_absorption(parameters['thickness_detector'],
+                                               parameters['material_detector'],
+                                               #???['spectrum'],
+                                               photo_only=parameters['photo_only'],
+                                               source=parameters['look_up_table'])
         else:
             self.efficiency = 1
         logger.debug("Detector efficiency is: {0}%"
@@ -109,35 +109,3 @@ def pixel_coordinates(field_of_view, pixel_size, distance_source_detector):
         row*pixel_size
 
     return pixel_coordinates
-
-
-if __name__ == '__main__':
-    import numpy as np
-    detector = Detector('conv', 80., 50., np.array([20,20]), 25, None, None, np.array([20, 25, 30, 35, 40]), 'nist', False)
-
-    image = np.random.rand(20, 20)
-
-    res_img = detector.detect(image)
-
-    import matplotlib.pyplot as plt
-
-    f = plt.figure(1)
-    plt.imshow(image)
-    f.show()
-
-    f = plt.figure(2)
-    plt.imshow(res_img)
-    f.show()
-
-
-
-
-
-
-
-
-
-
-
-
-
