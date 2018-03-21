@@ -228,11 +228,11 @@ def input_parser(numerical_type=NUMERICAL_TYPE):
                         help="Beam geometry. Choices are\n"
                         "'cone': cone/divergent beam, "
                         "'parallel': parallel beam (infinite source size).")
-    parser.add_argument('-sr', dest='sampling_rate',
+    parser.add_argument('-sr', dest='sampling_size',
                         action=_PositiveNumber,
                         type=numerical_type,
-                        help="Sampling voxel size (cube). "
-                        "If not set, it is pixel_size * 1e-3.")
+                        help="Sampling voxel size (cube) [um] at detector "
+                        "plane. If not set, it is pixel_size * 1e-3.")
     parser.add_argument('-lut', dest='look_up_table', default='nist',
                         type=str.lower,
                         choices=['nist', 'x0h'],

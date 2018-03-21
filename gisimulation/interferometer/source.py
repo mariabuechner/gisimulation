@@ -52,14 +52,17 @@ class Source():
 #            self.focal_spot_size = parameters['focal_spot_size']
 #        logger.debug("Source type is: {0}".format(self.type))
 
+        # Rays to pixel cetners, for analytical calculations
+        # (not for each sampling point)
         self.rays = dict()
         self.rays['targets'] = pixel_coordinates(parameters['field_of_view'],
-                                                 parameters['pixel_size'])
+                                                 parameters['pixel_size'],
+                                                 parameters
+                                                 ['distance_source_detector'],
+                                                 parameters['curved_detector'])
         # theta = atan(x/z)
         self.rays['thetas'] = np.arctan(self.rays['targets'][:, :, 0] /
-                                        geometry_results
-                                        ['distance_source_detector'])
+                                        self.rays['targets'][:, :, 2])
         # phi = atan(y/z)
         self.rays['phis'] = np.arctan(self.rays['targets'][:, :, 1] /
-                                      geometry_results
-                                      ['distance_source_detector'])
+                                      self.rays['targets'][:, :, 2])

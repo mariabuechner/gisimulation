@@ -75,21 +75,21 @@ def all_input(parameters, parser_info):
         # General input:
         logger.debug("Checking simulation input...")
 
-        if parameters['sampling_rate']:
-            if parameters['sampling_rate'] > parameters['pixel_size']:
+        if parameters['sampling_size']:
+            if parameters['sampling_size'] > parameters['pixel_size']:
                 error_message = ("Sampling rate ({0} um) must be smaller than "
                                  "pixel size ({1} um)"
-                                 .format(parameters['sampling_rate'],
+                                 .format(parameters['sampling_size'],
                                          parameters['pixel_size']))
         else:
-            # if not parameters['sampling_rate']:
+            # if not parameters['sampling_size']:
             logger.debug("Sampling rate ({0}) is not specified, "
                          "set to pixel size * 1e-3."
-                         .format(parser_info['sampling_rate'][0]))
+                         .format(parser_info['sampling_size'][0]))
             # Default to pixel_size *1e-3
-            parameters['sampling_rate'] = parameters['pixel_size'] * 1e-3
+            parameters['sampling_size'] = parameters['pixel_size'] * 1e-3
             logger.debug("Sampling rate is {0} um, with pixel size {1} "
-                         "um..".format(parameters['sampling_rate'],
+                         "um..".format(parameters['sampling_size'],
                                        parameters['pixel_size']))
         if parameters['look_up_table'] == 'x0h' and \
                 parameters['photo_only']:
