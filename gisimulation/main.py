@@ -7,6 +7,7 @@ import logging
 import numpy as np
 import scipy.io
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import sys
 import os
 # gisimulation modules
@@ -183,7 +184,7 @@ def show_geometry(results):
             radius = str(round(radius, 3))
 
         print("{0}\t\t{1}\t\t{2}\t\t{3}".format(grating, pitch, duty_cycle,
-                                              radius))
+                                                radius))
     # Fringe pitch on detector if dual phase
     if geometry_results['dual_phase']:
         pitch = str(round(geometry_results['pitch_fringe'], 3))
@@ -216,11 +217,13 @@ def show_analytical():
 
 #    fig.draw()
     fig.show()
+#    plt.show(block=False)
 
 
-def show_plot(x_values, y_values, title, label_x, label_y, labels=None):
+def line_plot(x_values, y_values, title, label_x, label_y, labels=None,
+              show=True):
     """
-    Show plot.
+    Plots plot onto axis, show in new figure optionally (default).
 
     Parameters
     ==========
@@ -236,6 +239,7 @@ def show_plot(x_values, y_values, title, label_x, label_y, labels=None):
     label_y [str]
     labels [list[strings]]:         List of strings, defaults to None
                                     (no legend)
+    show [boolean]:                 Show in new figure, default is True
 
     Notes
     =====
@@ -248,18 +252,21 @@ def show_plot(x_values, y_values, title, label_x, label_y, labels=None):
     y_values = np.array(y_values)
 
     # Figure
-    figure = plt.figure()
+    if show:
+        figure = plt.figure()
+
+    # Axis (Plot)
     axis = figure.add_subplot(111)
 
     if len(x_values.shape) == 1:
         # Only one series
         axis.plot(x_values, y_values)
     else:
-        index = 0
-        for x in x_values:
+        for index, x in enumerate(x_values):
+            logger.debug("Plotting {0}. line...".format(index+1))
             y = y_values[index]
             axis.plot(x, y)
-            index = index + 1
+            logger.debug("... done.")
 
     # Udpate info
     axis.set_title(title)
@@ -269,6 +276,45 @@ def show_plot(x_values, y_values, title, label_x, label_y, labels=None):
         axis.legend(labels)
 
     plt.draw()
+    plt.show(block=False)
+
+
+def image_plot(image, title, label_x, label_y, colormap='gray', axis=None):
+    """
+    Plots images onto axis, show in new figure optionally (default).
+
+    Parameters
+    ==========
+
+    image [np.array]:               2D numpy array
+    title [str]
+    label_x [str]
+    label_y [str]
+    colormap [str]:                 Name of colormap, default is 'gray'
+    show [boolean]:                 Show in new figure, default is True
+
+    """
+    # Figure
+    if not axis:
+        axis = plt.subplot(111)
+
+    # Udpate info
+    axis.set_title(title)
+    axis.set_xlabel(label_x)
+    axis.set_ylabel(label_y)
+
+    im = axis.imshow(image, cmap=colormap, interpolation='none')
+    # Scale colorbar to image height
+    divider = make_axes_locatable(axis)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    plt.colorbar(im, cax=cax)
+    plt.show(block=False)
+
+
+def plot_images():
+    fig, ax_array = plt.subplots(2, 2)
+    for ax in np.ravel(ax_array):
+        image_plot(np.random.rand(10, 5), 'title', 'x', 'y', axis=ax)
 
 # #############################################################################
 # Input/Results i/o ###########################################################
@@ -565,7 +611,8 @@ if __name__ == '__main__':
 
     show_analytical()
 
-##    input_parameters = collect_input(parameters, parser_info)
+#    # Save
+#    input_parameters = collect_input(parameters, parser_info)
 #    save_input('C:/Users/buechner_m/Documents/Code/bCTDesign/Simulation/Python/gisimulation/gisimulation/data/inputs/test5.txt', results['input'])
 #
 #    save_results('C:/Users/buechner_m/Documents/Code/bCTDesign/Simulation/Python/gisimulation/gisimulation/data/results/test5', results)

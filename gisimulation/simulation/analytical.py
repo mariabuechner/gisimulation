@@ -37,8 +37,7 @@ def spectrum_development(parameters, analytical_results,
         analytical_results['input_photons'] / \
         sum(analytical_results['input_photons'])
 
-    for component in analytical_components:
-
+#    for component in analytical_components:
 
 
 def calculate_results(parameters, results, analytical_components):

@@ -19,13 +19,11 @@ inv
 10.0
 80.0
 --dual_phase
-False
 -bg
 cone
 -fg
 g1
 --photo_only
-False
 -m1
 Si
 -m0
