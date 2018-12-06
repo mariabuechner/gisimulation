@@ -314,7 +314,7 @@ def image_plot(image, title, label_x, label_y, colormap='gray', axis=None):
 def plot_images():
     fig, ax_array = plt.subplots(2, 2)
     for ax in np.ravel(ax_array):
-        image_plot(np.random.rand(10, 5), 'title', 'x', 'y', axis=ax)
+        image_plot(np.random.rand(200, 500), 'title', 'x', 'y', axis=ax)
 
 # #############################################################################
 # Input/Results i/o ###########################################################

@@ -906,19 +906,25 @@ class Geometry():
             M = total_length / to_g1
 
             # Pitches [um]
+#            logger.info("p0".format(p0))
+#            logger.info("dn".format(self._parameters['distance_g1_g2']))
+#            logger.info("l".format(to_g1))
+            self._parameters['pitch_g2'] = self._parameters['pitch_g0'] * \
+                self._parameters['distance_g1_g2'] / to_g1
             self._parameters['pitch_g1'] = \
                 self._nu * self._parameters['pitch_g2'] / M
-            if 'G0' in self._parameters['component_list']:
-                self._parameters['pitch_g0'] = \
-                    (to_g1 / self._parameters['distance_g1_g2']) * \
-                    self._parameters['pitch_g2']
+#            self._parameters['pitch_g1'] = \
+#                self._nu * self._parameters['pitch_g2'] / M
+#            if 'G0' in self._parameters['component_list']:
+#                self._parameters['pitch_g0'] = \
+#                    (to_g1 / self._parameters['distance_g1_g2']) * \
+#                    self._parameters['pitch_g2']
 
             # Duty cycles
             self._parameters['duty_cycle_g1'] = \
-                self._parameters['duty_cycle_g2']
-            if 'G0' in self._parameters['component_list']:
-                self._parameters['duty_cycle_g0'] = \
-                    self._parameters['duty_cycle_g2']
+                self._parameters['duty_cycle_g0']
+            self._parameters['duty_cycle_g2'] = \
+                self._parameters['duty_cycle_g0']
 
         logger.info("... done.")
 
