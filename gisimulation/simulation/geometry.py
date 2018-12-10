@@ -871,7 +871,7 @@ class Geometry():
                                                 ['fixed_distance']]
 
                 # distance from G1 to G2 (dn)
-                # dn = s / (s * 2 * lambda / (n * p2^2) + 1)
+                # dn = s / (n * p2^2 / (s * 2 * lambda) + 1)
                 # lambda and p2 in um, need to be in mm
                 wavelength = self._parameters['design_wavelength'] * \
                     1e-3  # [mm]
